@@ -1,4 +1,8 @@
-export type ProjectStatus = "Draft concept" | "In development" | "Completed";
+export type ProjectStatus =
+  | "Draft concept"
+  | "In development"
+  | "Completed"
+  | "Ongoing Experiment";
 
 export type ProjectVisualKind = "software" | "iot" | "agri" | "prototype";
 
@@ -21,6 +25,17 @@ export type Project = {
  * client names. Update summary/status/href as real details become ready.
  */
 export const projects: readonly Project[] = [
+  {
+    slug: "hidroponik",
+    title: "Panduan Hidroponik Pak Choy Hijau",
+    category: "Smart Agriculture / Hydroponics",
+    summary:
+      "Interactive guide and growth journal tracking daily Kratky passive hydroponics progress, nutrient mixing, and seedling health.",
+    status: "Ongoing Experiment",
+    visual: "agri",
+    cover: "/projects/hidroponik/assets/hari-13-takung-biru-penuh.jpg",
+    href: "/projects/hidroponik/",
+  },
   {
     slug: "biztrack",
     title: "BizTrack",
@@ -58,3 +73,4 @@ export const projects: readonly Project[] = [
     visual: "prototype",
   },
 ];
+

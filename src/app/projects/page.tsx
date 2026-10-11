@@ -15,9 +15,10 @@ export const metadata: Metadata = {
 };
 
 export default function ProjectsPage() {
-  const drafts = projects.filter((p) => p.status === "Draft concept");
+  const ongoing = projects.filter((p) => p.status === "Ongoing Experiment");
   const inProgress = projects.filter((p) => p.status === "In development");
   const completed = projects.filter((p) => p.status === "Completed");
+  const drafts = projects.filter((p) => p.status === "Draft concept");
 
   return (
     <>
@@ -32,7 +33,7 @@ export default function ProjectsPage() {
         className="border-b border-border bg-surface-muted/60"
       >
         <Container>
-          <ol className="grid divide-y divide-border sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4 lg:divide-x">
+          <ol className="grid divide-y divide-border sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-5 lg:divide-x">
             {projects.map((project, i) => (
               <li key={project.slug} className="lg:px-6 lg:first:pl-0">
                 <Link
@@ -57,12 +58,12 @@ export default function ProjectsPage() {
         </Container>
       </nav>
 
-      {completed.length > 0 && (
+      {ongoing.length > 0 && (
         <ProjectGroup
-          id="completed"
-          eyebrow="Completed"
-          title="Public projects."
-          items={completed}
+          id="ongoing"
+          eyebrow="Ongoing experiment"
+          title="Live explorations & journals."
+          items={ongoing}
         />
       )}
 
@@ -72,6 +73,15 @@ export default function ProjectsPage() {
           eyebrow="In development"
           title="Currently being built."
           items={inProgress}
+        />
+      )}
+
+      {completed.length > 0 && (
+        <ProjectGroup
+          id="completed"
+          eyebrow="Completed"
+          title="Public projects."
+          items={completed}
         />
       )}
 
@@ -97,7 +107,7 @@ export default function ProjectsPage() {
               />
             ))}
           </div>
-          {completed.length === 0 && (
+          {completed.length === 0 && ongoing.length === 0 && (
             <p className="mt-10 border border-dashed border-border px-6 py-4 text-sm text-muted">
               No completed public projects are listed yet.
             </p>

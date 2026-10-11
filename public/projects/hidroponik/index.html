@@ -1,0 +1,2055 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panduan Hidroponik Pak Choy Hijau (Kaedah Kratky) + Penjejak Tumbesaran</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #10b981;
+      --primary-dark: #059669;
+      --primary-light: #d1fae5;
+      --accent: #06b6d4;
+      --accent-warm: #f59e0b;
+      --danger: #ef4444;
+      --bg-main: #0a0f1d;
+      --bg-card: rgba(17, 24, 39, 0.85);
+      --bg-card-hover: rgba(31, 41, 55, 0.9);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-active: rgba(16, 185, 129, 0.4);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --text-dim: #6b7280;
+      --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: radial-gradient(circle at 10% 20%, #0d2818 0%, #0a0f1d 90%);
+      color: var(--text-main);
+      min-height: 100vh;
+      line-height: 1.6;
+      padding: 24px 16px;
+    }
+
+    .container {
+      max-width: 1020px;
+      margin: 0 auto;
+      padding-bottom: 60px;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      padding: 36px 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--glass-shadow);
+      backdrop-filter: blur(12px);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    header::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .badge-hero {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #34d399;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.3rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff 30%, #34d399 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+      line-height: 1.25;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1.02rem;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    /* Live Status Banner (NEW) */
+    .status-alert-box {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(6, 182, 212, 0.12) 100%);
+      border: 2px solid rgba(52, 211, 153, 0.5);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 28px;
+      box-shadow: 0 10px 30px -5px rgba(16, 185, 129, 0.25);
+      position: relative;
+      overflow: hidden;
+      animation: pulseBorder 3s infinite alternate ease-in-out;
+    }
+
+    @keyframes pulseBorder {
+      0% { border-color: rgba(52, 211, 153, 0.4); box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.2); }
+      100% { border-color: rgba(52, 211, 153, 0.8); box-shadow: 0 12px 35px -5px rgba(16, 185, 129, 0.4); }
+    }
+
+    .status-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .status-title-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .live-dot {
+      width: 14px;
+      height: 14px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 12px #10b981;
+      position: relative;
+    }
+
+    .live-dot::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 2px solid #34d399;
+      animation: ripple 1.6s infinite ease-out;
+    }
+
+    @keyframes ripple {
+      0% { transform: scale(0.9); opacity: 1; }
+      100% { transform: scale(1.9); opacity: 0; }
+    }
+
+    .status-heading {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .status-tag {
+      background: rgba(16, 185, 129, 0.25);
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .action-item {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .action-icon {
+      font-size: 1.6rem;
+      flex-shrink: 0;
+    }
+
+    .action-text h4 {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: #34d399;
+      margin-bottom: 4px;
+    }
+
+    .action-text p {
+      font-size: 0.85rem;
+      color: #d1d5db;
+      line-height: 1.45;
+    }
+
+    /* Photo Journal Styles */
+    .journal-section {
+      background: var(--bg-card);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 28px;
+      box-shadow: var(--glass-shadow);
+      position: relative;
+    }
+
+    .journal-card {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 24px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-top: 16px;
+      align-items: start;
+    }
+
+    @media (max-width: 860px) {
+      .journal-card {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .journal-img-container {
+      position: relative;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      background: #000;
+    }
+
+    .journal-img {
+      width: 100%;
+      height: auto;
+      max-height: 440px;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.4s ease;
+    }
+
+    .journal-img:hover {
+      transform: scale(1.03);
+    }
+
+    .journal-photo-tag {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(16, 185, 129, 0.95);
+      color: #064e3b;
+      font-weight: 800;
+      font-size: 0.78rem;
+      padding: 5px 12px;
+      border-radius: 999px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+      letter-spacing: 0.03em;
+    }
+
+    .journal-info-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .journal-day-badge {
+      background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+      color: #042f2e;
+      font-weight: 800;
+      padding: 4px 14px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+    }
+
+    .health-metric-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 10px;
+      margin: 16px 0;
+    }
+
+    .metric-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+    }
+
+    .metric-card.highlight {
+      border-color: rgba(52, 211, 153, 0.4);
+      background: rgba(16, 185, 129, 0.06);
+    }
+
+    .metric-card .lbl {
+      font-size: 0.73rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .metric-card .val {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #34d399;
+      font-family: 'Outfit', sans-serif;
+      margin-top: 2px;
+    }
+
+    .metric-card .sub {
+      font-size: 0.73rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .growth-checklist {
+      list-style: none;
+      margin-top: 12px;
+    }
+
+    .growth-checklist li {
+      position: relative;
+      padding-left: 28px;
+      margin-bottom: 8px;
+      font-size: 0.88rem;
+      color: #d1d5db;
+    }
+
+    .growth-checklist li.done::before {
+      content: '✅';
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+
+    .growth-checklist li.pending::before {
+      content: '👉';
+      position: absolute;
+      left: 0;
+      top: 0;
+    }
+
+    /* Tab controls for Journal */
+    .journal-tab-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 12px;
+    }
+
+    .journal-tab-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #9ca3af;
+      padding: 9px 18px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.88rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .journal-tab-btn:hover {
+      background: rgba(16, 185, 129, 0.15);
+      color: #ffffff;
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+
+    .journal-tab-btn.active {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(6, 182, 212, 0.2) 100%);
+      color: #34d399;
+      border-color: #10b981;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.25);
+    }
+
+    .journal-tab-content {
+      display: none;
+      animation: tabFadeIn 0.3s ease;
+    }
+
+    .journal-tab-content.active {
+      display: block;
+    }
+
+    @keyframes tabFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Comparison Card Grid */
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .comparison-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .comparison-item {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.25s ease, border-color 0.25s ease;
+    }
+
+    .comparison-item:hover {
+      transform: translateY(-3px);
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+
+    .comparison-item .img-box {
+      position: relative;
+      height: 240px;
+      overflow: hidden;
+      background: #000;
+    }
+
+    .comparison-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.35s ease;
+    }
+
+    .comparison-item:hover img {
+      transform: scale(1.04);
+    }
+
+    .comparison-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(0, 0, 0, 0.75);
+      border: 1px solid rgba(52, 211, 153, 0.6);
+      color: #34d399;
+      font-weight: 700;
+      font-size: 0.8rem;
+      padding: 4px 12px;
+      border-radius: 999px;
+      backdrop-filter: blur(8px);
+    }
+
+    .comparison-desc {
+      padding: 18px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .comparison-desc h4 {
+      font-size: 1.05rem;
+      color: #ffffff;
+      margin-bottom: 6px;
+    }
+
+    .comparison-desc p {
+      font-size: 0.86rem;
+      color: #9ca3af;
+      line-height: 1.5;
+    }
+
+    .comparison-footer-banner {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.1) 100%);
+      border: 1px dashed rgba(16, 185, 129, 0.4);
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      margin-top: 18px;
+      font-size: 0.88rem;
+      color: #d1fae5;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Parameter Grid */
+    .param-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+
+    .param-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: all 0.25s ease;
+      backdrop-filter: blur(10px);
+    }
+
+    .param-card:hover {
+      border-color: var(--border-active);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.2);
+    }
+
+    .param-title {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .param-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #34d399;
+    }
+
+    .param-sub {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    /* Section Cards */
+    .section-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: var(--glass-shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(16, 185, 129, 0.15);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      color: #34d399;
+      flex-shrink: 0;
+    }
+
+    h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.35rem;
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    /* Interactive Timeline Tracker */
+    .timeline-interactive {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .stage-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      transition: all 0.25s ease;
+      position: relative;
+    }
+
+    .stage-card.completed {
+      border-color: rgba(16, 185, 129, 0.35);
+      background: rgba(16, 185, 129, 0.04);
+    }
+
+    .stage-card.current {
+      border: 2px solid #34d399;
+      background: rgba(16, 185, 129, 0.09);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+    }
+
+    .stage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .stage-title {
+      font-weight: 700;
+      font-size: 1.05rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .stage-card.current .stage-title {
+      color: #34d399;
+    }
+
+    .stage-pill {
+      font-size: 0.75rem;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+    }
+
+    .pill-done {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .pill-active {
+      background: #10b981;
+      color: #064e3b;
+      animation: pulse 1.5s infinite alternate;
+    }
+
+    .pill-upcoming {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-dim);
+    }
+
+    .stage-body {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    .stage-body ul {
+      margin-top: 8px;
+      padding-left: 20px;
+    }
+
+    .stage-body li {
+      margin-bottom: 5px;
+    }
+
+    /* Inventory Items List */
+    .inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 14px;
+    }
+
+    .inventory-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .inventory-item .check-icon {
+      color: #10b981;
+      font-size: 1.1rem;
+      margin-top: 2px;
+    }
+
+    .inventory-item h4 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #f3f4f6;
+    }
+
+    .inventory-item p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Warning & Tips Callouts */
+    .callout {
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      margin: 14px 0 6px;
+      font-size: 0.88rem;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .callout-warning {
+      background: rgba(239, 68, 68, 0.1);
+      border-left: 4px solid var(--danger);
+      color: #fca5a5;
+    }
+
+    .callout-tip {
+      background: rgba(16, 185, 129, 0.1);
+      border-left: 4px solid var(--primary);
+      color: #6ee7b7;
+    }
+
+    .callout-info {
+      background: rgba(6, 182, 212, 0.1);
+      border-left: 4px solid var(--accent);
+      color: #7dd3fc;
+    }
+
+    /* Routine Table */
+    .routine-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .routine-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .routine-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-md);
+      padding: 18px;
+    }
+
+    .routine-card h3 {
+      font-size: 1rem;
+      color: #e5e7eb;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .checklist {
+      list-style: none;
+    }
+
+    .checklist li {
+      position: relative;
+      padding-left: 26px;
+      margin-bottom: 10px;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    .checklist li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: #10b981;
+      font-weight: bold;
+    }
+
+    /* Interactive Calculator Section */
+    .calc-box {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(6, 182, 212, 0.05) 100%);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-top: 14px;
+    }
+
+    .calc-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .calc-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .calc-input-group label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .calc-input {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: #ffffff;
+      padding: 10px 14px;
+      font-size: 1rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .calc-input:focus {
+      border-color: #10b981;
+    }
+
+    .calc-result {
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      display: flex;
+      justify-content: space-around;
+      text-align: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .res-item .res-val {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #34d399;
+    }
+
+    .res-item .res-lbl {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Common FAQ / Troubleshoot */
+    .faq-item {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+
+    .faq-question {
+      padding: 14px 16px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+    }
+
+    .faq-question:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: #34d399;
+    }
+
+    .faq-answer {
+      padding: 0 16px 14px;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
+      padding-top: 12px;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      margin-top: 30px;
+      padding: 20px;
+      color: var(--text-dim);
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Khai Space Navigation Bar -->
+    <nav style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-size: 0.875rem;">
+      <a href="/projects" style="display: inline-flex; align-items: center; gap: 8px; color: var(--text-muted); text-decoration: none; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='#34d399'" onmouseout="this.style.color='var(--text-muted)'">
+        <span>←</span> Kembali ke Projek Khai Space
+      </a>
+      <a href="/" style="color: var(--text-dim); text-decoration: none; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase;" onmouseover="this.style.color='#f3f4f6'" onmouseout="this.style.color='var(--text-dim)'">
+        khaispace.com
+      </a>
+    </nav>
+
+    <!-- Header -->
+    <header>
+      <div class="badge-hero">🌱 Panduan Hidroponik Pemula</div>
+      <h1>Panduan Menanam Sayur Pak Choy Hijau</h1>
+      <p class="subtitle">Kaedah Kratky (Hidroponik Pasif Tanpa Pam & Elektrik) Menggunakan Alatan Sedia Ada</p>
+    </header>
+
+    <!-- LIVE STATUS BANNER: Hari Ke-13 -->
+    <div class="status-alert-box">
+      <div class="status-header-row">
+        <div class="status-title-area">
+          <div class="live-dot"></div>
+          <div class="status-heading">Status Semasa: Hari Ke-13 — Balang Kaca Siap Dibalut Aluminium Foil & Penutup Kadbod! Setup Kratky Sempurna 100% 🛡️🌿✨</div>
+        </div>
+        <div class="status-tag" style="background: rgba(16, 185, 129, 0.25); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.5);">Hari Ke-13 (Kratky Pasif Beroperasi Penuh)</div>
+      </div>
+
+      <p style="font-size: 0.95rem; color: #e5e7eb; margin-bottom: 12px;">
+        Pencapaian cemerlang pada <strong>Hari Ke-13</strong>! Cadangan pencegahan lumut telah disempurnakan dengan amat kemas dan saintifik — <strong>kedua-dua balang kaca kini siap dibalut sepenuhnya dengan aluminium foil dan penutup kadbod tersuai</strong>. Kesemua 11 anak pokok Pak Choy (8 unit dalam takung biru 3L, 1 unit dalam bekas hitam, dan 2 unit dalam balang kaca) menyesuaikan diri dengan cemerlang <strong>tanpa sebarang simptom kejutan pemindahan (transplant shock)</strong>. Pokok berdiri tegak, daun hijau segar berkilat, dan bersedia memasuki fasa pembesaran daun secara pesat!
+      </p>
+
+      <div class="action-grid">
+        <div class="action-item" style="border-color: rgba(52, 211, 153, 0.5); background: rgba(16, 185, 129, 0.08);">
+          <div class="action-icon">🛡️</div>
+          <div class="action-text">
+            <h4>Balutan Foil & Kadbod 100% Berjaya</h4>
+            <p>Aluminium foil memantulkan haba dan menyekat 100% cahaya daripada menembusi larutan baja balang. Tiada pembiakan <strong>lumut hijau (algae)</strong> yang boleh merebut baja dan oksigen anak pokok!</p>
+          </div>
+        </div>
+
+        <div class="action-item">
+          <div class="action-icon">💧</div>
+          <div class="action-text">
+            <h4>Biarkan Paras Air Surut Semulajadi</h4>
+            <p><strong>Jangan tambah air takung buat masa ini!</strong> Biarkan paras air menyusut 1–2 cm dalam beberapa hari ini supaya <strong>ruang udara (air gap)</strong> terbentuk untuk respirasi akar oksigen kaedah Kratky.</p>
+          </div>
+        </div>
+
+        <div class="action-item">
+          <div class="action-icon">☀️</div>
+          <div class="action-text">
+            <h4>Kekalkan Cahaya Pagi Tepi Tingkap</h4>
+            <p>Cahaya pagi 7:30 – 11:30 pagi sangat mencukupi untuk fotosintesis daun ke-3 dan ke-4 tanpa menyebabkan larutan baja takung menjadi panas berlebihan.</p>
+          </div>
+        </div>
+
+        <div class="action-item">
+          <div class="action-icon">🦟</div>
+          <div class="action-text">
+            <h4>Pastikan Penutup Rapat (Cegah Nyamuk)</h4>
+            <p>Pastikan penutup kadbod dan coroplast rapat di sekeliling mulut takung/balang agar nyamuk tidak dapat masuk dan bertelur di dalam larutan baja hidroponik.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JURNAL BERGAMBAR TUMBESARAN (PHOTO GROWTH JOURNAL) -->
+    <div class="journal-section">
+      <div class="section-header">
+        <div class="section-icon">📸</div>
+        <div>
+          <h2>Jurnal Bergambar Tumbesaran Anda</h2>
+          <p style="font-size:0.85rem; color:var(--text-muted);">Rekod visual & diagnosis AI pintar mengikut perkembangan harian semaian anda</p>
+        </div>
+      </div>
+
+      <!-- Tab Buttons Navigation -->
+      <div class="journal-tab-bar">
+        <button class="journal-tab-btn active" id="btn-hari13" onclick="switchJournalTab('hari13')">
+          <span>🌱 Hari Ke-13</span>
+          <span style="font-size: 0.72rem; background: rgba(52, 211, 153, 0.25); color: #34d399; padding: 2px 8px; border-radius: 999px;">Terkini</span>
+        </button>
+        <button class="journal-tab-btn" id="btn-hari11" onclick="switchJournalTab('hari11')">
+          <span>🪴 Hari Ke-12 & 11</span>
+          <span style="font-size: 0.72rem; background: rgba(255, 255, 255, 0.1); color: #d1d5db; padding: 2px 8px; border-radius: 999px;">Pindah Takung</span>
+        </button>
+        <button class="journal-tab-btn" id="btn-hari7" onclick="switchJournalTab('hari7')">
+          <span>🌿 Hari Ke-7</span>
+          <span style="font-size: 0.72rem; background: rgba(255, 255, 255, 0.1); color: #d1d5db; padding: 2px 8px; border-radius: 999px;">Baja AB Awal</span>
+        </button>
+        <button class="journal-tab-btn" id="btn-hari6" onclick="switchJournalTab('hari6')">
+          <span>🍃 Hari Ke-6</span>
+          <span style="font-size: 0.72rem; background: rgba(255, 255, 255, 0.1); color: #d1d5db; padding: 2px 8px; border-radius: 999px;">Daun Sebenar</span>
+        </button>
+        <button class="journal-tab-btn" id="btn-hari4" onclick="switchJournalTab('hari4')">
+          <span>☀️ Hari Ke-4</span>
+          <span style="font-size: 0.72rem; background: rgba(255, 255, 255, 0.1); color: #d1d5db; padding: 2px 8px; border-radius: 999px;">Kotiledon</span>
+        </button>
+        <button class="journal-tab-btn" id="btn-hari3" onclick="switchJournalTab('hari3')">
+          <span>🌱 Hari Ke-3</span>
+          <span style="font-size: 0.72rem; background: rgba(255, 255, 255, 0.1); color: #d1d5db; padding: 2px 8px; border-radius: 999px;">Pecah Benih</span>
+        </button>
+        <button class="journal-tab-btn" id="btn-compare" onclick="switchJournalTab('compare')">
+          <span>⚡ Garis Masa Tumbesaran</span>
+          <span style="font-size: 0.72rem; background: rgba(6, 182, 212, 0.2); color: #38bdf8; padding: 2px 8px; border-radius: 999px;">Hari 3 ➔ 13</span>
+        </button>
+      </div>
+
+      <!-- TAB CONTENT: HARI KE-13 (ACTIVE) -->
+      <div class="journal-tab-content active" id="tab-hari13">
+        <div class="journal-card">
+          <div class="journal-img-container">
+            <img id="hari13-main-img" src="assets/hari-13-balang-foil.jpg" alt="Balang Kaca Dibalut Foil & Kadbod Hari Ke-13" class="journal-img">
+            <span class="journal-photo-tag" style="background: rgba(16, 185, 129, 0.95); color: #064e3b;">Hari Ke-13 • Balang Kaca Dibalut Aluminium Foil & Penutup Kadbod (Kalis Lumut 100%)</span>
+            
+            <!-- Quick View Toggle Buttons -->
+            <div style="position: absolute; bottom: 12px; right: 12px; display: flex; gap: 6px; flex-wrap: wrap;">
+              <button onclick="document.getElementById('hari13-main-img').src='assets/hari-13-balang-foil.jpg'" style="background: rgba(16,185,129,0.35); border: 1px solid rgba(52,211,153,0.8); color: #34d399; padding: 5px 11px; font-size: 0.75rem; border-radius: 6px; cursor: pointer; font-weight: 700;">🛡️ Balang Foil & Kadbod</button>
+              <button onclick="document.getElementById('hari13-main-img').src='assets/hari-13-takung-biru-penuh.jpg'" style="background: rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.3); color: #ffffff; padding: 5px 11px; font-size: 0.75rem; border-radius: 6px; cursor: pointer;">🪴 Takung Biru 8 Pokok</button>
+              <button onclick="document.getElementById('hari13-main-img').src='assets/hari-13-close-bekas-hitam.jpg'" style="background: rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.3); color: #ffffff; padding: 5px 11px; font-size: 0.75rem; border-radius: 6px; cursor: pointer;">🔍 Dekat Bekas Hitam</button>
+              <button onclick="document.getElementById('hari13-main-img').src='assets/hari-12-semua-pindah.jpg'" style="background: rgba(6,182,212,0.3); border: 1px solid rgba(56,189,248,0.7); color: #38bdf8; padding: 5px 11px; font-size: 0.75rem; border-radius: 6px; cursor: pointer; font-weight: 600;">🪟 Pandangan Penuh Tingkap (Hari 12)</button>
+            </div>
+          </div>
+
+          <div class="journal-info">
+            <div class="journal-info-header">
+              <span class="journal-day-badge" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">Log Harian: Hari Ke-13</span>
+              <span style="font-size:0.82rem; color:#34d399; font-weight:600;">Skor Kesihatan: 99/100 (Cemerlang & Setup 100% Selesai)</span>
+            </div>
+
+            <h3 style="font-size: 1.15rem; color: #ffffff; margin-bottom: 8px;">Analisis & Diagnosis Pakar AI:</h3>
+            <p style="font-size: 0.88rem; color: #d1d5db; line-height: 1.55;">
+              Syabas atas tindakan yang pantas dan tepat! Pada <strong>Hari Ke-13</strong>, anda telah menyempurnakan langkah kritikal dengan <strong>membalut kedua-dua balang kaca menggunakan aluminium foil dan penutup kadbod tebal</strong>. Ini menghalang penembusan cahaya matahari 100% ke dalam air baja AB, sekali gus melumpuhkan risiko pertumbuhan <strong>lumut hijau (algae)</strong> yang biasanya mencuri baja serta oksigen akar.
+            </p>
+            <p style="font-size: 0.88rem; color: #d1d5db; line-height: 1.55; margin-top: 8px;">
+              Perhatikan kesemua 11 anak pokok di ketiga-tiga unit takung: <strong>tiada sebarang tanda 'transplant shock' (kejutan pemindahan)</strong>! Anak pokok tidak layu, daun kotiledon kekal hijau cerah, dan daun sejati ke-3 serta ke-4 mula mekar melebar. Ini membuktikan formulasi baja takung (~944–966 µS/cm) dan paras air yang disediakan sangat serasi dengan sistem akar anak pokok!
+            </p>
+
+            <div class="health-metric-grid">
+              <div class="metric-card highlight">
+                <div class="lbl">Fasa Tumbesaran</div>
+                <div class="val" style="font-size:1.15rem;">Vegetatif Aktif</div>
+                <div class="sub">Daun Sebenar #3 & #4 Mekar</div>
+              </div>
+              <div class="metric-card">
+                <div class="lbl">Perlindungan Lumut</div>
+                <div class="val" style="color: #34d399;">100% Kalis Alga</div>
+                <div class="sub">Foil Aluminium + Kadbod</div>
+              </div>
+              <div class="metric-card">
+                <div class="lbl">Kadar Hidup</div>
+                <div class="val" style="color: #38bdf8;">11/11 Sihat Segar</div>
+                <div class="sub">0% Kejutan Pindah (No Shock)</div>
+              </div>
+              <div class="metric-card">
+                <div class="lbl">Status Sistem</div>
+                <div class="val" style="color: #fbbf24;">Kratky Beroperasi</div>
+                <div class="sub">Takung Biru + Hitam + 2 Balang</div>
+              </div>
+            </div>
+
+            <h4 style="font-size: 0.92rem; color: #34d399; margin-top: 14px; margin-bottom: 6px;">Tindakan Wajib & Checklist Hari Ke-13:</h4>
+            <ul class="growth-checklist">
+              <li class="done"><strong>🛡️ Balutan Kalis Cahaya Sempurna:</strong> Balang kaca telah dibalut dengan aluminium foil dan bertutup kadbod rapi untuk menyekat lumut.</li>
+              <li class="done"><strong>🪴 Sifar Kejutan Pemindahan (Zero Shock):</strong> Kesemua 11 anak pokok berdiri tegap dan segar selepas 24 jam di takung baharu.</li>
+              <li class="done"><strong>☀️ Fotosintesis Cahaya Pagi:</strong> Pendedahan di tepi tingkap diteruskan bagi memacu pembentukan klorofil daun.</li>
+              <li class="pending"><strong>💧 Biarkan Air Susut Semulajadi:</strong> JANGAN tambah air takung sekarang! Biarkan paras larutan surut sedikit (1–2 cm) sepanjang 3–5 hari akan datang bagi membina ruang zon akar udara (oxygen air gap).</li>
+              <li class="pending"><strong>🦟 Periksa Rapatan Penutup:</strong> Pastikan kadbod dan penutup coroplast tiada celah longgar untuk mengelakkan nyamuk bertelur dalam air baja.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB CONTENT: HARI KE-11 & 12 (PINDAH TAKUNG) -->
+      <div class="journal-tab-content" id="tab-hari11">
+        <div class="journal-card">
+          <div class="journal-img-container">
+            <img id="hari11-main-img" src="assets/hari-12-semua-pindah.jpg" alt="Semua Anak Benih Pak Choy Dipindahkan Ke Takung Kratky" class="journal-img">
+            <span class="journal-photo-tag" style="background: rgba(16, 185, 129, 0.95); color: #064e3b;">Hari Ke-12 • Semua Pindah Ke Takung Kratky (Takung 3L, Bekas Hitam & Balang)</span>
+            
+            <!-- Quick View Toggle Buttons -->
+            <div style="position: absolute; bottom: 12px; right: 12px; display: flex; gap: 6px; flex-wrap: wrap;">
+              <button onclick="document.getElementById('hari11-main-img').src='assets/hari-12-semua-pindah.jpg'" style="background: rgba(16,185,129,0.35); border: 1px solid rgba(52,211,153,0.8); color: #34d399; padding: 5px 11px; font-size: 0.75rem; border-radius: 6px; cursor: pointer; font-weight: 700;">🌟 Semua Pindah (Hari 12)</button>
+              <button onclick="document.getElementById('hari11-main-img').src='assets/hari-12-takung-penuh.jpg'" style="background: rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.3); color: #ffffff; padding: 5px 11px; font-size: 0.75rem; border-radius: 6px; cursor: pointer;">🪟 Pandangan Penuh Tingkap</button>
+              <button onclick="document.getElementById('hari11-main-img').src='assets/hari-11-transplant.jpg'" style="background: rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.3); color: #ffffff; padding: 5px 11px; font-size: 0.75rem; border-radius: 6px; cursor: pointer;">🪴 Bekas Hitam Tunggal</button>
+              <button onclick="document.getElementById('hari11-main-img').src='assets/hari-11-takung-3l.jpg'" style="background: rgba(6,182,212,0.3); border: 1px solid rgba(56,189,248,0.7); color: #38bdf8; padding: 5px 11px; font-size: 0.75rem; border-radius: 6px; cursor: pointer; font-weight: 600;">💧 Bancuhan 3L (944 µS/cm)</button>
+              <button onclick="document.getElementById('hari11-main-img').src='assets/hari-11.jpg'" style="background: rgba(0,0,0,0.85); border: 1px solid rgba(255,255,255,0.3); color: #ffffff; padding: 5px 11px; font-size: 0.75rem; border-radius: 6px; cursor: pointer;">🔍 Asal Bekas Semaian</button>
+            </div>
+          </div>
+
+          <div class="journal-info">
+            <div class="journal-info-header">
+              <span class="journal-day-badge" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">Log Harian: Hari Ke-11</span>
+              <span style="font-size:0.82rem; color:#34d399; font-weight:600;">Skor Kesihatan: 97/100 (Sangat Subur & Padat)</span>
+            </div>
+
+            <h3 style="font-size: 1.15rem; color: #ffffff; margin-bottom: 8px;">Analisis & Diagnosis Pakar AI:</h3>
+            <p style="font-size: 0.88rem; color: #d1d5db; line-height: 1.55;">
+              Tahniah atas penjagaan yang konsisten! Pada <strong>Hari Ke-11</strong>, anak pokok Pak Choy anda telah melangkah masuk ke <strong>fasa vegetatif awal</strong> dengan jayanya. 
+              Daun sejati (<em>true leaves</em>) kini sudah mencapai <strong>3 hingga 4 helai</strong> dengan urat daun yang jelas dan tepi berombak sihat. Ketinggian pokok stabil sekitar <strong>5.5 – 7.5 cm</strong> dan batang tidak membengkok lemah. 
+              Akar-akar putih aktif mula kelihatan menjalar di dasar kiub rockwool menyerap air baja. Ini adalah indikator terbaik bahawa anak benih sudah cukup kuat untuk dipindahkan ke sistem takung hidroponik Kratky dalam 1 hingga 3 hari akan datang!
+            </p>
+
+            <div class="health-metric-grid">
+              <div class="metric-card highlight">
+                <div class="lbl">Fasa Tumbesaran</div>
+                <div class="val" style="font-size:1.15rem;">Daun Sebenar #3 & #4</div>
+                <div class="sub">Vegetatif Awal Mantap</div>
+              </div>
+              <div class="metric-card">
+                <div class="lbl">Purata Ketinggian</div>
+                <div class="val">5.5 - 7.5 cm</div>
+                <div class="sub">Batang tegak simetri</div>
+              </div>
+              <div class="metric-card">
+                <div class="lbl">Kadar Hidup</div>
+                <div class="val" style="color: #38bdf8;">12/12 Kiub Subur</div>
+                <div class="sub">Tiada pokok mati / layu</div>
+              </div>
+              <div class="metric-card">
+                <div class="lbl">Status Pindah Takung</div>
+                <div class="val" style="color: #fbbf24;">Sedia (Hari 11–13)</div>
+                <div class="sub">Akar tembus rockwool</div>
+              </div>
+            </div>
+
+            <h4 style="font-size: 0.92rem; color: #34d399; margin-top: 14px; margin-bottom: 6px;">Tindakan Wajib & Checklist Hari Ke-11:</h4>
+            <ul class="growth-checklist">
+              <li class="pending"><strong>✂️ Penjarangan (Thinning) Segera:</strong> Beberapa kiub (terutamanya kiub tengah depan dan kiri depan) masih mengandungi 2 anak pokok. Pilih 1 pokok yang paling tegap & segar, kemudian <em>gunting pokok kedua di paras pangkal rockwool</em> menggunakan gunting kecil. Jangan tarik/cabut dengan tangan untuk mengelakkan kerosakan akar pokok utama!</li>
+              <li class="done"><strong>🪴 Pemindahan Pertama Selesai:</strong> 1 anak pokok telah berjaya dipindahkan ke net pot Kratky dengan larutan 966 µS/cm dan aras air dasar yang tepat.</li>
+              <li class="done"><strong>💧 Kelembapan Rockwool Sempurna:</strong> Larutan baja di dasar bekas diserap secara konsisten melalui daya kapilari tanpa melemaskan zon leher pokok.</li>
+              <li class="done"><strong>☀️ Fotosintesis Cemerlang:</strong> Pendedahan cahaya matahari pagi di tepi tingkap diteruskan dan memberikan rona hijau daun yang sangat sihat.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB CONTENT: HARI KE-7 -->
+      <div class="journal-tab-content" id="tab-hari7">
+        <div class="journal-card">
+          <div class="journal-img-container">
+            <img id="hari7-main-img" src="assets/hari-7.jpg" alt="Semaian Pak Choy Hari Ke-7" class="journal-img">
+            <span class="journal-photo-tag" style="background: rgba(16, 185, 129, 0.95); color: #064e3b;">Hari Ke-7 • Mula Baja AB (432 µS/cm) & Daun Sebenar Kembang</span>
+          </div>
+
+          <div class="journal-info">
+            <div class="journal-info-header">
+              <span class="journal-day-badge" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">Log Harian: Hari Ke-7</span>
+              <span style="font-size:0.82rem; color:#34d399; font-weight:600;">Skor Kesihatan: 98/100 (Cemerlang Tertinggi)</span>
+            </div>
+
+            <h3 style="font-size: 1.15rem; color: #ffffff; margin-bottom: 8px;">Analisis & Diagnosis Pakar AI:</h3>
+            <p style="font-size: 0.88rem; color: #d1d5db; line-height: 1.55;">
+              Visual Hari Ke-7 menunjukkan transformasi yang mengagumkan! Anak pokok berdiri tegap dengan ketinggian purata <strong>4.0 – 5.5 cm</strong>. Pucuk <strong>daun sejati (true leaf) pertama dan kedua</strong> kini semakin melebar di tengah roset cotyledon. Penyusunan kiub rockwool dalam bekas lutsinar dengan lapisan larutan baja AB cetek (paras 1–2mm) di dasar adalah langkah <em>bottom feeding</em> yang sangat tepat — kiub rockwool kekal lembap menyerap nutrien tanpa melemaskan zon perakaran atas.
+            </p>
+
+            <div class="health-metric-grid">
+              <div class="metric-card highlight">
+                <div class="lbl">Fasa Tumbesaran</div>
+                <div class="val" style="font-size:1.15rem;">Daun Sebenar #1 & #2</div>
+                <div class="sub">Nutrisi aktif bermula</div>
+              </div>
+              <div class="metric-card">
+                <div class="lbl">Purata Ketinggian</div>
+                <div class="val">4.0 - 5.5 cm</div>
+                <div class="sub">Batang tegak kukuh</div>
+              </div>
+              <div class="metric-card">
+                <div class="lbl">Kepekatan Baja AB</div>
+                <div class="val" style="color: #38bdf8;">432 µS/cm</div>
+                <div class="sub">Starter dose tepat & selamat</div>
+              </div>
+              <div class="metric-card">
+                <div class="lbl">Kaedah Siraman</div>
+                <div class="val">Rendaman Dasar</div>
+                <div class="sub">Paras 1-2mm menyerap sekata</div>
+              </div>
+            </div>
+
+            <h4 style="font-size: 0.92rem; color: #34d399; margin-top: 14px; margin-bottom: 6px;">Checklist Rutin Hari Ke-7:</h4>
+            <ul class="growth-checklist">
+              <li class="done"><strong>Pembajaan Pertama Diberikan:</strong> Larutan baja AB dengan bacaan 432 µS/cm berjaya dimasukkan ke dasar bekas.</li>
+              <li class="done"><strong>Pendedahan Cahaya Semulajadi:</strong> Lokasi tepi tingkap terbuka membekalkan udara segar dan cahaya matahari yang mencukupi.</li>
+              <li class="pending"><strong>Pusing Bekas 180 Darjah:</strong> Pusingkan bekas menghadap bilik petang ini supaya batang tidak condong ke arah tingkap sahaja.</li>
+              <li class="pending"><strong>Periksa Paras Baja Esok Pagi:</strong> Jika air di lantai bekas kering diserap rockwool, tambah sedikit baki bancuhan baja (1-2mm sahaja).</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB CONTENT: HARI KE-6 -->
+      <div class="journal-tab-content" id="tab-hari6">
+        <div class="journal-card">
+          <div class="journal-img-container">
+            <img id="hari6-main-img" src="assets/hari-6.jpg" alt="Semaian Pak Choy Hari Ke-6" class="journal-img">
+            <span class="journal-photo-tag" style="background: rgba(16, 185, 129, 0.95); color: #064e3b;">Hari Ke-6 • Daun Sebenar Mula Muncul</span>
+            
+            <!-- Quick View Toggle Buttons -->
+            <div style="position: absolute; bottom: 12px; right: 12px; display: flex; gap: 6px;">
+              <button onclick="document.getElementById('hari6-main-img').src='assets/hari-6.jpg'" style="background: rgba(0,0,0,0.75); border: 1px solid rgba(255,255,255,0.3); color: #ffffff; padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; cursor: pointer;">Sudut Penuh</button>
+              <button onclick="document.getElementById('hari6-main-img').src='assets/hari-6-close.jpg'" style="background: rgba(0,0,0,0.75); border: 1px solid rgba(52,211,153,0.5); color: #34d399; padding: 4px 10px; font-size: 0.75rem; border-radius: 6px; cursor: pointer;">🔍 Jarak Dekat (Pucuk)</button>
+            </div>
+          </div>
+
+          <div class="journal-info">
+            <div class="journal-info-header">
+              <span class="journal-day-badge" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">Log Harian: Hari Ke-6</span>
+              <span style="font-size:0.82rem; color:#34d399; font-weight:600;">Skor Kesihatan: 96/100 (Sangat Cemerlang)</span>
+            </div>
+
+            <h3 style="font-size: 1.15rem; color: #ffffff; margin-bottom: 8px;">Analisis & Diagnosis Pakar AI:</h3>
+            <p style="font-size: 0.88rem; color: #d1d5db; line-height: 1.55;">
+              Tahniah! Pokok anda kini berjaya memasuki <strong>fasa transisi vegetatif</strong>. Di bahagian tengah antara dua daun lembaga berbentuk hati, pucuk daun sejati (true leaf) yang pertama telah mula membesar dengan corak tepi yang khas. Batang pokok membesar dengan padat, berjarak ruas pendek, membuktikan ia mendapat kuantiti cahaya matahari pagi yang sangat seimbang tanpa sebarang masalah etiolasi (melidi).
+            </p>
+
+            <div class="health-metric-grid">
+              <div class="metric-card highlight">
+                <div class="lbl">Fasa Tumbesaran</div>
+                <div class="val" style="font-size:1.15rem;">Daun Sebenar #1</div>
+                <div class="sub">Tunas daun ke-3 mula keluar</div>
+              </div>
+              <div class="metric-card">
+                <div class="lbl">Purata Ketinggian</div>
+                <div class="val">3.0 - 4.2 cm</div>
+                <div class="sub">Batang padat & tegap</div>
+              </div>
+              <div class="metric-card">
+                <div class="lbl">Status Nutrisi</div>
+                <div class="val">Sedia Baja AB</div>
+                <div class="sub">Dos 250 - 350 PPM (1/4 dos)</div>
+              </div>
+              <div class="metric-card">
+                <div class="lbl">Kelembapan Media</div>
+                <div class="val">Sangat Baik</div>
+                <div class="sub">Rockwool gebu, tiada lumut tebal</div>
+              </div>
+            </div>
+
+            <h4 style="font-size: 0.92rem; color: #34d399; margin-top: 14px; margin-bottom: 6px;">Checklist Rutin Hari Ke-6:</h4>
+            <ul class="growth-checklist">
+              <li class="done"><strong>Cahaya matahari pagi diteruskan:</strong> Pokok menunjukkan respon fotosintesis yang sangat sihat di tepi tingkap.</li>
+              <li class="pending"><strong>Mula bancuhan Baja AB dos rendah:</strong> Campurkan 1.5 – 2.0 ml pati A & B ke dalam 1L air bersih (250–350 PPM), tuang di dasar bekas semaian.</li>
+              <li class="pending"><strong>Pusing bekas 180 darjah:</strong> Teruskan rutin harian ini setiap tengah hari supaya batang pokok tegak simetri ke atas.</li>
+              <li class="pending"><strong>Tinjau kiub berkembar:</strong> Perhatikan kiub yang ada 2 anak pokok. Sedia gunting kecil tajam untuk penjarangan pada Hari 7–8.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB CONTENT: HARI KE-4 -->
+      <div class="journal-tab-content" id="tab-hari4">
+        <div class="journal-card">
+          <div class="journal-img-container">
+            <img src="assets/hari-4.jpg" alt="Semaian Pak Choy Hari Ke-4" class="journal-img">
+            <span class="journal-photo-tag">Hari Ke-4 • Tepi Tingkap</span>
+          </div>
+
+          <div class="journal-info">
+            <div class="journal-info-header">
+              <span class="journal-day-badge">Log Harian: Hari Ke-4</span>
+              <span style="font-size:0.82rem; color:#34d399; font-weight:600;">Skor Kesihatan: 92/100 (Cemerlang)</span>
+            </div>
+
+            <h3 style="font-size: 1.15rem; color: #ffffff; margin-bottom: 8px;">Analisis & Diagnosis Pakar AI:</h3>
+            <p style="font-size: 0.88rem; color: #d1d5db; line-height: 1.55;">
+              Anak pokok anda melepasi fasa percambahan dengan sangat memuaskan. Langkah meletakkannya di tepi tingkap berjemur cahaya pagi secara langsung berjaya <strong>menyekat etiolasi (pokok melidi)</strong> dan membolehkan klorofil aktif bekerja.
+            </p>
+
+            <div class="health-metric-grid">
+              <div class="metric-card highlight">
+                <div class="lbl">Kadar Percambahan</div>
+                <div class="val">~83%</div>
+                <div class="sub">10/12 kiub berjaya bercambah</div>
+              </div>
+              <div class="metric-card">
+                <div class="lbl">Purata Ketinggian</div>
+                <div class="val">1.8 - 2.5 cm</div>
+                <div class="sub">Batang tegak stabil</div>
+              </div>
+              <div class="metric-card">
+                <div class="lbl">Warna Daun</div>
+                <div class="val">Hijau Cerah</div>
+                <div class="sub">Fotosintesis aktif</div>
+              </div>
+              <div class="metric-card">
+                <div class="lbl">Kelembapan Rockwool</div>
+                <div class="val">Optimum</div>
+                <div class="sub">Lembap sekata, tiada lumut</div>
+              </div>
+            </div>
+
+            <h4 style="font-size: 0.92rem; color: #34d399; margin-top: 14px; margin-bottom: 6px;">Checklist Rutin Hari Ke-4:</h4>
+            <ul class="growth-checklist">
+              <li class="done"><strong>Didedahkan ke cahaya matahari pagi:</strong> Sedang berjalan dengan cemerlang di tepi tingkap.</li>
+              <li class="done"><strong>Pusing bekas 180 darjah:</strong> Mengelakkan batang pokok melengkung sebelah arah sahaja.</li>
+              <li class="done"><strong>Periksa paras air di dasar bekas:</strong> Kiub rockwool kekal lembap dan segar.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB CONTENT: HARI KE-3 -->
+      <div class="journal-tab-content" id="tab-hari3">
+        <div class="journal-card">
+          <div class="journal-img-container">
+            <img src="assets/hari-3.jpg" alt="Semaian Pak Choy Hari Ke-3" class="journal-img">
+            <span class="journal-photo-tag" style="background: rgba(6, 182, 212, 0.95); color: #083344;">Hari Ke-3 • Mula Pecah Benih</span>
+          </div>
+
+          <div class="journal-info">
+            <div class="journal-info-header">
+              <span class="journal-day-badge" style="background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);">Log Harian: Hari Ke-3</span>
+              <span style="font-size:0.82rem; color:#38bdf8; font-weight:600;">Skor Kesihatan: 90/100 (Percambahan Seragam)</span>
+            </div>
+
+            <h3 style="font-size: 1.15rem; color: #ffffff; margin-bottom: 8px;">Analisis & Diagnosis Pakar AI:</h3>
+            <p style="font-size: 0.88rem; color: #d1d5db; line-height: 1.55;">
+              Titik-titik tunas hijau halus (sekitar 2–5 mm) baru mula menembusi permukaan lubang kiub rockwool. Biji benih bertindak balas dengan baik terhadap kelembapan media semaian. Daun kotiledon masih kuncup rapat. Pendedahan terus ke kawasan bercahaya pada saat ini adalah kunci utama kejayaan semaian!
+            </p>
+
+            <div class="health-metric-grid">
+              <div class="metric-card highlight" style="border-color: rgba(6, 182, 212, 0.4); background: rgba(6, 182, 212, 0.06);">
+                <div class="lbl">Tunas Memecah</div>
+                <div class="val" style="color: #38bdf8;">~75%</div>
+                <div class="sub">8-9 kiub mula nampak hijau</div>
+              </div>
+              <div class="metric-card">
+                <div class="lbl">Purata Ketinggian</div>
+                <div class="val">0.2 - 0.5 cm</div>
+                <div class="sub">Tunas baru menjenguk</div>
+              </div>
+              <div class="metric-card">
+                <div class="lbl">Bentuk Tunas</div>
+                <div class="val">Kuncup Berkembar</div>
+                <div class="sub">Menuju ke arah cahaya</div>
+              </div>
+              <div class="metric-card">
+                <div class="lbl">Kelembapan Rockwool</div>
+                <div class="val">Basah Sekata</div>
+                <div class="sub">Penyerapan air optimum</div>
+              </div>
+            </div>
+
+            <h4 style="font-size: 0.92rem; color: #38bdf8; margin-top: 14px; margin-bottom: 6px;">Catatan Tindakan Hari Ke-3:</h4>
+            <ul class="growth-checklist">
+              <li class="done"><strong>Keluarkan dari tempat gelap:</strong> Tindakan tepat mengeluarkan bekas ke tempat terang sebaik sahaja tunas hijau dikesan.</li>
+              <li class="done"><strong>Kekalkan semburan air paip bersih:</strong> Kiub rockwool basah elok di atas lapik kain berjalur.</li>
+              <li class="done"><strong>Tiada baja diperlukan:</strong> Benih masih mempunyai bekalan nutrien asli dalam biji benih.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB CONTENT: PERBANDINGAN SISI KE SISI (COMPARISON TIMELINE) -->
+      <div class="journal-tab-content" id="tab-compare">
+        <div class="comparison-grid">
+          <!-- Card Hari 3 -->
+          <div class="comparison-item">
+            <div class="img-box">
+              <img src="assets/hari-3.jpg" alt="Hari Ke-3">
+              <span class="comparison-badge">🌱 Hari Ke-3 (Tunas)</span>
+            </div>
+            <div class="comparison-desc">
+              <h4>Hari Ke-3: Mula Memecah Benih</h4>
+              <p>Tunas kuncup halus baru menjenguk (~0.3 cm). Daun lembaga masih kuncup rapat dalam lubang kiub rockwool.</p>
+              <div style="margin-top: 8px; font-size: 0.8rem; color: #38bdf8; font-weight: 600;">Status: Permulaan Percambahan</div>
+            </div>
+          </div>
+
+          <!-- Card Hari 4 -->
+          <div class="comparison-item">
+            <div class="img-box">
+              <img src="assets/hari-4.jpg" alt="Hari Ke-4">
+              <span class="comparison-badge" style="border-color: #38bdf8; color: #38bdf8;">☀️ Hari Ke-4 (Berjemur)</span>
+            </div>
+            <div class="comparison-desc">
+              <h4>Hari Ke-4: Kotiledon Terbuka</h4>
+              <p>Tumbesaran melompat kepada ~2.0 cm. Daun lembaga terbuka lebar menyerap matahari pagi di tepi tingkap.</p>
+              <div style="margin-top: 8px; font-size: 0.8rem; color: #38bdf8; font-weight: 600;">Status: Fotosintesis Aktif</div>
+            </div>
+          </div>
+
+          <!-- Card Hari 6 -->
+          <div class="comparison-item">
+            <div class="img-box">
+              <img src="assets/hari-6.jpg" alt="Hari Ke-6">
+              <span class="comparison-badge">🌿 Hari Ke-6 (Pucuk Sebenar)</span>
+            </div>
+            <div class="comparison-desc">
+              <h4>Hari Ke-6: Pucuk Daun Sebenar</h4>
+              <p>Tinggi ~3.5 cm. Daun sejati (true leaf) mula memecah di tengah kotiledon. Batang tegap & bersedia terima baja AB.</p>
+              <div style="margin-top: 8px; font-size: 0.8rem; color: #38bdf8; font-weight: 600;">Status: Transisi Vegetatif Awal</div>
+            </div>
+          </div>
+
+          <!-- Card Hari 7 -->
+          <div class="comparison-item">
+            <div class="img-box">
+              <img src="assets/hari-7.jpg" alt="Hari Ke-7">
+              <span class="comparison-badge">🌱 Hari Ke-7 (Baja Awal)</span>
+            </div>
+            <div class="comparison-desc">
+              <h4>Hari Ke-7: Pembajaan Pertama & Daun Kembang</h4>
+              <p>Tinggi mencecah ~4.5 - 5.5 cm. Daun sejati melebar aktif. Pengenalan baja AB starter (432 µS/cm) secara rendaman dasar 1-2mm.</p>
+              <div style="margin-top: 8px; font-size: 0.8rem; color: #38bdf8; font-weight: 600;">Status: Nutrisi Awal Aktif</div>
+            </div>
+          </div>
+
+          <!-- Card Hari 11 -->
+          <div class="comparison-item">
+            <div class="img-box">
+              <img src="assets/hari-11.jpg" alt="Hari Ke-11">
+              <span class="comparison-badge">🌿 Hari Ke-11 (Daun #3 & #4 Mekar)</span>
+            </div>
+            <div class="comparison-desc">
+              <h4>Hari Ke-11: Daun Sebenar #3–4 & Sedia Takung</h4>
+              <p>Tinggi mencecah ~5.5 – 7.5 cm. Daun sejati ke-3 & ke-4 kembang mekar. Akar putih menembusi bawah rockwool; sedia untuk penjarangan dan pemindahan ke takung Kratky.</p>
+              <div style="margin-top: 8px; font-size: 0.8rem; color: #34d399; font-weight: 600;">Status: Vegetatif Awal & Sedia Pindah</div>
+            </div>
+          </div>
+
+          <!-- Card Hari 13 -->
+          <div class="comparison-item" style="border-color: rgba(52, 211, 153, 0.8); box-shadow: 0 0 18px rgba(16, 185, 129, 0.35);">
+            <div class="img-box">
+              <img src="assets/hari-13-takung-biru-penuh.jpg" alt="Hari Ke-13">
+              <span class="comparison-badge" style="border-color: #34d399; color: #34d399; background: rgba(5, 150, 105, 0.9);">🛡️ Hari Ke-13 (Kratky Penuh & Foil Kalis Lumut)</span>
+            </div>
+            <div class="comparison-desc">
+              <h4>Hari Ke-13: Kratky Mantap & Balutan Foil</h4>
+              <p>Semua 11 pokok selamat beradaptasi tanpa kejutan pindah. Balang kaca siap dibalut aluminium foil & kadbod kalis lumut; takung biru 8 pokok segar mekar memasuki fasa vegetatif pesat.</p>
+              <div style="margin-top: 8px; font-size: 0.8rem; color: #34d399; font-weight: 600;">Status: Vegetatif Pesat & Kalis Lumut</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="comparison-footer-banner">
+          <div style="font-size: 1.8rem; flex-shrink: 0;">🚀</div>
+          <div>
+            <strong>Garis Masa 13 Hari Yang Sangat Berjaya (Hari 3 ➔ Hari 4 ➔ Hari 6 ➔ Hari 7 ➔ Hari 11 ➔ Hari 13):</strong>
+            <p style="font-size: 0.84rem; color: #a7f3d0; margin-top: 4px;">
+              Perjalanan semaian anda membuktikan kaedah penjagaan yang amat saintifik dan teliti! Bermula dari tunas 3mm pada Hari 3, bukaan kotiledon Hari 4, pucuk pertama Hari 6, pembajaan asas 432 µS/cm Hari 7, fasa sedia pindah Hari 11, sehinggalah <strong>Hari Ke-13 di mana kesemua 11 pokok beroperasi penuh dalam sistem Kratky dengan balutan aluminium foil kalis alga</strong> — pokok kini memasuki fasa pertumbuhan vegetatif pesat dengan kadar survival 100%!
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Reference Parameters -->
+    <div class="param-grid">
+      <div class="param-card">
+        <span class="param-title">🎯 Nilai EC Sasaran</span>
+        <span class="param-value">1.4 – 1.8 <small style="font-size:0.9rem">mS/cm</small></span>
+        <span class="param-sub">Peringkat Pindah Takung: 1.2–1.4 mS/cm</span>
+      </div>
+      <div class="param-card">
+        <span class="param-title">🧪 Nilai pH Optimum</span>
+        <span class="param-value">5.8 – 6.5</span>
+        <span class="param-sub">Penyerapan nutrien terbaik</span>
+      </div>
+      <div class="param-card">
+        <span class="param-title">☀️ Keperluan Cahaya</span>
+        <span class="param-value">4 – 6 <small style="font-size:0.9rem">Jam</small></span>
+        <span class="param-sub">Cahaya pagi / teduhan 30%</span>
+      </div>
+      <div class="param-card">
+        <span class="param-title">⏱️ Tempoh Tuai</span>
+        <span class="param-value">28 – 35 <small style="font-size:0.9rem">Hari</small></span>
+        <span class="param-sub">Baki ~15–22 hari lagi</span>
+      </div>
+    </div>
+
+    <!-- Interactive Growth Timeline / Log -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon">📈</div>
+        <h2>Jadual & Fasa Tumbesaran Pak Choy</h2>
+      </div>
+
+      <div class="timeline-interactive">
+        <!-- Stage 1: Done -->
+        <div class="stage-card completed">
+          <div class="stage-header">
+            <div class="stage-title">
+              <span>✅ Fasa 1: Penyemaian Biji Benih</span>
+            </div>
+            <span class="stage-pill pill-done">Selesai (Hari 1–2)</span>
+          </div>
+          <div class="stage-body">
+            Biji benih diletakkan di dalam lubang kiub rockwool yang dibasahkan dan disimpan di tempat redup/gelap untuk memulakan percambahan.
+          </div>
+        </div>
+
+        <!-- Stage 2: Done -->
+        <div class="stage-card completed">
+          <div class="stage-header">
+            <div class="stage-title">
+              <span>✅ Fasa 2: Benih Bercambah & Pendedahan Cahaya (Hari 2–6)</span>
+            </div>
+            <span class="stage-pill pill-done">Selesai (Hari 2–6)</span>
+          </div>
+          <div class="stage-body">
+            Daun kotiledon mekar menghijau dan pendedahan kepada sinaran matahari pagi berjaya menghalang etiolasi (pokok kurus melidi). Kadar percambahan cemerlang (~83%).
+          </div>
+        </div>
+
+        <!-- Stage 3: Done -->
+        <div class="stage-card completed">
+          <div class="stage-header">
+            <div class="stage-title">
+              <span>✅ Fasa 3: Kemunculan Daun Sebenar & Pengenalan Baja Nipis (Hari 7–10)</span>
+            </div>
+            <span class="stage-pill pill-done">Selesai (Hari 7–10)</span>
+          </div>
+          <div class="stage-body">
+            Daun sebenar (<em>true leaves</em>) pertama & kedua berkembang pesat hasil pembajaan nipis rendaman dasar (432 µS/cm). Batang padat tanpa etiolasi dan kiub rockwool kekal subur.
+          </div>
+        </div>
+
+        <!-- Stage 4: Selesai -->
+        <div class="stage-card completed">
+          <div class="stage-header">
+            <div class="stage-title">
+              <span>✅ Fasa 4: Penjarangan & Pemindahan Takung Kratky (Hari 11–12)</span>
+            </div>
+            <span class="stage-pill pill-done">Selesai 100% (Hari 11–12)</span>
+          </div>
+          <div class="stage-body">
+            <p>Penjarangan (1 pokok 1 net pot) selesai sepenuhnya tanpa sebarang kerosakan akar. Kesemua 11 pokok berjaya dipindahkan ke dalam takung hidroponik Kratky (takung biru 3L 944 µS/cm, bekas hitam 966 µS/cm, dan 2 balang kaca bertutup foil kalis lumut).</p>
+          </div>
+        </div>
+
+        <!-- Stage 5: CURRENT (HARI 13+) -->
+        <div class="stage-card current">
+          <div class="stage-header">
+            <div class="stage-title">
+              <span>🥬 Fasa 5: Tumbesaran Vegetatif Pesat Kratky & Pembentukan Zon Udara (Hari 13–35)</span>
+            </div>
+            <span class="stage-pill pill-active">HARI KE-13+ (AKTIF SEKARANG)</span>
+          </div>
+          <div class="stage-body">
+            <p><strong>Status Terkini (Hari Ke-13):</strong> Pokok kini memasuki fasa pembesaran daun secara pesat dalam takung Kratky masing-masing. Daun sejati #3 dan #4 mula berkembang mekar.</p>
+            <ul>
+              <li><strong>Biarkan Air Susut Semulajadi:</strong> Jangan tambah air takung sekarang! Biarkan paras air menyusut secara perlahan-lahan (1–2 cm) bagi mewujudkan <strong>ruang zon akar udara (oxygen air gap)</strong> untuk membekalkan oksigen respirasi akar.</li>
+              <li><strong>Kekalkan Cahaya Pagi:</strong> Pendedahan 4–6 jam sinaran matahari pagi di tepi tingkap adalah mencukupi untuk fotosintesis optimum tanpa memanaskan larutan baja.</li>
+              <li><strong>Jangkaan Tuai:</strong> Pak Choy akan membesar berganda-ganda saiznya dalam masa 2–3 minggu akan datang dan sedia dituai pada <strong>Hari ke-28 hingga ke-35</strong> (baki ~15–22 hari lagi).</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Peralatan Anda -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon">📦</div>
+        <h2>Peralatan Anda & Fungsinya</h2>
+      </div>
+      <div class="inventory-grid">
+        <div class="inventory-item">
+          <div class="check-icon">✓</div>
+          <div>
+            <h4>Biji Benih Pak Choy Hijau</h4>
+            <p>Benih berkualiti tinggi, percambahan pantas 24–48 jam.</p>
+          </div>
+        </div>
+        <div class="inventory-item">
+          <div class="check-icon">✓</div>
+          <div>
+            <h4>Rockwool</h4>
+            <p>Media semaian pegang kelembapan & sokong akar.</p>
+          </div>
+        </div>
+        <div class="inventory-item">
+          <div class="check-icon">✓</div>
+          <div>
+            <h4>Baja A & B Cecair (Formula Sayur Daun)</h4>
+            <p>Pati cecair siap guna khas untuk daun hijau tebal & batang rangup.</p>
+          </div>
+        </div>
+        <div class="inventory-item">
+          <div class="check-icon">✓</div>
+          <div>
+            <h4>EC / TDS Meter (EDM)</h4>
+            <p>Ukur kepekatan garam mineral/baja dalam air.</p>
+          </div>
+        </div>
+        <div class="inventory-item">
+          <div class="check-icon">✓</div>
+          <div>
+            <h4>pH Meter</h4>
+            <p>Pastikan asid-alkali air tidak menyekat serapan nutrien.</p>
+          </div>
+        </div>
+        <div class="inventory-item">
+          <div class="check-icon">✓</div>
+          <div>
+            <h4>Net Pot & Bekas Takungan (Container)</h4>
+            <p>Pemegang pokok & takungan larutan nutrien kedap cahaya.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Khas Baja AB Cecair Shopee -->
+    <div class="section-card" style="border: 1px solid rgba(6, 182, 212, 0.35); background: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(17, 24, 39, 0.9) 100%);">
+      <div class="section-header">
+        <div class="section-icon" style="background: rgba(6, 182, 212, 0.2); color: #38bdf8;">🧪</div>
+        <h2>Panduan Khas: Baja AB Cecair (Leafy Greens) Anda</h2>
+      </div>
+      <p style="font-size:0.92rem; color:var(--text-muted); margin-bottom:14px;">
+        Baja A & B cecair yang anda beli adalah formula sedia ada (ready-to-mix concentrate) yang sangat mesra pengguna kerana anda <strong>tidak perlu membancuh serbuk</strong> terlebih dahulu.
+      </p>
+
+      <div class="routine-grid">
+        <div class="routine-card" style="background: rgba(0, 0, 0, 0.3);">
+          <h3 style="color: #38bdf8;">💧 Cara Penggunaan Botol Cecair</h3>
+          <ul class="checklist">
+            <li><strong>Goncang Botol Dahulu:</strong> Sebelum guna, goncang botol A dan botol B supaya mendakan mineral larut sekata.</li>
+            <li><strong>Gunakan Picagari (Syringe) / Penutup Berasingan:</strong> Jangan celup alat penyukat yang sama dari botol A ke dalam botol B untuk elak pencemaran silang.</li>
+            <li><strong>Nisbah Asas:</strong> 5ml Cecair A + 5ml Cecair B bagi setiap 1 Liter air (anggaran menghasilkan EC ~1.5 - 1.8 mS/cm).</li>
+          </ul>
+        </div>
+        <div class="routine-card" style="background: rgba(0, 0, 0, 0.3);">
+          <h3 style="color: #38bdf8;">📦 Cara Penyimpanan & Pantang Larang</h3>
+          <ul class="checklist">
+            <li><strong>Jangan Campur Pekat Terus:</strong> Jangan sekali-kali tuang Pati A terus bercampur Pati B tanpa air!</li>
+            <li><strong>Tempat Sejuk & Gelap:</strong> Simpan pada suhu bilik dan elakkan daripada terkena cahaya matahari langsung.</li>
+            <li><strong>Jangka Hayat:</strong> Boleh bertahan lebih 1 hingga 2 tahun jika disimpan dengan betul.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANDUAN PRAKTIKAL: PEMBAJAAN BEKAS SEMAIAN & RENDAMAN DASAR (BOTTOM FEEDING) -->
+    <div class="section-card" style="border: 1px solid rgba(16, 185, 129, 0.4); background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(17, 24, 39, 0.95) 100%);">
+      <div class="section-header">
+        <div class="section-icon" style="background: rgba(16, 185, 129, 0.2); color: #34d399;">🌱</div>
+        <div>
+          <h2>Panduan Lengkap: Cara Membaja Bekas Semaian (Peringkat Daun Sebenar)</h2>
+          <p style="font-size:0.85rem; color:var(--text-muted);">Panduan sukatan tepat, teknik bancuhan, dan kaedah rendaman dasar (<em>bottom feeding</em>) tanpa merosakkan akar halus</p>
+        </div>
+      </div>
+
+      <div class="routine-grid" style="margin-bottom: 20px;">
+        <!-- Card 1: Sukatan Tepat -->
+        <div class="routine-card" style="background: rgba(0, 0, 0, 0.35); border-left: 3px solid #10b981;">
+          <h3 style="color: #34d399;">📏 1. Berapa Sukatan Yang Diperlukan? (Starter Dose)</h3>
+          <p style="font-size:0.88rem; color:#d1d5db; margin-bottom:12px;">Untuk anak benih berumur 7–10 hari yang baru keluar daun sejati, gunakan <strong>bancuhan nipis (separuh dos)</strong>:</p>
+          <ul class="checklist">
+            <li><strong>Air Bersih (Paip / Tapis):</strong> 1 Liter</li>
+            <li><strong>Pati Cecair A:</strong> 2.0 ml – 2.5 ml</li>
+            <li><strong>Pati Cecair B:</strong> 2.0 ml – 2.5 ml</li>
+            <li><strong>Sasaran EC:</strong> <strong>0.6 – 0.8 mS/cm</strong> (~300 – 450 ppm / µS/cm)</li>
+          </ul>
+          <div class="callout-box callout-warning" style="margin-top: 10px;">
+            ⚠️ <strong>Peringatan:</strong> Jangan gunakan dos penuh dewasa (5ml A + 5ml B) pada bekas semaian. Akar anak pokok masih sangat halus dan boleh mengalami lecur garam mineral (<em>fertilizer burn</em>).
+          </div>
+        </div>
+
+        <!-- Card 2: Cara Bancuh -->
+        <div class="routine-card" style="background: rgba(0, 0, 0, 0.35); border-left: 3px solid #06b6d4;">
+          <h3 style="color: #38bdf8;">🥣 2. Cara Bancuh Step-by-Step</h3>
+          <ol style="margin-left: 20px; font-size: 0.88rem; color: #d1d5db; line-height: 1.6;">
+            <li style="margin-bottom: 8px;"><strong>Sediakan 1L Air:</strong> Tuang 1 Liter air bersih ke dalam botol mineral atau bekas bancuhan berasingan.</li>
+            <li style="margin-bottom: 8px;"><strong>Goncang & Masukkan Pati A:</strong> Goncang botol A, sedut <strong>2.0 – 2.5 ml</strong> menggunakan picagari, masukkan ke dalam air, lalu <strong>kacau sehingga larut sekata</strong>.</li>
+            <li style="margin-bottom: 8px;"><strong>Bilas & Masukkan Pati B:</strong> Goncang botol B, sedut <strong>2.0 – 2.5 ml</strong> menggunakan picagari bersih/berasingan, masukkan ke dalam air bancuhan, dan <strong>kacau sebati</strong>.</li>
+            <li><strong>Ukur Bacaan:</strong> Celupkan EC/TDS meter anda. Bacaan sekitar <strong>400–500 µS/cm</strong> atau <strong>300–450 ppm</strong> adalah sempurna.</li>
+          </ol>
+          <div class="callout-box callout-tip" style="margin-top: 10px;">
+            💡 <strong>Pantang Larang:</strong> Jangan sesekali campurkan Pati A pekat & Pati B pekat secara terus tanpa air bagi mengelakkan tindak balas pembentukan mendakan kalsium fosfat.
+          </div>
+        </div>
+      </div>
+
+      <div class="routine-grid">
+        <!-- Card 3: Cara Letak (Bottom Feeding) -->
+        <div class="routine-card" style="background: rgba(0, 0, 0, 0.35); border-left: 3px solid #f59e0b;">
+          <h3 style="color: #fbbf24;">💧 3. Cara Letak Dalam Bekas Semaian (Rendaman Dasar)</h3>
+          <ul class="checklist">
+            <li><strong>Tuang di Lantai/Dasar Bekas:</strong> Tuangkan larutan baja nipis ke bahagian dasar bekas semaian pada paras cetek <strong>1 – 2 mm sahaja</strong>.</li>
+            <li><strong>Tarikan Kapilari (Wicking Action):</strong> Biarkan tapak kiub rockwool menyedut air baja naik ke atas secara semulajadi.</li>
+            <li><strong>Elak Siram Dari Atas:</strong> Jangan curah air baja terus di atas pucuk dan daun anak pokok kerana daun mudah patah atau lecur terkena matahari terik.</li>
+            <li><strong>Jangan Tenggelamkan Kiub:</strong> Kiub rockwool hanya perlu menyentuh sedikit air di dasar. Zon atas kiub mesti ada udara untuk respirasi akar.</li>
+          </ul>
+        </div>
+
+        <!-- Card 4: Memahami Bacaan Meter -->
+        <div class="routine-card" style="background: rgba(0, 0, 0, 0.35); border-left: 3px solid #8b5cf6;">
+          <h3 style="color: #a78bfa;">🔬 4. Memahami Bacaan Meter (Contoh: 432 µS/cm)</h3>
+          <p style="font-size:0.88rem; color:#d1d5db; margin-bottom:10px;">
+            Apabila anda mengukur larutan semaian dan mendapat bacaan <strong>432</strong>:
+          </p>
+          <div style="background: rgba(0,0,0,0.4); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 10px; font-size: 0.85rem; color: #e5e7eb;">
+            <div style="margin-bottom: 8px;">🔹 <strong>Jika paparan unit µS/cm:</strong> 432 µS/cm = <strong>0.43 mS/cm</strong> (dos pemula yang sangat lembut & bebas risiko kejutan garam).</div>
+            <div>🔹 <strong>Jika paparan unit PPM:</strong> 432 ppm &asymp; <strong>0.6 – 0.8 mS/cm</strong> (tepat-tepat pada sasaran optimum fasa semaian).</div>
+          </div>
+          <div class="callout-box callout-info" style="margin-top: 6px;">
+            ✅ <strong>Keputusan:</strong> Kedua-dua tafsiran membuktikan larutan anda berada pada julat <strong>sangat selamat & cemerlang</strong> untuk anak benih Pak Choy.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANDUAN PENGURUSAN NILAI EC: BILA PERLU NAIKKAN EC & CARA TOP UP KRATKY -->
+    <div class="section-card" id="panduan-ec" style="border: 1px solid rgba(56, 189, 248, 0.4); background: linear-gradient(135deg, rgba(6, 182, 212, 0.07) 0%, rgba(17, 24, 39, 0.95) 100%);">
+      <div class="section-header">
+        <div class="section-icon" style="background: rgba(6, 182, 212, 0.2); color: #38bdf8;">📊</div>
+        <div>
+          <h2>Panduan Pengurusan & Bila Perlu Naikkan Nilai EC (Kaedah Kratky)</h2>
+          <p style="font-size:0.85rem; color:var(--text-muted);">Ketahui tanda fizikal pokok, fasa umur yang tepat, dan teknik 'Top Up' tanpa melemaskan akar udara</p>
+        </div>
+      </div>
+
+      <!-- Current Status Alert on EC -->
+      <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(52, 211, 153, 0.5); border-radius: var(--radius-sm); padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px;">
+        <div style="font-size: 2rem; flex-shrink: 0;">🛑</div>
+        <div>
+          <div style="font-weight: 700; color: #34d399; font-size: 0.98rem; margin-bottom: 3px;">
+            Status Semasa (Hari Ke-13): Nilai EC 944 – 966 µS/cm ➔ BELUM PERLU NAIKKAN LAGI!
+          </div>
+          <div style="font-size: 0.88rem; color: #d1d5db; line-height: 1.5;">
+            Anak pokok baru 1–2 hari berpindah ke takung. Sistem akar masih dalam proses adaptasi awal. Kepekatan semasa sekitar <strong>~0.95 – 1.0 mS/cm</strong> ini sudah sangat mencukupi dan selamat tanpa sebarang risiko lecur baja (<em>nutrient burn</em>). Biarkan larutan sedia ada diserap secara semulajadi.
+          </div>
+        </div>
+      </div>
+
+      <!-- 2 Cards: When to raise & How to top up -->
+      <div class="routine-grid" style="margin-bottom: 22px;">
+        <div class="routine-card" style="background: rgba(0, 0, 0, 0.35); border-left: 3px solid #38bdf8;">
+          <h3 style="color: #38bdf8;">⏱️ 1. Bila Masa Tepat Untuk Naikkan EC? (Hari Ke-18 – 20)</h3>
+          <p style="font-size: 0.88rem; color: #d1d5db; margin-bottom: 10px;">
+            Naikkan kepekatan baja ke paras matang (<strong>1.4 – 1.8 mS/cm</strong> atau <strong>1400 – 1800 µS/cm</strong>) apabila anda melihat <strong>3 tanda utama</strong> ini:
+          </p>
+          <ul class="checklist">
+            <li><strong>5–6 Daun Sebenar:</strong> Pokok sudah mempunyai 5 hingga 6 helai daun sejati yang lebar, tebal dan bertingkat padat.</li>
+            <li><strong>Akar Putih Menjalar Panjang:</strong> Akar putih sudah terjuntai keluar dari celah net pot sekurang-kurangnya <strong>3 – 5 cm</strong> ke dalam air takung.</li>
+            <li><strong>Paras Air Susut:</strong> Air dalam takung telah susut antara <strong>30% hingga 50%</strong> daripada paras asal.</li>
+          </ul>
+        </div>
+
+        <div class="routine-card" style="background: rgba(0, 0, 0, 0.35); border-left: 3px solid #f59e0b;">
+          <h3 style="color: #fbbf24;">💧 2. Peraturan Emas 'Top Up' Baja Dalam Kaedah Kratky</h3>
+          <p style="font-size: 0.88rem; color: #d1d5db; margin-bottom: 10px;">
+            Dalam kaedah Kratky, <strong>JANGAN curah pati baja pekat sesuka hati</strong> ke dalam takung setiap hari. Ikuti langkah selamat ini:
+          </p>
+          <ul class="checklist">
+            <li><strong>Bancuh Berasingan:</strong> Sediakan bancuhan air baja baharu dalam botol/bekas lain pada sasaran <strong>1.4 – 1.6 mS/cm (1400–1600 µS/cm)</strong>.</li>
+            <li>⚠️ <strong>Hanya Isi Setakat Separuh (50%):</strong> JANGAN isi air sampai penuh ke dasar net pot semula! Isi setakat separuh takung sahaja.</li>
+            <li><strong>Jaga Zon Akar Udara (Air Gap):</strong> Bahagian atas akar wajib terdedah kepada udara untuk pernafasan oksigen. Jika diisi penuh, pokok akan lemas dan reput akar!</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Jadual Fasa EC -->
+      <h3 style="font-size: 1.05rem; color: #ffffff; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+        <span>📋</span> Jadual Lengkap Nilai EC Mengikut Peringkat Umur Pak Choy
+      </h3>
+
+      <div style="overflow-x: auto; margin-bottom: 20px;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.86rem; text-align: left; background: rgba(0,0,0,0.3); border-radius: var(--radius-sm); overflow: hidden; border: 1px solid rgba(255,255,255,0.08);">
+          <thead>
+            <tr style="background: rgba(255,255,255,0.06); color: #9ca3af; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em;">
+              <th style="padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.08);">Fasa & Umur Pokok</th>
+              <th style="padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.08);">Nilai EC Sasaran</th>
+              <th style="padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.08);">Sukatan Anggaran (A & B)</th>
+              <th style="padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.08);">Tindakan & Catatan</th>
+              <th style="padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.08);">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+              <td style="padding: 12px 14px; color: #e5e7eb; font-weight: 600;">Hari 0 – 6<br><span style="font-size:0.75rem; color:#9ca3af; font-weight:normal;">Percambahan</span></td>
+              <td style="padding: 12px 14px; color: #38bdf8; font-weight: 700;">0 mS/cm<br><span style="font-size:0.75rem; color:#9ca3af; font-weight:normal;">~0 µS/cm</span></td>
+              <td style="padding: 12px 14px; color: #d1d5db;">Air paip kosong sahaja</td>
+              <td style="padding: 12px 14px; color: #9ca3af;">Benih guna nutrien asli biji benih; jangan beri baja.</td>
+              <td style="padding: 12px 14px;"><span style="background: rgba(16,185,129,0.15); color:#34d399; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700;">Selesai ✓</span></td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+              <td style="padding: 12px 14px; color: #e5e7eb; font-weight: 600;">Hari 7 – 10<br><span style="font-size:0.75rem; color:#9ca3af; font-weight:normal;">Daun Sebenar #1 & #2</span></td>
+              <td style="padding: 12px 14px; color: #38bdf8; font-weight: 700;">0.4 – 0.6 mS/cm<br><span style="font-size:0.75rem; color:#9ca3af; font-weight:normal;">400 – 600 µS/cm</span></td>
+              <td style="padding: 12px 14px; color: #d1d5db;">2.0 – 2.5 ml / Liter</td>
+              <td style="padding: 12px 14px; color: #9ca3af;">Baja nipis rendaman dasar 1–2mm (Anda guna 432 µS/cm).</td>
+              <td style="padding: 12px 14px;"><span style="background: rgba(16,185,129,0.15); color:#34d399; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700;">Selesai ✓</span></td>
+            </tr>
+            <tr style="background: rgba(16, 185, 129, 0.08); border-bottom: 1px solid rgba(16, 185, 129, 0.25);">
+              <td style="padding: 12px 14px; color: #ffffff; font-weight: 700;">Hari 11 – 17<br><span style="font-size:0.75rem; color:#34d399; font-weight:600;">Adaptasi Takung (Kini)</span></td>
+              <td style="padding: 12px 14px; color: #34d399; font-weight: 700; font-size: 0.95rem;">0.8 – 1.1 mS/cm<br><span style="font-size:0.75rem; color:#a7f3d0; font-weight:normal;">800 – 1100 µS/cm</span></td>
+              <td style="padding: 12px 14px; color: #ffffff; font-weight: 600;">3.0 – 3.5 ml / Liter</td>
+              <td style="padding: 12px 14px; color: #e5e7eb;"><strong>Status Anda:</strong> 944–966 µS/cm. Biarkan air susut semulajadi; JANGAN tambah baja sekarang.</td>
+              <td style="padding: 12px 14px;"><span style="background: #10b981; color:#064e3b; padding: 3px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 800; animation: pulse 1.5s infinite alternate;">AKTIF KINI 🟢</span></td>
+            </tr>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+              <td style="padding: 12px 14px; color: #e5e7eb; font-weight: 600;">Hari 18 – 28<br><span style="font-size:0.75rem; color:#fbbf24; font-weight:600;">Vegetatif Pesat</span></td>
+              <td style="padding: 12px 14px; color: #fbbf24; font-weight: 700;">1.4 – 1.8 mS/cm<br><span style="font-size:0.75rem; color:#fde68a; font-weight:normal;">1400 – 1800 µS/cm</span></td>
+              <td style="padding: 12px 14px; color: #d1d5db;">4.5 – 5.0 ml / Liter</td>
+              <td style="padding: 12px 14px; color: #d1d5db;"><strong>WAKTU NAIKKAN EC:</strong> Bila daun 5-6 helai & air susut 30-50%, top up air baja 1.5 mS/cm (paras 50% takung).</td>
+              <td style="padding: 12px 14px;"><span style="background: rgba(245, 158, 11, 0.2); color:#fbbf24; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700;">Akan Datang ⏳</span></td>
+            </tr>
+            <tr>
+              <td style="padding: 12px 14px; color: #e5e7eb; font-weight: 600;">Hari 29 – 35<br><span style="font-size:0.75rem; color:#9ca3af; font-weight:normal;">Kematangan & Tuaian</span></td>
+              <td style="padding: 12px 14px; color: #38bdf8; font-weight: 700;">1.0 – 1.2 mS/cm<br><span style="font-size:0.75rem; color:#9ca3af; font-weight:normal;">(atau Flush Air Paip)</span></td>
+              <td style="padding: 12px 14px; color: #d1d5db;">Kurangkan baja / Air paip</td>
+              <td style="padding: 12px 14px; color: #9ca3af;">3 hari sebelum tuai, top up air paip kosong (flushing) supaya sayur manis, rangup, & tiada rasa pahit baja.</td>
+              <td style="padding: 12px 14px;"><span style="background: rgba(255,255,255,0.08); color:#d1d5db; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700;">Akan Datang ⏳</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Quick Testing Guidelines Box -->
+      <div style="background: rgba(0,0,0,0.4); border-left: 3px solid #8b5cf6; border-radius: var(--radius-sm); padding: 14px 16px;">
+        <h4 style="color: #a78bfa; font-size: 0.92rem; margin-bottom: 6px;">🔍 Tip Menguji & Membaca Meter Semasa Rutin Mingguan:</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; font-size: 0.85rem; color: #d1d5db; margin-top: 8px;">
+          <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 6px;">
+            <strong style="color: #fbbf24;">📉 Jika Bacaan EC Jatuh (Cth: < 700 µS/cm):</strong>
+            <p style="margin-top: 4px; color: #9ca3af;">Pokok "makan" nutrien lebih pantas berbanding air. Boleh sediakan sedikit bancuhan baja baharu untuk kembalikan ke paras ~1,200 – 1,400 µS/cm.</p>
+          </div>
+          <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 6px;">
+            <strong style="color: #38bdf8;">📈 Jika Bacaan EC Naik Mendadak (Cth: > 1,300 µS/cm):</strong>
+            <p style="margin-top: 4px; color: #9ca3af;">Pada hari cuaca panas terik, pokok "minum" air dengan laju menyebabkan garam baja menjadi pekat. <strong>Cukup sekadar tambah air paip kosong</strong> tanpa baja.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Interactive Calculator -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon">🧮</div>
+        <h2>Kalkulator Anggaran Bancuhan Baja AB</h2>
+      </div>
+      <p style="font-size:0.9rem; color:var(--text-muted);">Masukkan kapasiti air takungan anda untuk mengira anggaran sukatan stok pati Baja A & B yang diperlukan mengikut peringkat tumbuhan.</p>
+      
+      <div class="calc-box">
+        <div class="calc-row">
+          <div class="calc-input-group">
+            <label for="waterLiters">Kapasiti Air Bekas (Liter):</label>
+            <input type="number" id="waterLiters" class="calc-input" value="10" min="1" max="100" oninput="calculateBaja()">
+          </div>
+          <div class="calc-input-group">
+            <label for="growthStage">Peringkat Tumbuhan:</label>
+            <select id="growthStage" class="calc-input" onchange="calculateBaja()">
+              <option value="early">Anak Benih Awal (Hari 7-10 | EC 0.6 - 0.8 mS/cm | ~2.5 ml/L)</option>
+              <option value="seedling">Anak Pokok Membesar (Hari 11-18 | EC 1.0 - 1.2 mS/cm | ~3.5 ml/L)</option>
+              <option value="vegetative" selected>Pokok Matang (Hari 19-35 | EC 1.5 - 1.8 mS/cm | ~5.0 ml/L)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="calc-result">
+          <div class="res-item">
+            <div class="res-val" id="resA">50 ml</div>
+            <div class="res-lbl">Pati Baja A</div>
+          </div>
+          <div class="res-item">
+            <div class="res-val" id="resB">50 ml</div>
+            <div class="res-lbl">Pati Baja B</div>
+          </div>
+          <div class="res-item">
+            <div class="res-val" id="resEC">1.5 - 1.8</div>
+            <div class="res-lbl">Sasaran EC (mS/cm)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FAQ & Masalah Biasa Fasa Percambahan -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon">❓</div>
+        <h2>Soalan Lazim & Masalah Fasa Semaian</h2>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>Apa itu 'Kutilang' (Etiolation) & kenapa ia bahaya?</span>
+          <span>▾</span>
+        </div>
+        <div class="faq-answer">
+          'Kutilang' adalah singkatan <em>Kurus, Tinggi, Langsing</em>. Apabila anak pokok tidak mendapat cahaya matahari yang cukup, batangnya akan memanjang secara paksa untuk mencari sumber cahaya. Pokok yang kutilang akan menjadi lembik, mudah tumbang, dan sukar membesar menjadi sayur yang padat. Atasinya dengan meletakkan semaian di bawah cahaya pagi sekarang!
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>Bolehkah saya biarkan 2 atau 3 anak pokok dalam 1 kiub rockwool?</span>
+          <span>▾</span>
+        </div>
+        <div class="faq-answer">
+          Pada fasa bercambah sekarang, biarkan sahaja. Namun pada hari ke-7 hingga ke-10 (apabila daun sebenar keluar), disyorkan memilih hanya <strong>1 pokok terbaik</strong> setiap kiub dan buang yang selebihnya supaya pokok dapat membesar dengan saiz maksimum tanpa bersaing nutrien.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>Bila waktu terbaik pindah ke takungan besar?</span>
+          <span>▾</span>
+        </div>
+        <div class="faq-answer">
+          Waktu paling ideal ialah apabila akar putih sudah mula terkeluar menembusi bahagian bawah kiub rockwool dan pokok sudah memiliki 3 hingga 4 helai daun yang stabil (biasanya sekitar umur 10 hingga 14 hari).
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>Berapa sukatan baja AB untuk bekas semaian dan bagaimana cara letak?</span>
+          <span>▾</span>
+        </div>
+        <div class="faq-answer">
+          Gunakan bancuhan separuh kepekatan: <strong>2.0 – 2.5 ml Pati A + 2.0 – 2.5 ml Pati B untuk setiap 1 Liter air</strong> (sasaran EC 0.6 – 0.8 mS/cm atau ~300–450 ppm). Jangan curah atas daun; sebaliknya tuang ke bahagian <strong>dasar bekas semaian (paras cetek 1–2 mm)</strong> supaya tapak kiub rockwool menyerap baja dari bawah (<em>bottom feeding</em>).
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>Apakah maksud bacaan 432 µS/cm atau PPM pada EC/TDS meter saya?</span>
+          <span>▾</span>
+        </div>
+        <div class="faq-answer">
+          Bacaan 432 adalah sangat ideal dan selamat untuk semaian anak benih. Jika unit terpapar <strong>µS/cm</strong>, ia bersamaan dengan <strong>0.43 mS/cm</strong> (dos pemula lembut). Jika mod <strong>ppm</strong>, ia bersamaan dengan anggaran <strong>0.6 – 0.8 mS/cm</strong> (zon sasaran tepat). Kedua-duanya menjamin akar halus tidak mengalami kejutan garam.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>Bila saya perlu naikkan nilai EC dan bagaimana cara 'top up' air baja dalam takung Kratky?</span>
+          <span>▾</span>
+        </div>
+        <div class="faq-answer">
+          Nilai EC <strong>belum perlu dinaikkan pada Hari ke-13</strong> kerana bancuhan sedia ada (~944–966 µS/cm) adalah fasa adaptasi akar yang selamat. Masa terbaik untuk menaikkan nilai EC ke paras <strong>1.4 – 1.8 mS/cm (1400–1800 µS/cm)</strong> ialah sekitar <strong>Hari ke-18 hingga ke-20</strong> apabila pokok mempunyai <strong>5 hingga 6 daun sejati yang lebar</strong> dan akar putih terjuntai 3–5 cm. Semasa menambah air baja baharu (*top up*), <strong>hanya isi setakat 50% (separuh takung) sahaja</strong> — jangan isi penuh ke paras net pot semula agar ruang udara (*air gap*) untuk pernafasan akar tidak tenggelam lemas!
+        </div>
+      </div>
+    </div>
+
+    <!-- Routine Management -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon">📅</div>
+        <h2>Rutin Harian & Mingguan</h2>
+      </div>
+      <div class="routine-grid">
+        <div class="routine-card">
+          <h3>☀️ Rutin Harian (1-2 Minit)</h3>
+          <ul class="checklist">
+            <li><strong>Semak Serangga Perosak:</strong> Periksa bawah daun dari serangan ulat hijau, kutu trip, atau lalat putih.</li>
+            <li><strong>Periksa Kelesuan Daun:</strong> Jika daun layu waktu tengah hari panas terik, sediakan jaring teduhan (shade net 30-50%).</li>
+            <li><strong>Pastikan Pencahayaan Cukup:</strong> Pastikan pokok terima sekurang-kurangnya 4–6 jam sinaran matahari cerah.</li>
+          </ul>
+        </div>
+        <div class="routine-card">
+          <h3>🔬 Rutin Mingguan (5 Minit)</h3>
+          <ul class="checklist">
+            <li><strong>Ukur EC & pH:</strong> Suhu panas membuatkan pokok minum air lebih laju berbanding baja, jadi nilai EC mungkin meningkat. Tambah air jika EC > 2.0.</li>
+            <li><strong>Semak Paras Air:</strong> Pastikan akar mencecah air tetapi tinggalkan ruang udara (jangan isi sampai limpah).</li>
+            <li><strong>Kesihatan Akar:</strong> Akar sihat berwarna putih bersih. Jika akar coklat berlendir & berbau busuk, ia tanda reput akar (*root rot*).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <p>🌿 Panduan Hidroponik Sayur Pak Choy Hijau • Sebahagian daripada <a href="/projects" style="color: #34d399; text-decoration: underline;">Khai Space Explorations</a></p>
+    </footer>
+  </div>
+
+  <script>
+    function calculateBaja() {
+      const liters = parseFloat(document.getElementById('waterLiters').value) || 0;
+      const stage = document.getElementById('growthStage').value;
+      
+      let ratePerLiter = 5.0;
+      let targetEC = '1.5 - 1.8';
+
+      if (stage === 'early') {
+        ratePerLiter = 2.5;
+        targetEC = '0.6 - 0.8';
+      } else if (stage === 'seedling') {
+        ratePerLiter = 3.5;
+        targetEC = '1.0 - 1.2';
+      } else {
+        ratePerLiter = 5.0;
+        targetEC = '1.5 - 1.8';
+      }
+
+      let totalA = Math.round(liters * ratePerLiter);
+      let totalB = totalA;
+
+      document.getElementById('resA').innerText = totalA + ' ml';
+      document.getElementById('resB').innerText = totalB + ' ml';
+      document.getElementById('resEC').innerText = targetEC;
+    }
+
+    function toggleFaq(el) {
+      const answer = el.nextElementSibling;
+      if (answer.style.display === 'none') {
+        answer.style.display = 'block';
+        el.querySelector('span:last-child').innerText = '▾';
+      } else {
+        answer.style.display = 'none';
+        el.querySelector('span:last-child').innerText = '▸';
+      }
+    }
+
+    function switchJournalTab(tabId) {
+      // Deactivate all buttons & contents
+      document.querySelectorAll('.journal-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      document.querySelectorAll('.journal-tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+
+      // Activate selected
+      const activeBtn = document.getElementById('btn-' + tabId);
+      const activeContent = document.getElementById('tab-' + tabId);
+
+      if (activeBtn) activeBtn.classList.add('active');
+      if (activeContent) activeContent.classList.add('active');
+    }
+  </script>
+</body>
+</html>
