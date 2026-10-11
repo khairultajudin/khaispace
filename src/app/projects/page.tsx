@@ -33,7 +33,7 @@ export default function ProjectsPage() {
         className="border-b border-border bg-surface-muted/60"
       >
         <Container>
-          <ol className="grid divide-y divide-border sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-5 lg:divide-x">
+          <ol className="grid divide-y divide-border sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4 lg:divide-x">
             {projects.map((project, i) => (
               <li key={project.slug} className="lg:px-6 lg:first:pl-0">
                 <Link

@@ -26,17 +26,6 @@ export type Project = {
  */
 export const projects: readonly Project[] = [
   {
-    slug: "hidroponik",
-    title: "Panduan Hidroponik Pak Choy Hijau",
-    category: "Smart Agriculture / Hydroponics",
-    summary:
-      "Interactive guide and growth journal tracking daily Kratky passive hydroponics progress, nutrient mixing, and seedling health.",
-    status: "Ongoing Experiment",
-    visual: "agri",
-    cover: "/projects/hidroponik/assets/hari-13-takung-biru-penuh.jpg",
-    href: "/projects/hidroponik/",
-  },
-  {
     slug: "biztrack",
     title: "BizTrack",
     category: "Software / SaaS",
@@ -55,13 +44,15 @@ export const projects: readonly Project[] = [
     visual: "iot",
   },
   {
-    slug: "hydroponics-system",
-    title: "Hydroponics System",
-    category: "Smart Agriculture",
+    slug: "hidroponik",
+    title: "Panduan Hidroponik Pak Choy Hijau",
+    category: "Smart Agriculture / Hydroponics",
     summary:
-      "An exploration of monitored, automated growing systems for small spaces.",
-    status: "Draft concept",
+      "Interactive guide and growth journal tracking daily Kratky passive hydroponics progress, nutrient mixing, and seedling health.",
+    status: "Ongoing Experiment",
     visual: "agri",
+    cover: "/projects/hidroponik/assets/hari-13-takung-biru-penuh.jpg",
+    href: "/projects/hidroponik/",
   },
   {
     slug: "3d-printing-prototyping",
