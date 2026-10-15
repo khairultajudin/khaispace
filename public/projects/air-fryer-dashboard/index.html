@@ -1,0 +1,1913 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Air Fryer Dada Ayam Chef - Menu Minimalis 5 Rempah Seminggu (400g / 2 Pax)</title>
+  <meta name="description" content="Dashboard 5 menu dada ayam seminggu (400g / 2 pax) menggunakan gabungan rempah minimalis: Smoked Paprika, Garlic Powder, Onion Powder, Oregano, Black Pepper & Chicken Seasoning.">
+  <!-- Google Fonts & Font Awesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --primary: #ff5722;
+      --primary-hover: #f4511e;
+      --primary-light: rgba(255, 87, 34, 0.12);
+      --secondary: #ff9800;
+      --accent: #10b981;
+      --accent-light: rgba(16, 185, 129, 0.12);
+      --lotus-green: #008751;
+      --lotus-light: rgba(0, 135, 81, 0.12);
+      --bg-main: #0d1117;
+      --bg-card: #161b22;
+      --bg-card-hover: #1f242c;
+      --bg-subtle: #21262d;
+      --border-color: #30363d;
+      --text-main: #f0f6fc;
+      --text-muted: #8b949e;
+      --card-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    [data-theme="light"] {
+      --bg-main: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f1f5f9;
+      --bg-subtle: #e2e8f0;
+      --border-color: #cbd5e1;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      overflow-x: hidden;
+    }
+
+    /* Top Navigation Header */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(22, 27, 34, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.85rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    [data-theme="light"] header {
+      background: rgba(255, 255, 255, 0.88);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-icon {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: #fff;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      box-shadow: 0 4px 15px rgba(255, 87, 34, 0.4);
+    }
+
+    .brand-text h1 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, #ff7a45, #ffb300);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge-pill {
+      background: rgba(255, 87, 34, 0.15);
+      border: 1px solid rgba(255, 87, 34, 0.3);
+      color: var(--primary);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-icon {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: var(--transition);
+    }
+
+    .btn-icon:hover {
+      background: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    /* Container Layout */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 2rem;
+      width: 100%;
+    }
+
+    /* Hero Banner */
+    .hero {
+      background: linear-gradient(135deg, rgba(255, 87, 34, 0.16) 0%, rgba(255, 152, 0, 0.06) 100%);
+      border: 1px solid rgba(255, 87, 34, 0.28);
+      border-radius: var(--radius-lg);
+      padding: 2.25rem 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 320px;
+      height: 320px;
+      background: radial-gradient(circle, rgba(255, 87, 34, 0.25), transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-content h2 {
+      font-size: 2.1rem;
+      font-weight: 800;
+      margin-bottom: 0.65rem;
+      line-height: 1.25;
+    }
+
+    .hero-content p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      max-width: 680px;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .stat-badge {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .stat-badge i {
+      font-size: 1.3rem;
+      color: var(--primary);
+    }
+
+    .stat-badge .stat-num {
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+
+    .stat-badge .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Quick Navigation Bar */
+    .quick-nav-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .nav-chip-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.65rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+    }
+
+    .nav-chip-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-light);
+      transform: translateY(-2px);
+    }
+
+    .nav-chip-btn.highlight {
+      background: var(--accent-light);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* SECTION: PANTRY INVENTORY & LOTUS'S SHOPPING LIST */
+    .grocery-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      margin-bottom: 3.5rem;
+      box-shadow: var(--card-shadow);
+      position: relative;
+    }
+
+    .grocery-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .grocery-title h3 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .grocery-title p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Cost Summary Cards */
+    .cost-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .cost-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      text-align: center;
+    }
+
+    .cost-card-title {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .cost-card-val {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .cost-card-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .grocery-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (max-width: 850px) {
+      .grocery-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .grocery-cat-card {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+    }
+
+    .grocery-cat-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .grocery-cat-title span {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cat-cost-badge {
+      font-size: 0.75rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--accent);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 700;
+    }
+
+    .grocery-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .grocery-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.85rem;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-card);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .grocery-item:hover {
+      background: var(--bg-card-hover);
+    }
+
+    .grocery-item.checked {
+      opacity: 0.55;
+      text-decoration: line-through;
+    }
+
+    .item-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .item-left input {
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .item-price {
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .have-tag {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    /* Tools Grid */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .tools-grid {
+        grid-template-columns: 1fr;
+      }
+      .hero {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    .tool-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--card-shadow);
+    }
+
+    .tool-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .tool-header i {
+      color: var(--primary);
+      font-size: 1.25rem;
+    }
+
+    .tool-header h3 {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .converter-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .input-group label {
+      display: block;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .input-group input {
+      width: 100%;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.65rem 0.9rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.95rem;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .input-group input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .converter-result {
+      background: linear-gradient(135deg, rgba(255, 87, 34, 0.1), rgba(16, 185, 129, 0.1));
+      border: 1px dashed var(--primary);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      text-align: center;
+    }
+
+    .res-val {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .res-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* Live Timer */
+    .timer-widget {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 0.5rem;
+    }
+
+    .timer-display {
+      font-size: 2.6rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      font-variant-numeric: tabular-nums;
+      color: var(--primary);
+      margin: 0.25rem 0 0.75rem;
+    }
+
+    .timer-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 0.75rem;
+    }
+
+    .btn {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 0.6rem 1.25rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: var(--bg-subtle);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border-color);
+      color: var(--text-main);
+    }
+
+    .btn-accent {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-accent:hover {
+      background: #059669;
+    }
+
+    .timer-quick-set {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .chip-btn {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .chip-btn:hover {
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    /* Section Navigation / Filter */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .section-title {
+      font-size: 1.4rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .search-filter-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .search-box {
+      flex: 1;
+      position: relative;
+    }
+
+    .search-box i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+    }
+
+    .search-box input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.65rem 1rem 0.65rem 2.4rem;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .search-box input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .category-chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 6px;
+      margin-bottom: 1.5rem;
+      scrollbar-width: thin;
+    }
+
+    .cat-chip {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 0.5rem 1rem;
+      border-radius: 25px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: var(--transition);
+    }
+
+    .cat-chip:hover, .cat-chip.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      box-shadow: 0 4px 12px rgba(255, 87, 34, 0.3);
+    }
+
+    /* Recipe Cards Grid */
+    .recipes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3.5rem;
+    }
+
+    .recipe-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .recipe-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--primary);
+      box-shadow: 0 15px 35px -10px rgba(255, 87, 34, 0.25);
+    }
+
+    .card-top {
+      padding: 1.25rem 1.25rem 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .day-badge {
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 6px;
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .tag-container {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .recipe-cat-tag {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+
+    .portion-tag {
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .card-body {
+      padding: 0 1.25rem 1.25rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .recipe-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--text-main);
+    }
+
+    .recipe-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+      margin-bottom: 1rem;
+      flex: 1;
+    }
+
+    .powder-badge-list {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .powder-tag {
+      font-size: 0.72rem;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border-color);
+      color: var(--secondary);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .recipe-specs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      background: var(--bg-subtle);
+      border-radius: var(--radius-md);
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .spec-item .spec-title {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .spec-item .spec-val {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .card-footer {
+      padding: 0.85rem 1.25rem;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0,0,0,0.1);
+    }
+
+    /* Modal Styling */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      max-width: 650px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      transform: scale(0.95);
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-overlay.open .modal-container {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      background: var(--bg-card);
+      z-index: 10;
+    }
+
+    .modal-title {
+      font-size: 1.3rem;
+      font-weight: 800;
+    }
+
+    .modal-close {
+      background: var(--bg-subtle);
+      border: none;
+      color: var(--text-muted);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .modal-close:hover {
+      color: var(--text-main);
+      background: var(--border-color);
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+    }
+
+    .modal-section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin: 1.25rem 0 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--primary);
+    }
+
+    .checklist {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.9rem;
+      background: var(--bg-subtle);
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+
+    .checklist-item input {
+      margin-top: 3px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .steps-list {
+      padding-left: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    /* Pro Tips Grid */
+    .tips-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 3.5rem;
+    }
+
+    .tip-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      display: flex;
+      gap: 12px;
+    }
+
+    .tip-icon {
+      color: var(--secondary);
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .tip-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+      font-size: 0.95rem;
+    }
+
+    .tip-text {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* Footer */
+    footer {
+      background: var(--bg-card);
+      border-top: 1px solid var(--border-color);
+      padding: 2.5rem 2rem 1.5rem;
+      margin-top: auto;
+    }
+
+    .footer-content {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: var(--transition);
+    }
+
+    .footer-links a:hover {
+      color: var(--primary);
+    }
+
+    .footer-bottom {
+      max-width: 1280px;
+      margin: 1.5rem auto 0;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color);
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body data-theme="dark">
+
+  <!-- Header -->
+  <header>
+    <a href="#" class="brand">
+      <div class="brand-icon"><i class="fa-solid fa-jar"></i></div>
+      <div class="brand-text">
+        <h1>Air Fryer Minimalist Spices Chef</h1>
+        <p>Menu 5 Rempah Seminggu (400g / 2 Pax)</p>
+      </div>
+    </a>
+    <div class="nav-actions">
+      <a href="/projects" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;" title="Kembali ke KhaiSpace">
+        <i class="fa-solid fa-arrow-left"></i> KhaiSpace
+      </a>
+      <div class="badge-pill" style="background:rgba(0, 135, 81, 0.15); color:#10b981; border-color:rgba(0,135,81,0.3);">
+        <i class="fa-solid fa-store"></i> Hanya Perlu Beli 2 Serbuk di Lotus's
+      </div>
+      <button class="btn-icon" id="themeToggle" title="Tukar Tema (Dark/Light)">
+        <i class="fa-solid fa-moon"></i>
+      </button>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- Hero Banner -->
+    <div class="hero">
+      <div class="hero-content">
+        <h2>5 Resepi Mudah Guna Stok Rempah Sedia Ada + 2 Tambahan</h2>
+        <p>Menggunakan stok anda (<strong>Smoked Paprika, Black Pepper, Oregano, Chicken Seasoning</strong>) dan hanya tambah <strong>Garlic Powder & Onion Powder</strong> dari Lotus's. Jimat ruang kabinet, modal rendah, dan rasa ayam tetap 'smoky', 'herby' serta berjus!</p>
+        <div class="hero-stats">
+          <div class="stat-badge">
+            <i class="fa-solid fa-wallet"></i>
+            <div>
+              <div class="stat-num">RM 49.78</div>
+              <div class="stat-label">Total Belanja di Lotus's</div>
+            </div>
+          </div>
+          <div class="stat-badge">
+            <i class="fa-solid fa-scale-balanced"></i>
+            <div>
+              <div class="stat-num">2.0 kg</div>
+              <div class="stat-label">Dada Ayam (5 Hari)</div>
+            </div>
+          </div>
+          <div class="stat-badge">
+            <i class="fa-solid fa-circle-check"></i>
+            <div>
+              <div class="stat-num">4 Dah Ada</div>
+              <div class="stat-label">Hanya Beli 2 Serbuk</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Navigation Bar -->
+    <div class="quick-nav-bar">
+      <a href="#recipesSection" class="nav-chip-btn"><i class="fa-solid fa-utensils"></i> Lihat 5 Resepi Isnin–Jumaat</a>
+      <a href="#grocerySection" class="nav-chip-btn highlight"><i class="fa-solid fa-cart-shopping"></i> Senarai Beli Lotus's (RM49.78 Sahaja)</a>
+      <a href="#tipsSection" class="nav-chip-btn"><i class="fa-solid fa-lightbulb"></i> Tips Dada Ayam Juicy</a>
+    </div>
+
+    <!-- SECTION: SENARAI INVENTORI & SENARAI BELI-BELAH LOTUS'S -->
+    <div class="grocery-section" id="grocerySection">
+      <div class="grocery-header">
+        <div class="grocery-title">
+          <h3><i class="fa-solid fa-store" style="color:var(--accent);"></i> Senarai Beli Lotus's & Stok Sedia Ada di Rumah</h3>
+          <p>Tak perlu beli 10 botol rempah. Hanya beli 2 botol serbuk tambahan bersama 2.0kg dada ayam!</p>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-secondary" onclick="resetCheckboxes()"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+          <button class="btn btn-accent" onclick="copyGroceryList()"><i class="fa-solid fa-copy"></i> Salin Senarai Beli</button>
+        </div>
+      </div>
+
+      <!-- Cost Summary Cards -->
+      <div class="cost-summary-grid">
+        <div class="cost-card">
+          <div class="cost-card-title">Perlu Dibeli di Lotus's</div>
+          <div class="cost-card-val" style="color:var(--accent);">RM 49.78</div>
+          <div class="cost-card-sub">2kg Ayam (RM35.80) + 2 Serbuk (RM13.98)</div>
+        </div>
+        <div class="cost-card">
+          <div class="cost-card-title">Kos Masak / Hidangan (2 Pax)</div>
+          <div class="cost-card-val">RM 7.60</div>
+          <div class="cost-card-sub">Untuk 400g Dada Ayam + Rempah</div>
+        </div>
+        <div class="cost-card">
+          <div class="cost-card-title">Kos Seorang Makan</div>
+          <div class="cost-card-val" style="color:var(--secondary);">RM 3.80</div>
+          <div class="cost-card-sub">Sangat berbaloi & sihat!</div>
+        </div>
+      </div>
+
+      <!-- Two Column Layout: To Buy vs In Pantry -->
+      <div class="grocery-grid">
+        
+        <!-- Column 1: Perlu Beli di Lotus's -->
+        <div class="grocery-cat-card" style="border-color: rgba(16, 185, 129, 0.4);">
+          <div class="grocery-cat-title">
+            <span><i class="fa-solid fa-cart-arrow-down" style="color:var(--accent);"></i> 1. PERLU DIBELI DI LOTUS'S</span>
+            <span class="cat-cost-badge">Jumlah: RM 49.78</span>
+          </div>
+          <ul class="grocery-list">
+            <li class="grocery-item" onclick="toggleGrocery(this)">
+              <div class="item-left">
+                <input type="checkbox"> 
+                <span><strong>Dada Ayam Tanpa Tulang</strong> (2.0 kg - bahagi 5 pek 400g)</span>
+              </div>
+              <span class="item-price">RM 35.80</span>
+            </li>
+            <li class="grocery-item" onclick="toggleGrocery(this)">
+              <div class="item-left">
+                <input type="checkbox"> 
+                <span>🧄 <strong>Lotus's Garlic Powder</strong> (50g)</span>
+              </div>
+              <span class="item-price">RM 6.99</span>
+            </li>
+            <li class="grocery-item" onclick="toggleGrocery(this)">
+              <div class="item-left">
+                <input type="checkbox"> 
+                <span>🧅 <strong>Lotus's Onion Powder</strong> (45g)</span>
+              </div>
+              <span class="item-price">RM 6.99</span>
+            </li>
+            <li style="font-size:0.75rem; color:var(--text-muted); padding:4px 8px; line-height:1.4;">
+              💡 <em>Optional: Serbuk Cili Baba's (RM2.50) jika suka rasa ekstra pedas.</em>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Column 2: Dah Ada di Rumah -->
+        <div class="grocery-cat-card">
+          <div class="grocery-cat-title">
+            <span><i class="fa-solid fa-house-chimney-check" style="color:var(--primary);"></i> 2. DAH ADA DI RUMAH (JIMAT!)</span>
+            <span class="have-tag">Ready to Use</span>
+          </div>
+          <ul class="grocery-list">
+            <li class="grocery-item" style="cursor:default;">
+              <div class="item-left">
+                <i class="fa-solid fa-circle-check" style="color:var(--accent);"></i>
+                <span>🌶️ Smoked Paprika (Bagi aroma smoky & warna merah karamel)</span>
+              </div>
+              <span class="have-tag">✅ ADA</span>
+            </li>
+            <li class="grocery-item" style="cursor:default;">
+              <div class="item-left">
+                <i class="fa-solid fa-circle-check" style="color:var(--accent);"></i>
+                <span>🧂 Black Pepper (Lada Hitam Kasar)</span>
+              </div>
+              <span class="have-tag">✅ ADA</span>
+            </li>
+            <li class="grocery-item" style="cursor:default;">
+              <div class="item-left">
+                <i class="fa-solid fa-circle-check" style="color:var(--accent);"></i>
+                <span>🍗 Chicken Seasoning (Pati/Perencah Ayam)</span>
+              </div>
+              <span class="have-tag">✅ ADA</span>
+            </li>
+            <li class="grocery-item" style="cursor:default;">
+              <div class="item-left">
+                <i class="fa-solid fa-circle-check" style="color:var(--accent);"></i>
+                <span>🌿 Oregano (Herba wangi Itali)</span>
+              </div>
+              <span class="have-tag">✅ ADA</span>
+            </li>
+            <li class="grocery-item" style="cursor:default;">
+              <div class="item-left">
+                <i class="fa-solid fa-circle-check" style="color:var(--accent);"></i>
+                <span>🫒 Minyak Masak / Minyak Zaitun & Sedikit Garam</span>
+              </div>
+              <span class="have-tag">✅ ADA</span>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Utilities Section: Oven Converter & Live Cooking Timer -->
+    <div class="tools-grid">
+      <!-- Tool 1: Oven to Air Fryer Converter -->
+      <div class="tool-card">
+        <div class="tool-header">
+          <i class="fa-solid fa-calculator"></i>
+          <h3>Kalkulator Tukar Oven ke Air Fryer (Dada Ayam)</h3>
+        </div>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">
+          Dada ayam perapan serbuk masak sangat pantas! Tukar suhu & masa oven agar dada ayam tidak kering.
+        </p>
+        <div class="converter-inputs">
+          <div class="input-group">
+            <label><i class="fa-solid fa-temperature-half"></i> Suhu Oven Asal (°C)</label>
+            <input type="number" id="ovenTemp" value="190" step="5" min="100" max="250">
+          </div>
+          <div class="input-group">
+            <label><i class="fa-solid fa-clock"></i> Masa Oven Asal (Minit)</label>
+            <input type="number" id="ovenTime" value="20" step="1" min="1" max="180">
+          </div>
+        </div>
+        <div class="converter-result">
+          <div>
+            <div class="res-val" id="afTemp">180°C</div>
+            <div class="res-label">Suhu Air Fryer</div>
+          </div>
+          <div style="font-size: 1.5rem; color: var(--text-muted);"><i class="fa-solid fa-arrow-right"></i></div>
+          <div>
+            <div class="res-val" id="afTime">14 min</div>
+            <div class="res-label">Masa Dada Ayam (400g)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tool 2: Pemasa Masak Pintar (Smart Cooking Timer) -->
+      <div class="tool-card">
+        <div class="tool-header">
+          <i class="fa-solid fa-stopwatch"></i>
+          <h3>Pemasa Masak Dada Ayam</h3>
+        </div>
+        <div class="timer-widget">
+          <div class="timer-display" id="timerDisplay">14:00</div>
+          <div class="timer-controls">
+            <button class="btn" id="startTimerBtn"><i class="fa-solid fa-play"></i> Mula</button>
+            <button class="btn btn-secondary" id="resetTimerBtn"><i class="fa-solid fa-rotate-left"></i> Reset</button>
+          </div>
+          <div class="timer-quick-set">
+            <span style="font-size:0.75rem; color:var(--text-muted); align-self:center;">Pantas:</span>
+            <button class="chip-btn" onclick="setTimer(13)">13m (Herb Chicken)</button>
+            <button class="chip-btn" onclick="setTimer(14)">14m (Smoked Paprika)</button>
+            <button class="chip-btn" onclick="setTimer(14)">14m (Smoky Onion Rub)</button>
+            <button class="chip-btn" onclick="setTimer(15)">15m (Smoky Spicy)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Recipe Explorer Section -->
+    <div class="section-header" id="recipesSection">
+      <div class="section-title">
+        <i class="fa-solid fa-calendar-check" style="color:var(--primary)"></i>
+        5 Menu Serbuk Dada Ayam (Isnin – Jumaat)
+      </div>
+      <div class="search-filter-bar">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="searchInput" placeholder="Cari hari (cth: Isnin, Jumaat) atau resepi...">
+        </div>
+      </div>
+    </div>
+
+    <!-- Category Chips (5 Days) -->
+    <div class="category-chips" id="categoryChips">
+      <button class="cat-chip active" data-cat="all"><i class="fa-solid fa-calendar-days"></i> Semua 5 Hari</button>
+      <button class="cat-chip" data-cat="Isnin"><i class="fa-solid fa-1"></i> Isnin (Smoked Paprika Garlic)</button>
+      <button class="cat-chip" data-cat="Selasa"><i class="fa-solid fa-2"></i> Selasa (Italian Herb & Onion)</button>
+      <button class="cat-chip" data-cat="Rabu"><i class="fa-solid fa-3"></i> Rabu (Smoky Onion Pepper)</button>
+      <button class="cat-chip" data-cat="Khamis"><i class="fa-solid fa-4"></i> Khamis (Garlic Herb Savoury)</button>
+      <button class="cat-chip" data-cat="Jumaat"><i class="fa-solid fa-5"></i> Jumaat (Smoky Spicy Rub)</button>
+    </div>
+
+    <!-- Recipe Cards Grid -->
+    <div class="recipes-grid" id="recipesGrid">
+      <!-- Dynamic recipe cards rendered via JS -->
+    </div>
+
+    <!-- 5 Pro Tips Section for Boneless Breast with Dry Rubs -->
+    <div class="section-title" id="tipsSection" style="margin-bottom: 1.25rem;">
+      <i class="fa-solid fa-lightbulb" style="color:var(--secondary)"></i>
+      Petua Masak Dada Ayam Menggunakan Rempah Serbuk (Dry Rub)
+    </div>
+    <div class="tips-grid">
+      <div class="tip-card">
+        <div class="tip-icon"><i class="fa-solid fa-droplet"></i></div>
+        <div>
+          <div class="tip-title">1. Sapu Minyak Dulu Sebelum Serbuk</div>
+          <div class="tip-text">Lumurkan 1 sudu minyak zaitun/masak ke atas dada ayam terlebih dahulu agar rempah serbuk melekat sekata dan tidak berdebu.</div>
+        </div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon"><i class="fa-solid fa-fire"></i></div>
+        <div>
+          <div class="tip-title">2. Kehebatan Smoked Paprika</div>
+          <div class="tip-text">Smoked Paprika memberikan warna merah menggoda dan rasa berasap 'smoky' seolah-olah dipanggang atas arang sebenar.</div>
+        </div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+        <div>
+          <div class="tip-title">3. Masa Tepat 13–15 Minit (180°C)</div>
+          <div class="tip-text">Jangan lebih masa! Balikkan di minit ke-8. Isi dada ayam akan kekal lembut, berjus dan langsung tidak kering.</div>
+        </div>
+      </div>
+      <div class="tip-card">
+        <div class="tip-icon"><i class="fa-solid fa-box-archive"></i></div>
+        <div>
+          <div class="tip-title">4. Meal Prep Pantas</div>
+          <div class="tip-text">Anda boleh gaul serbuk dalam pek plastik dan simpan terus dalam peti sejuk. Bila nak makan, terus masukkan ke air fryer!</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Detail Modal -->
+  <div class="modal-overlay" id="recipeModal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">Nama Resepi</div>
+        <button class="modal-close" id="modalCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="recipe-specs" id="modalSpecs"></div>
+        
+        <div class="modal-section-title"><i class="fa-solid fa-jar"></i> Sukatan Rempah Serbuk (Khas 400g Dada Ayam / 2 Pax)</div>
+        <ul class="checklist" id="modalIngredients"></ul>
+
+        <div class="modal-section-title"><i class="fa-solid fa-list-ol"></i> Cara Memasak Air Fryer (Pantas & Mudah)</div>
+        <ol class="steps-list" id="modalSteps"></ol>
+
+        <div style="margin-top: 1.5rem; display: flex; gap: 10px;">
+          <button class="btn" id="modalSetTimerBtn"><i class="fa-solid fa-clock"></i> Set Pemasa untuk Menu Ini</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-content">
+      <div class="brand">
+        <div class="brand-icon"><i class="fa-solid fa-jar"></i></div>
+        <div class="brand-text">
+          <h1>Air Fryer Minimalist Spices Chef</h1>
+          <p>Pelan 5 Hari Masakan Serbuk Dada Ayam (400g / 2 Orang)</p>
+        </div>
+      </div>
+      <ul class="footer-links">
+        <li><a href="/projects"><i class="fa-solid fa-arrow-left"></i> Kembali ke KhaiSpace</a></li>
+        <li><a href="#grocerySection"><i class="fa-solid fa-cart-shopping"></i> Senarai Beli Lotus's</a></li>
+        <li><a href="#recipesSection"><i class="fa-solid fa-utensils"></i> 5 Resepi</a></li>
+        <li><a href="https://www.lotuss.com.my" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> Lotus's Online</a></li>
+      </ul>
+    </div>
+    <div class="footer-bottom">
+      &copy; 2026 Air Fryer Minimalist Spices Chef. Rujukan praktikal untuk hidangan berdua.
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script>
+    // 5 Resepi Menggunakan 100% Stok User + Garlic & Onion Powder
+    const recipes = [
+      {
+        id: 1,
+        day: "Isnin",
+        title: "Smoked Paprika Garlic Chicken",
+        category: "Isnin",
+        categoryName: "Isnin (Smoked Garlic)",
+        desc: "Gabungan aroma salai smoked paprika dan kelazatan garlic powder, diseimbangkan dengan chicken seasoning berjus.",
+        temp: "180°C",
+        time: "14 min",
+        timeMins: 14,
+        servings: "400g (2 Orang)",
+        portion: "400g Dada Ayam",
+        powders: ["Smoked Paprika", "Garlic Powder", "Chicken Seasoning", "Black Pepper"],
+        ingredients: [
+          "400g dada ayam Lotus's (dikelar sedikit permukaan)",
+          "1 sudu kecil Serbuk Smoked Paprika",
+          "1/2 sudu kecil Serbuk Garlic Powder (Lotus's)",
+          "1/2 sudu kecil Chicken Seasoning (Pati Ayam)",
+          "1/2 sudu kecil Serbuk Black Pepper (Lada Hitam)",
+          "1 sudu besar Minyak Masak / Minyak Zaitun"
+        ],
+        steps: [
+          "Lumurkan 400g dada ayam bersama 1 sudu besar minyak.",
+          "Campurkan smoked paprika, garlic powder, chicken seasoning dan black pepper.",
+          "Tabur dan gosokkan campuran rempah serbuk rata pada seluruh permukaan ayam.",
+          "Masukkan ke dalam air fryer dan bakar pada suhu 180°C selama 8 minit.",
+          "Terbalikkan dada ayam dan sambung bakar selama 6 minit lagi sehingga berkilat merah keemasan.",
+          "Rehatkan 3 minit sebelum dipotong nipis untuk hidangan."
+        ]
+      },
+      {
+        id: 2,
+        day: "Selasa",
+        title: "Italian Herb & Onion Chicken",
+        category: "Selasa",
+        categoryName: "Selasa (Herb & Onion)",
+        desc: "Aroma wangi herba oregano dipadukan dengan rasa manis karamel onion powder dan garlic powder. Sangat segar!",
+        temp: "180°C",
+        time: "13 min",
+        timeMins: 13,
+        servings: "400g (2 Orang)",
+        portion: "400g Dada Ayam",
+        powders: ["Oregano", "Onion Powder", "Garlic Powder", "Chicken Seasoning", "Black Pepper"],
+        ingredients: [
+          "400g dada ayam (fillet sederhana tebal)",
+          "1 sudu kecil Oregano kering",
+          "1/2 sudu kecil Serbuk Onion Powder (Lotus's)",
+          "1/2 sudu kecil Serbuk Garlic Powder (Lotus's)",
+          "1/2 sudu kecil Chicken Seasoning",
+          "1/2 sudu kecil Serbuk Black Pepper",
+          "1 sudu besar Minyak Masak / Minyak Zaitun"
+        ],
+        steps: [
+          "Sapu minyak rata pada kedua-dua belah permukaan dada ayam.",
+          "Campurkan oregano, onion powder, garlic powder, chicken seasoning dan black pepper.",
+          "Lumur dan ramas lembut serbuk rempah pada isi ayam.",
+          "Bakar dalam air fryer pada suhu 180°C selama 7 minit.",
+          "Terbalikkan ayam dan sambung bakar 6 minit lagi hingga wangi beraroma herba."
+        ]
+      },
+      {
+        id: 3,
+        day: "Rabu",
+        title: "Smoky Onion Pepper Glaze Chicken",
+        category: "Rabu",
+        categoryName: "Rabu (Smoky Onion)",
+        desc: "Rasa berasap smoked paprika bergabung dengan manis onion powder dan kepedasan lada hitam kasar.",
+        temp: "180°C",
+        time: "14 min",
+        timeMins: 14,
+        servings: "400g (2 Orang)",
+        portion: "400g Dada Ayam",
+        powders: ["Smoked Paprika", "Onion Powder", "Black Pepper", "Chicken Seasoning"],
+        ingredients: [
+          "400g dada ayam (dipotong kepingan lebar)",
+          "1 sudu kecil Serbuk Smoked Paprika",
+          "1 sudu kecil Serbuk Onion Powder (Lotus's)",
+          "1/2 sudu kecil Serbuk Black Pepper Kasar",
+          "1/2 sudu kecil Chicken Seasoning",
+          "1 sudu besar Minyak Masak"
+        ],
+        steps: [
+          "Lumurkan kepingan ayam dengan 1 sudu minyak.",
+          "Gaulkan smoked paprika, onion powder, black pepper dan chicken seasoning di dalam mangkuk kecil.",
+          "Taburkan sekata pada kepingan ayam.",
+          "Susun dalam bakul air fryer dan bakar pada suhu 180°C selama 8 minit.",
+          "Terbalikkan ayam dan bakar lagi selama 6 minit sehingga terbentuk kerak karamel bawang yang lazat."
+        ]
+      },
+      {
+        id: 4,
+        day: "Khamis",
+        title: "Garlic Herb Savoury Chicken",
+        category: "Khamis",
+        categoryName: "Khamis (Garlic Herb)",
+        desc: "Resepi klasik ala restoran Barat; aroma padu garlic powder dan oregano dengan rasa gurih pekat chicken seasoning.",
+        temp: "180°C",
+        time: "14 min",
+        timeMins: 14,
+        servings: "400g (2 Orang)",
+        portion: "400g Dada Ayam",
+        powders: ["Garlic Powder", "Oregano", "Chicken Seasoning", "Black Pepper"],
+        ingredients: [
+          "400g dada ayam (dikelar silang)",
+          "1 sudu kecil Serbuk Garlic Powder (Lotus's)",
+          "1 sudu kecil Oregano",
+          "1/2 sudu kecil Chicken Seasoning",
+          "1/2 sudu kecil Black Pepper",
+          "1 sudu besar Minyak Masak / Minyak Zaitun"
+        ],
+        steps: [
+          "Lumurkan minyak ke seluruh bahagian ayam.",
+          "Campurkan garlic powder, oregano, chicken seasoning dan black pepper.",
+          "Gosokkan campuran ke dalam celah-celah kelaran dada ayam.",
+          "Bakar dalam air fryer pada suhu 180°C selama 8 minit.",
+          "Terbalikkan dan sambung bakar 6 minit lagi sehingga keemasan."
+        ]
+      },
+      {
+        id: 5,
+        day: "Jumaat",
+        title: "Smoky Spicy / BBQ Dry Rub Chicken",
+        category: "Jumaat",
+        categoryName: "Jumaat (Smoky Spicy)",
+        desc: "Menu penutup minggu yang padu! Gabungan lengkap smoked paprika, garlic, onion, black pepper & sedikit chili powder.",
+        temp: "180°C",
+        time: "15 min",
+        timeMins: 15,
+        servings: "400g (2 Orang)",
+        portion: "400g Dada Ayam",
+        powders: ["Smoked Paprika", "Garlic Powder", "Onion Powder", "Black Pepper", "Chilli Powder (Optional)"],
+        ingredients: [
+          "400g dada ayam (boneless breast)",
+          "1 sudu kecil Serbuk Smoked Paprika",
+          "1/2 sudu kecil Serbuk Garlic Powder (Lotus's)",
+          "1/2 sudu kecil Serbuk Onion Powder (Lotus's)",
+          "1/2 sudu kecil Chicken Seasoning",
+          "1/2 sudu kecil Black Pepper",
+          "1/2 sudu kecil Serbuk Cili (jika suka pedas)",
+          "1 sudu besar Minyak Masak"
+        ],
+        steps: [
+          "Sapu minyak pada dada ayam.",
+          "Campurkan semua rempah serbuk (smoked paprika, garlic, onion, black pepper, chicken seasoning dan serbuk cili).",
+          "Lumur tebal ke atas ayam untuk menghasilkan 'BBQ dry crust'.",
+          "Bakar dalam air fryer pada suhu 180°C selama 9 minit.",
+          "Terbalikkan dan sambung bakar 6 minit lagi sehingga warna merah gelap berasap dan super juicy."
+        ]
+      }
+    ];
+
+    // State Variables
+    let currentCategory = 'all';
+    let searchQuery = '';
+    let timerInterval = null;
+    let timerSeconds = 840; // 14 mins default
+    let isTimerRunning = false;
+
+    // DOM Elements
+    const recipesGrid = document.getElementById('recipesGrid');
+    const searchInput = document.getElementById('searchInput');
+    const categoryChips = document.getElementById('categoryChips');
+    const themeToggle = document.getElementById('themeToggle');
+
+    // Converter Elements
+    const ovenTempInput = document.getElementById('ovenTemp');
+    const ovenTimeInput = document.getElementById('ovenTime');
+    const afTempElem = document.getElementById('afTemp');
+    const afTimeElem = document.getElementById('afTime');
+
+    // Timer Elements
+    const timerDisplay = document.getElementById('timerDisplay');
+    const startTimerBtn = document.getElementById('startTimerBtn');
+    const resetTimerBtn = document.getElementById('resetTimerBtn');
+
+    // Modal Elements
+    const recipeModal = document.getElementById('recipeModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalSpecs = document.getElementById('modalSpecs');
+    const modalIngredients = document.getElementById('modalIngredients');
+    const modalSteps = document.getElementById('modalSteps');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+    const modalSetTimerBtn = document.getElementById('modalSetTimerBtn');
+    let currentActiveRecipe = null;
+
+    // Initialize Dashboard
+    function init() {
+      renderRecipes();
+      setupEventListeners();
+      updateConverter();
+      loadGroceryState();
+    }
+
+    // Render Recipe Cards
+    function renderRecipes() {
+      const filtered = recipes.filter(recipe => {
+        const matchesCategory = (currentCategory === 'all' || recipe.day === currentCategory);
+        const matchesSearch = recipe.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              recipe.day.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              recipe.desc.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                              recipe.powders.some(p => p.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                              recipe.ingredients.some(ing => ing.toLowerCase().includes(searchQuery.toLowerCase()));
+        return matchesCategory && matchesSearch;
+      });
+
+      if (filtered.length === 0) {
+        recipesGrid.innerHTML = `
+          <div style="grid-column: 1/-1; text-align:center; padding: 3rem 1rem; color: var(--text-muted);">
+            <i class="fa-solid fa-jar" style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+            <h3>Tiada resepi serbuk ditemui</h3>
+            <p>Cuba kata kunci seperti "paprika", "herb", "garlic", "Isnin".</p>
+          </div>
+        `;
+        return;
+      }
+
+      recipesGrid.innerHTML = filtered.map(recipe => `
+        <div class="recipe-card" data-id="${recipe.id}">
+          <div class="card-top">
+            <div class="tag-container">
+              <span class="day-badge"><i class="fa-solid fa-calendar-day"></i> ${recipe.day}</span>
+              <span class="portion-tag"><i class="fa-solid fa-scale-balanced"></i> ${recipe.portion}</span>
+            </div>
+            <span class="recipe-cat-tag">${recipe.categoryName}</span>
+          </div>
+          <div class="card-body">
+            <h3 class="recipe-title">${recipe.title}</h3>
+            <p class="recipe-desc">${recipe.desc}</p>
+            <div class="powder-badge-list">
+              ${recipe.powders.map(p => `<span class="powder-tag"><i class="fa-solid fa-sparkles"></i> ${p}</span>`).join('')}
+            </div>
+            <div class="recipe-specs">
+              <div class="spec-item">
+                <div class="spec-title"><i class="fa-solid fa-temperature-half"></i> Suhu</div>
+                <div class="spec-val">${recipe.temp}</div>
+              </div>
+              <div class="spec-item">
+                <div class="spec-title"><i class="fa-solid fa-clock"></i> Masa</div>
+                <div class="spec-val">${recipe.time}</div>
+              </div>
+              <div class="spec-item">
+                <div class="spec-title"><i class="fa-solid fa-users"></i> Porsi</div>
+                <div class="spec-val" style="color:var(--text-main); font-size:0.85rem;">2 Orang</div>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="chip-btn" onclick="setTimer(${recipe.timeMins})"><i class="fa-solid fa-stopwatch"></i> ${recipe.time}</button>
+            <button class="btn" style="padding: 0.45rem 1rem; font-size:0.8rem;" onclick="openRecipeModal(${recipe.id})">
+              Lihat Resepi <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Modal Details Logic
+    function openRecipeModal(id) {
+      const recipe = recipes.find(r => r.id === id);
+      if (!recipe) return;
+      currentActiveRecipe = recipe;
+
+      modalTitle.innerText = `${recipe.day}: ${recipe.title}`;
+      modalSpecs.innerHTML = `
+        <div class="spec-item">
+          <div class="spec-title"><i class="fa-solid fa-scale-balanced"></i> Berat Ayam</div>
+          <div class="spec-val">400g (2 Pax)</div>
+        </div>
+        <div class="spec-item">
+          <div class="spec-title"><i class="fa-solid fa-temperature-half"></i> Suhu Air Fryer</div>
+          <div class="spec-val">${recipe.temp}</div>
+        </div>
+        <div class="spec-item">
+          <div class="spec-title"><i class="fa-solid fa-clock"></i> Masa Masak</div>
+          <div class="spec-val">${recipe.time}</div>
+        </div>
+      `;
+
+      modalIngredients.innerHTML = recipe.ingredients.map(ing => `
+        <li class="checklist-item">
+          <input type="checkbox" id="chk_${Math.random().toString(36).substr(2, 6)}">
+          <label style="cursor:pointer;">${ing}</label>
+        </li>
+      `).join('');
+
+      modalSteps.innerHTML = recipe.steps.map(step => `
+        <li>${step}</li>
+      `).join('');
+
+      recipeModal.classList.add('open');
+    }
+
+    function closeModal() {
+      recipeModal.classList.remove('open');
+    }
+
+    // Converter Logic
+    function updateConverter() {
+      const oTemp = parseFloat(ovenTempInput.value) || 190;
+      const oTime = parseFloat(ovenTimeInput.value) || 20;
+
+      const convertedTemp = Math.round((oTemp - 10) / 5) * 5;
+      const convertedTime = Math.max(1, Math.round(oTime * 0.7));
+
+      afTempElem.innerText = `${convertedTemp}°C`;
+      afTimeElem.innerText = `${convertedTime} min`;
+    }
+
+    // Timer Logic
+    function formatTime(totalSeconds) {
+      const m = Math.floor(totalSeconds / 60);
+      const s = totalSeconds % 60;
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function updateTimerDisplay() {
+      timerDisplay.innerText = formatTime(timerSeconds);
+    }
+
+    function setTimer(minutes) {
+      clearInterval(timerInterval);
+      isTimerRunning = false;
+      timerSeconds = minutes * 60;
+      updateTimerDisplay();
+      startTimerBtn.innerHTML = '<i class="fa-solid fa-play"></i> Mula';
+    }
+
+    function toggleTimer() {
+      if (isTimerRunning) {
+        clearInterval(timerInterval);
+        isTimerRunning = false;
+        startTimerBtn.innerHTML = '<i class="fa-solid fa-play"></i> Sambung';
+      } else {
+        if (timerSeconds <= 0) timerSeconds = 840;
+        isTimerRunning = true;
+        startTimerBtn.innerHTML = '<i class="fa-solid fa-pause"></i> Berhenti';
+        timerInterval = setInterval(() => {
+          if (timerSeconds > 0) {
+            timerSeconds--;
+            updateTimerDisplay();
+          } else {
+            clearInterval(timerInterval);
+            isTimerRunning = false;
+            startTimerBtn.innerHTML = '<i class="fa-solid fa-play"></i> Mula';
+            alert('🔔 Masa memasak 400g dada ayam serbuk telah siap! Angkat dan rehatkan 3 minit.');
+          }
+        }, 1000);
+      }
+    }
+
+    function resetTimer() {
+      clearInterval(timerInterval);
+      isTimerRunning = false;
+      timerSeconds = 840;
+      updateTimerDisplay();
+      startTimerBtn.innerHTML = '<i class="fa-solid fa-play"></i> Mula';
+    }
+
+    // Grocery List Interactive Logic
+    function toggleGrocery(el) {
+      const chk = el.querySelector('input');
+      chk.checked = !chk.checked;
+      el.classList.toggle('checked', chk.checked);
+      saveGroceryState();
+    }
+
+    function resetCheckboxes() {
+      document.querySelectorAll('.grocery-item').forEach(item => {
+        item.classList.remove('checked');
+        const chk = item.querySelector('input');
+        if (chk) chk.checked = false;
+      });
+      localStorage.removeItem('airfryer_groceries_minimalist');
+    }
+
+    function saveGroceryState() {
+      const state = [];
+      document.querySelectorAll('.grocery-item').forEach((item, index) => {
+        const chk = item.querySelector('input');
+        if (chk && chk.checked) {
+          state.push(index);
+        }
+      });
+      localStorage.setItem('airfryer_groceries_minimalist', JSON.stringify(state));
+    }
+
+    function loadGroceryState() {
+      try {
+        const saved = JSON.parse(localStorage.getItem('airfryer_groceries_minimalist') || '[]');
+        const items = document.querySelectorAll('.grocery-item');
+        saved.forEach(idx => {
+          if (items[idx]) {
+            items[idx].classList.add('checked');
+            const chk = items[idx].querySelector('input');
+            if (chk) chk.checked = true;
+          }
+        });
+      } catch (e) {}
+    }
+
+    function copyGroceryList() {
+      const text = `🛒 SENARAI BELI DI LOTUS'S (TOTAL: RM 49.78)
+
+[1. PERLU DIBELI DI LOTUS'S]
+- Dada Ayam Segar Tanpa Tulang (2.0 kg) = RM 35.80 (RM17.90/kg)
+- Lotus's Garlic Powder (50g) = RM 6.99
+- Lotus's Onion Powder (45g) = RM 6.99
+
+[2. DAH ADA DI RUMAH (READY)]
+✅ Smoked Paprika
+✅ Black Pepper
+✅ Chicken Seasoning
+✅ Oregano
+✅ Minyak Masak / Minyak Zaitun
+
+📊 KOS HIDANGAN (400g / 2 Orang):
+- Kos Ayam 400g: RM 7.16
+- Kos Rempah: ~RM 0.44
+- Total 1 Kali Masak (2 Pax): RM 7.60 (~RM 3.80 seorang makan!)`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        alert('✅ Senarai beli Lotus\'s (RM49.78) berjaya disalin ke clipboard!');
+      }).catch(() => {
+        alert('Gagal menyalin. Sila salin secara manual.');
+      });
+    }
+
+    // Event Listeners
+    function setupEventListeners() {
+      // Search
+      searchInput.addEventListener('input', (e) => {
+        searchQuery = e.target.value;
+        renderRecipes();
+      });
+
+      // Categories
+      categoryChips.addEventListener('click', (e) => {
+        const btn = e.target.closest('.cat-chip');
+        if (!btn) return;
+        document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        currentCategory = btn.dataset.cat;
+        renderRecipes();
+      });
+
+      // Converter Inputs
+      ovenTempInput.addEventListener('input', updateConverter);
+      ovenTimeInput.addEventListener('input', updateConverter);
+
+      // Timer Controls
+      startTimerBtn.addEventListener('click', toggleTimer);
+      resetTimerBtn.addEventListener('click', resetTimer);
+
+      // Modal Controls
+      modalCloseBtn.addEventListener('click', closeModal);
+      recipeModal.addEventListener('click', (e) => {
+        if (e.target === recipeModal) closeModal();
+      });
+
+      modalSetTimerBtn.addEventListener('click', () => {
+        if (currentActiveRecipe) {
+          setTimer(currentActiveRecipe.timeMins);
+          closeModal();
+          window.scrollTo({ top: 350, behavior: 'smooth' });
+        }
+      });
+
+      // Theme toggle
+      themeToggle.addEventListener('click', () => {
+        const body = document.body;
+        const currentTheme = body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        body.setAttribute('data-theme', newTheme);
+        themeToggle.querySelector('i').className = newTheme === 'dark' ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+      });
+    }
+
+    // Run on load
+    init();
+  </script>
+</body>
+</html>

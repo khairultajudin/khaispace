@@ -55,6 +55,26 @@ export const projects: readonly Project[] = [
     href: "/projects/hidroponik/",
   },
   {
+    slug: "pixelpop",
+    title: "PixelPop: Mainan Refleks & Memori",
+    category: "3D Printing & Embedded Systems",
+    summary:
+      "Projek penyertaan Domechy Maker Challenge x Creality — mainan refleks interaktif berasaskan Cytron Maker ESP32 dan reka bentuk 3D mesra kanak-kanak.",
+    status: "In development",
+    visual: "prototype",
+    href: "/projects/pixelpop/",
+  },
+  {
+    slug: "air-fryer-dashboard",
+    title: "Air Fryer Dada Ayam Chef",
+    category: "Culinary & Lifestyle Utility",
+    summary:
+      "Dashboard interaktif 5 menu dada ayam seminggu (400g / 2 pax) menggunakan gabungan rempah minimalis, kalkulator kos Lotus's, dan pemasa masakan.",
+    status: "Completed",
+    visual: "software",
+    href: "/projects/air-fryer-dashboard/",
+  },
+  {
     slug: "3d-printing-prototyping",
     title: "3D Printing & Prototyping",
     category: "Engineering",
