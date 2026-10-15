@@ -27,12 +27,14 @@ export type Project = {
 export const projects: readonly Project[] = [
   {
     slug: "biztrack",
-    title: "BizTrack",
-    category: "Software / SaaS",
+    title: "BizTrack: Sistem Pengurusan Operasi & Yuran",
+    category: "Software / Multi-Tenant SaaS",
     summary:
-      "A business tracking concept exploring practical tools for everyday operations.",
-    status: "Draft concept",
+      "Sistem pengurusan operasi dan kutipan yuran berpusat untuk pusat tuisyen, akademi, dan gimnasium — lengkap dengan enjin templat dinamik, penjejak tunggakan, dan laporan audit A4.",
+    status: "Completed",
     visual: "software",
+    cover: "/projects/biztrack/assets/biztrack-dashboard.jpg",
+    href: "/projects/biztrack/",
   },
   {
     slug: "smart-rain-gauge",

@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BizTrack — Sistem Pengurusan Operasi & Kutipan Yuran Berpusat | KhaiSpace</title>
+  <meta name="description" content="Showcase & dokumentasi interaktif BizTrack: Platform SaaS multi-tenant pintar untuk pengurusan pelajar, kutipan yuran, dan laporan kewangan sedia audit.">
+  
+  <!-- Google Fonts: Inter, Manrope, JetBrains Mono & Font Awesome 6 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    /* KhaiSpace Architectural Design Tokens */
+    :root {
+      --background: #faf8f4;
+      --foreground: #0c2340;
+      --surface: #ffffff;
+      --surface-muted: #f4f1ea;
+      --muted: #4f5f77;
+      --border: #dde3ea;
+      --border-subtle: #edf2f7;
+      --primary: #2c6db2;
+      --primary-dark: #1b4d82;
+      --primary-soft: #e8f1fa;
+      --accent: #5fb88f;
+      --accent-strong: #2c7a58;
+      --accent-soft: #e6f4ed;
+      --accent-warm: #d97706;
+      --accent-warm-soft: #fef3c7;
+      --danger: #dc2626;
+      --danger-soft: #fee2e2;
+      --grid-line: rgba(44, 109, 178, 0.08);
+      --shadow-sm: 0 1px 3px 0 rgba(12, 35, 64, 0.04), 0 1px 2px -1px rgba(12, 35, 64, 0.04);
+      --shadow-md: 0 4px 12px -2px rgba(12, 35, 64, 0.06), 0 2px 6px -2px rgba(12, 35, 64, 0.04);
+      --shadow-lg: 0 12px 28px -6px rgba(12, 35, 64, 0.08), 0 4px 12px -4px rgba(12, 35, 64, 0.04);
+      --radius-lg: 12px;
+      --radius-md: 8px;
+      --radius-sm: 6px;
+      --transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--background);
+      background-image:
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+      background-size: 40px 40px;
+      color: var(--foreground);
+      min-height: 100vh;
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+      letter-spacing: -0.02em;
+      color: var(--foreground);
+    }
+
+    .font-mono, .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Architectural corner marks */
+    .has-corner-marks {
+      position: relative;
+    }
+    .has-corner-marks::before,
+    .has-corner-marks::after {
+      content: '';
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .has-corner-marks::before {
+      top: -1px;
+      left: -1px;
+      border-top: 1.5px solid rgba(44, 109, 178, 0.45);
+      border-left: 1.5px solid rgba(44, 109, 178, 0.45);
+    }
+    .has-corner-marks::after {
+      bottom: -1px;
+      right: -1px;
+      border-bottom: 1.5px solid rgba(44, 109, 178, 0.45);
+      border-right: 1.5px solid rgba(44, 109, 178, 0.45);
+    }
+
+    /* Top Sticky Navigation Bar */
+    .site-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(250, 248, 244, 0.94);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+    }
+
+    .site-nav-inner {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--foreground);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+
+    .nav-brand:hover {
+      color: var(--primary);
+    }
+
+    .nav-brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--primary-soft);
+      color: var(--primary-dark);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      overflow-x: auto;
+      padding: 4px 0;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: color 0.15s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--primary);
+    }
+
+    /* Main Container */
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 2.5rem 24px 80px;
+      width: 100%;
+    }
+
+    /* Hero Banner Card */
+    .hero-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--primary);
+      border-radius: var(--radius-lg);
+      padding: 3rem 2.5rem;
+      margin-bottom: 2.5rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+    }
+
+    .hero-top-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .eyebrow-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--primary);
+    }
+
+    .badge-live-saas {
+      background: var(--accent-soft);
+      border: 1px solid rgba(44, 122, 88, 0.25);
+      color: var(--accent-strong);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hero-title {
+      font-size: 2.6rem;
+      font-weight: 800;
+      line-height: 1.2;
+      color: var(--foreground);
+    }
+
+    .hero-title span {
+      color: var(--primary);
+    }
+
+    .hero-lead {
+      color: var(--muted);
+      font-size: 1.1rem;
+      max-width: 860px;
+      line-height: 1.65;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 0.5rem;
+    }
+
+    /* Buttons */
+    .btn {
+      background: var(--primary);
+      color: #fff;
+      border: 1px solid transparent;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--foreground);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--surface-muted);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-accent {
+      background: var(--accent-strong);
+      color: #fff;
+    }
+
+    .btn-accent:hover {
+      background: #205c42;
+    }
+
+    /* Key Metrics Highlights Grid */
+    .hero-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .stat-card {
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.15rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      transition: var(--transition);
+    }
+
+    .stat-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+    }
+
+    .stat-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-sm);
+      background: var(--primary-soft);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .stat-icon.green {
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+    }
+
+    .stat-icon.warm {
+      background: var(--accent-warm-soft);
+      color: var(--accent-warm);
+    }
+
+    .stat-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--foreground);
+      line-height: 1.2;
+    }
+
+    .stat-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    /* Section Subheadings */
+    .section-head {
+      margin-bottom: 1.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.85rem;
+    }
+
+    .section-head-title {
+      font-size: 1.55rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-head-title i {
+      color: var(--primary);
+    }
+
+    .section-head-sub {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    /* Showcase Screenshot Viewer */
+    .showcase-viewer {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem;
+      margin-bottom: 3.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .viewer-tab-nav {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 1.25rem;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .tab-btn {
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 0.6rem 1.25rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .screenshot-frame {
+      position: relative;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: var(--surface-muted);
+      box-shadow: var(--shadow-md);
+    }
+
+    .screenshot-img {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+
+    .screenshot-caption-box {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 1rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .caption-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--foreground);
+    }
+
+    .caption-desc {
+      font-size: 0.84rem;
+      color: var(--muted);
+    }
+
+    .tag-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 4px;
+      background: var(--primary-soft);
+      color: var(--primary-dark);
+    }
+
+    /* Core Features Grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3.5rem;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--primary);
+      border-radius: var(--radius-md);
+      padding: 1.75rem 1.5rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      transition: var(--transition);
+    }
+
+    .feature-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .feature-icon-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .feature-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-sm);
+      background: var(--primary-soft);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+    }
+
+    .feature-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .feature-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--foreground);
+    }
+
+    .feature-desc {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.6;
+      flex: 1;
+    }
+
+    .feature-points {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 0.75rem;
+    }
+
+    .feature-points li {
+      font-size: 0.82rem;
+      color: var(--foreground);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feature-points li i {
+      color: var(--accent-strong);
+      font-size: 0.75rem;
+    }
+
+    /* Interactive Template Switcher Simulator */
+    .simulator-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      margin-bottom: 3.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .sim-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .sim-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .sim-tab-btn {
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 0.65rem 1.25rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: var(--transition);
+    }
+
+    .sim-tab-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .sim-tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .sim-preview-screen {
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.5rem;
+    }
+
+    .sim-preview-topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.85rem;
+      margin-bottom: 1.25rem;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .sim-biz-name {
+      font-weight: 700;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--foreground);
+    }
+
+    .sim-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .sim-metric-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .sim-metric-lbl {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .sim-metric-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .sim-table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow-x: auto;
+    }
+
+    .sim-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+
+    .sim-table th {
+      background: var(--surface-muted);
+      padding: 10px 14px;
+      font-weight: 600;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .sim-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border-subtle);
+      color: var(--foreground);
+    }
+
+    .sim-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ROI / Time Saved Calculator */
+    .roi-calc-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2.25rem 2rem;
+      margin-bottom: 3.5rem;
+      box-shadow: var(--shadow-sm);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    @media (max-width: 860px) {
+      .roi-calc-box {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .calc-slider-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .calc-slider-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .calc-slider-head label {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--foreground);
+    }
+
+    .calc-val-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--primary-soft);
+      padding: 2px 10px;
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    .range-input {
+      width: 100%;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .calc-result-panel {
+      background: var(--surface-muted);
+      border: 1px dashed var(--primary);
+      border-radius: var(--radius-md);
+      padding: 1.75rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .roi-big-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2.6rem;
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1;
+    }
+
+    .roi-sub {
+      font-size: 0.85rem;
+      color: var(--muted);
+      max-width: 320px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
+    .roi-secondary-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      border-top: 1px solid var(--border);
+      padding-top: 1rem;
+    }
+
+    .roi-sec-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--accent-strong);
+    }
+
+    .roi-sec-lbl {
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+
+    /* Call To Action Card */
+    .cta-card {
+      background: linear-gradient(135deg, rgba(44, 109, 178, 0.08) 0%, rgba(95, 184, 143, 0.08) 100%);
+      border: 1px solid var(--primary);
+      border-radius: var(--radius-lg);
+      padding: 3rem 2rem;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .cta-title {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 0.75rem;
+      color: var(--foreground);
+    }
+
+    .cta-desc {
+      font-size: 1rem;
+      color: var(--muted);
+      max-width: 650px;
+      margin: 0 auto 1.75rem;
+      line-height: 1.6;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* Footer */
+    footer {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 24px 2rem;
+      margin-top: auto;
+    }
+
+    .footer-inner {
+      max-width: 1240px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: color 0.15s ease;
+    }
+
+    .footer-links a:hover {
+      color: var(--primary);
+    }
+
+    .footer-sub {
+      max-width: 1240px;
+      margin: 1.5rem auto 0;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-subtle);
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Sticky Navigation Bar -->
+  <nav class="site-nav">
+    <div class="site-nav-inner">
+      <a href="/projects" class="nav-brand">
+        <span>← KhaiSpace</span>
+        <span class="nav-brand-badge">SaaS Showcase</span>
+      </a>
+      <div class="nav-links">
+        <a href="#showcaseSection">Tinjauan Skrin</a>
+        <a href="#templateSection">Simulator Templat</a>
+        <a href="#kelebihanSection">Kelebihan Sistem</a>
+        <a href="#roiSection">Kalkulator Jimat Masa</a>
+        <a href="#hubungiSection">Dapatkan Demo</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <!-- Hero Card with Corner Marks -->
+    <header class="hero-card has-corner-marks">
+      <div class="hero-top-meta">
+        <span class="eyebrow-tag">
+          <i class="fa-solid fa-layer-group"></i> Multi-Tenant SaaS Platform • Domain-Driven Design
+        </span>
+        <span class="badge-live-saas">
+          <i class="fa-solid fa-circle-check"></i> Siap Dibina & Sedia Dilancarkan
+        </span>
+      </div>
+
+      <div>
+        <h1 class="hero-title">
+          BizTrack — Sistem Pengurusan Operasi & Kutipan Yuran Berpusat
+        </h1>
+        <p class="hero-lead">
+          Platform SaaS pintar khusus untuk <strong>Pusat Tuisyen, Akademi Kemahiran, Gimnasium, & Pusat Servis</strong>. Menggantikan fail Excel yang berselerak dengan automasi rekod bayaran, semakan yuran tertunggak, perbelanjaan operasi, dan laporan audit sedia cetak dalam Ringgit Malaysia (RM).
+        </p>
+      </div>
+
+      <div class="hero-actions">
+        <a href="#showcaseSection" class="btn">
+          <i class="fa-solid fa-display"></i> Terokai Antaramuka (Demo Visual)
+        </a>
+        <a href="#roiSection" class="btn btn-secondary">
+          <i class="fa-solid fa-calculator"></i> Kira Penjimatan Masa
+        </a>
+        <a href="#hubungiSection" class="btn btn-accent">
+          <i class="fa-solid fa-paper-plane"></i> Hubungi KhaiSpace
+        </a>
+      </div>
+
+      <!-- Highlights Grid -->
+      <div class="hero-stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon green"><i class="fa-solid fa-shield-halved"></i></div>
+          <div>
+            <div class="stat-num">100% RLS</div>
+            <div class="stat-label">Pengasingan Data Pangkalan Data</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fa-solid fa-arrows-split-up-and-left"></i></div>
+          <div>
+            <div class="stat-num">3 Templat</div>
+            <div class="stat-label">Tuisyen, Gim & Bengkel Servis</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon warm"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+          <div>
+            <div class="stat-num">1-Klik Audit</div>
+            <div class="stat-label">Laporan Kewangan Format Cetak A4</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon"><i class="fa-solid fa-bolt"></i></div>
+          <div>
+            <div class="stat-num">&lt; 1.5s</div>
+            <div class="stat-label">Masa Muat Pantas (React 19 + Vite)</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- SECTION: Tinjauan Skrin & Tangkapan Skrin Sebenar (Screenshot Showcase) -->
+    <section class="showcase-viewer has-corner-marks" id="showcaseSection">
+      <div class="section-head">
+        <div>
+          <h2 class="section-head-title">
+            <i class="fa-solid fa-display"></i> Tangkapan Skrin & Hasil Antaramuka Sebenar
+          </h2>
+          <p class="section-head-sub">Direka bentuk dengan teliti untuk keselesaan pentadbir — bersih, intuitif dan tanpa sebarang kekusutan.</p>
+        </div>
+      </div>
+
+      <!-- Tab Buttons -->
+      <div class="viewer-tab-nav">
+        <button class="tab-btn active" onclick="switchScreenshot('dashboard')">
+          <i class="fa-solid fa-chart-pie"></i> 1. Papan Pemuka Eksekutif (Dashboard KPI)
+        </button>
+        <button class="tab-btn" onclick="switchScreenshot('analytics')">
+          <i class="fa-solid fa-file-invoice-dollar"></i> 2. Laporan Yuran & Penjejak Tunggakan
+        </button>
+      </div>
+
+      <!-- Frame -->
+      <div class="screenshot-frame">
+        <img id="viewerImage" src="/projects/biztrack/assets/biztrack-dashboard.jpg" alt="BizTrack Dashboard Interface" class="screenshot-img">
+        
+        <div class="screenshot-caption-box">
+          <div>
+            <div class="caption-title" id="captionTitle">Papan Pemuka Masa Nyata: Hasil, Pelajar & Tunggakan</div>
+            <div class="caption-desc" id="captionDesc">
+              Paparan pantas 4 kad metrik utama (Pelajar Aktif, Pengajar, Kutipan Bulan Ini RM 24,850, dan Amaran Tunggakan RM 1,400) berserta carta bar perbandingan Pendapatan vs Kos Operasi 6 bulan.
+            </div>
+          </div>
+          <span class="tag-badge" id="captionTag">MODUL: DASHBOARD & REVENUE</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: Interactive Business Template Simulator -->
+    <section class="simulator-box has-corner-marks" id="templateSection">
+      <div class="sim-header">
+        <div class="section-head">
+          <div>
+            <h2 class="section-head-title">
+              <i class="fa-solid fa-sliders"></i> Enjin Templat Bisnes Dinamik (Cuba Sendiri)
+            </h2>
+            <p class="section-head-sub">
+              Satu sistem, pelbagai jenis perniagaan. Klik butang templat di bawah untuk melihat bagaimana terminologi antaramuka BizTrack bertukar secara automatik:
+            </p>
+          </div>
+        </div>
+
+        <div class="sim-tabs">
+          <button class="sim-tab-btn active" id="btnTuition" onclick="setSimTemplate('tuition')">
+            <i class="fa-solid fa-graduation-cap"></i> 1. Pusat Tuisyen & Akademi
+          </button>
+          <button class="sim-tab-btn" id="btnGym" onclick="setSimTemplate('gym')">
+            <i class="fa-solid fa-dumbbell"></i> 2. Gimnasium & Kelab Fitness
+          </button>
+          <button class="sim-tab-btn" id="btnWorkshop" onclick="setSimTemplate('workshop')">
+            <i class="fa-solid fa-wrench"></i> 3. Bengkel & Pusat Servis
+          </button>
+        </div>
+      </div>
+
+      <!-- Dynamic Screen Simulation -->
+      <div class="sim-preview-screen">
+        <div class="sim-preview-topbar">
+          <div class="sim-biz-name">
+            <i class="fa-solid fa-building" style="color:var(--primary);"></i>
+            <span id="simBizName">Akademi Mega Pintar</span>
+          </div>
+          <div style="font-size:0.8rem; color:var(--muted); font-weight:600;">
+            Templat Aktif: <span class="tag-badge" id="simBadge">Tuition Centre</span>
+          </div>
+        </div>
+
+        <div class="sim-metrics-grid">
+          <div class="sim-metric-card">
+            <div class="sim-metric-lbl" id="simLbl1">Pelajar Berdaftar</div>
+            <div class="sim-metric-val" id="simVal1">148 Orang</div>
+          </div>
+          <div class="sim-metric-card">
+            <div class="sim-metric-lbl" id="simLbl2">Pengajar / Tutor</div>
+            <div class="sim-metric-val" id="simVal2">12 Guru</div>
+          </div>
+          <div class="sim-metric-card">
+            <div class="sim-metric-lbl" id="simLbl3">Kelas Berjalan</div>
+            <div class="sim-metric-val" id="simVal3">18 Kelas</div>
+          </div>
+          <div class="sim-metric-card">
+            <div class="sim-metric-lbl" id="simLbl4">Yuran Terkumpul (Bulan Ini)</div>
+            <div class="sim-metric-val" style="color:var(--accent-strong);" id="simVal4">RM 24,850</div>
+          </div>
+        </div>
+
+        <div class="sim-table-wrap">
+          <table class="sim-table">
+            <thead>
+              <tr>
+                <th id="thCol1">Nama Pelajar</th>
+                <th id="thCol2">Kelas / Kursus</th>
+                <th id="thCol3">Tutor Bertanggungjawab</th>
+                <th id="thCol4">Kadar Yuran</th>
+                <th>Status Bayaran</th>
+              </tr>
+            </thead>
+            <tbody id="simTableBody">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: 6 Kelebihan Utama Sistem BizTrack -->
+    <section class="has-corner-marks" id="kelebihanSection" style="margin-bottom: 3.5rem;">
+      <div class="section-head">
+        <div>
+          <h2 class="section-head-title">
+            <i class="fa-solid fa-award"></i> 6 Kelebihan Utama Mengapa Bisnes Anda Perlukan BizTrack
+          </h2>
+          <p class="section-head-sub">Selesaikan masalah pengurusan rekod manual yang memakan masa dan berisiko kehilangan pendapatan.</p>
+        </div>
+      </div>
+
+      <div class="features-grid">
+        <!-- Feature 1 -->
+        <div class="feature-card">
+          <div class="feature-icon-bar">
+            <div class="feature-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <span class="feature-num">01 / KESELAMATAN</span>
+          </div>
+          <h3 class="feature-title">Multi-Tenant Row Level Security (RLS)</h3>
+          <p class="feature-desc">
+            Setiap penyewa mempunyai persekitaran terpencil di peringkat pangkalan data PostgreSQL Supabase. Dasar RLS memastikan data pelanggan anda 100% selamat tanpa risiko kebocoran antara bisnes.
+          </p>
+          <ul class="feature-points">
+            <li><i class="fa-solid fa-check"></i> Pengasingan data automatik berasaskan `business_id`</li>
+            <li><i class="fa-solid fa-check"></i> Pengesahan sesi selamat berstandard bank</li>
+          </ul>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="feature-card">
+          <div class="feature-icon-bar">
+            <div class="feature-icon"><i class="fa-solid fa-receipt"></i></div>
+            <span class="feature-num">02 / KEWANGAN</span>
+          </div>
+          <h3 class="feature-title">Penjejak Yuran & Amaran Tunggakan</h3>
+          <p class="feature-desc">
+            Ketahui serta-merta pelanggan yang belum melunaskan yuran bulanan. Sistem mengkategorikan kutipan (Paid vs Pending vs Overdue) supaya aliran tunai bisnes anda sentiasa positif.
+          </p>
+          <ul class="feature-points">
+            <li><i class="fa-solid fa-check"></i> Rekod kaedah Tunai, DuitNow, Kad & Online Transfer</li>
+            <li><i class="fa-solid fa-check"></i> Elakkan kerugian ribuan Ringgit akibat rekod tercicir</li>
+          </ul>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="feature-card">
+          <div class="feature-icon-bar">
+            <div class="feature-icon"><i class="fa-solid fa-print"></i></div>
+            <span class="feature-num">03 / AUDIT</span>
+          </div>
+          <h3 class="feature-title">Laporan Kewangan A4 Sedia Cetak</h3>
+          <p class="feature-desc">
+            Tiada lagi pening kepala apabila tiba musim pemfailan cukai atau audit tahunan. BizTrack menyediakan penjana laporan ringkasan Untung Bersih (Net Profit) yang dioptimumkan terus untuk cetakan kertas A4.
+          </p>
+          <ul class="feature-points">
+            <li><i class="fa-solid fa-check"></i> Penapis fleksibel mengikut bulan, tahun & kelas</li>
+            <li><i class="fa-solid fa-check"></i> Susun atur PDF/Print mesra juruaudit bertauliah</li>
+          </ul>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="feature-card">
+          <div class="feature-icon-bar">
+            <div class="feature-icon"><i class="fa-solid fa-file-csv"></i></div>
+            <span class="feature-num">04 / MIGRASI</span>
+          </div>
+          <h3 class="feature-title">Enjin Import Data CSV & RinggitPay</h3>
+          <p class="feature-desc">
+            Sudah ada senarai pelajar dalam fail Excel lama? BizTrack dibina dengan parser pintar PapaParse untuk memuat naik data pukal dalam beberapa saat tanpa perlu menaip semula satu persatu.
+          </p>
+          <ul class="feature-points">
+            <li><i class="fa-solid fa-check"></i> Sokongan format CSV standard dan penyata bank</li>
+            <li><i class="fa-solid fa-check"></i> Validasi data automatik mengelakkan rekod pendua</li>
+          </ul>
+        </div>
+
+        <!-- Feature 5 -->
+        <div class="feature-card">
+          <div class="feature-icon-bar">
+            <div class="feature-icon"><i class="fa-solid fa-cubes"></i></div>
+            <span class="feature-num">05 / MODULAR</span>
+          </div>
+          <h3 class="feature-title">Arkitektur Modular Bebas Pilihan</h3>
+          <p class="feature-desc">
+            Tidak perlukan modul Pengajar atau Kelas? Anda boleh menyahaktifkan mana-mana bahagian dari halaman Tetapan. Antaramuka akan menyembunyikan pautan yang tidak digunakan agar skrin kekal ringkas.
+          </p>
+          <ul class="feature-points">
+            <li><i class="fa-solid fa-check"></i> Kawalan laluan selamat menerusi `ModuleRoute`</li>
+            <li><i class="fa-solid fa-check"></i> Pengalaman pengguna disesuaikan mengikut saiz organisasi</li>
+          </ul>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="feature-card">
+          <div class="feature-icon-bar">
+            <div class="feature-icon"><i class="fa-solid fa-gauge-high"></i></div>
+            <span class="feature-num">06 / PRESTASI</span>
+          </div>
+          <h3 class="feature-title">Prestasi Pantas & Ringan (Zero Bloat)</h3>
+          <p class="feature-desc">
+            Dibina di atas enjin moden React 19 + Vite dengan reka bentuk CSS tulen. Laman dibuka sepantas kilat walaupun menggunakan telefon pintar atau talian internet yang perlahan di cawangan.
+          </p>
+          <ul class="feature-points">
+            <li><i class="fa-solid fa-check"></i> Tiada kebergantungan perpustakaan UI yang lambat</li>
+            <li><i class="fa-solid fa-check"></i> Antaramuka responsif untuk laptop, tablet & telefon</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: Interactive ROI / Time Saved Calculator -->
+    <section class="roi-calc-box has-corner-marks" id="roiSection">
+      <div>
+        <div class="eyebrow-tag" style="margin-bottom:8px;">
+          <i class="fa-solid fa-calculator"></i> Kalkulator Penjimatan Pentadbiran
+        </div>
+        <h2 style="font-size:1.8rem; font-weight:800; margin-bottom:0.75rem;">
+          Berapa Banyak Masa & Wang Yang BizTrack Boleh Jimatkan?
+        </h2>
+        <p style="font-size:0.9rem; color:var(--muted); margin-bottom:1.5rem; line-height:1.6;">
+          Urusan merekod bayaran manual, menyemak resit WhatsApp, dan mengira baki akhir bulan mengambil masa berharga yang sepatutnya digunakan untuk mengembangkan perniagaan anda.
+        </p>
+
+        <div class="calc-slider-group">
+          <div class="calc-slider-head">
+            <label for="studentCount">Bilangan Pelajar / Klien Aktif:</label>
+            <span class="calc-val-pill" id="valStudents">150 Orang</span>
+          </div>
+          <input type="range" id="studentCount" min="20" max="600" step="10" value="150" class="range-input" oninput="calculateROI()">
+        </div>
+
+        <div class="calc-slider-group">
+          <div class="calc-slider-head">
+            <label for="manualHours">Masa Semak Resit Seminggu (Jam):</label>
+            <span class="calc-val-pill" id="valHours">8 Jam</span>
+          </div>
+          <input type="range" id="manualHours" min="2" max="25" step="1" value="8" class="range-input" oninput="calculateROI()">
+        </div>
+      </div>
+
+      <!-- Result Display -->
+      <div class="calc-result-panel">
+        <div>
+          <div style="font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); margin-bottom:6px;">
+            Masa Pentadbiran Dijimatkan Setiap Bulan
+          </div>
+          <div class="roi-big-num" id="resHoursSaved">26 Jam</div>
+          <div class="roi-sub">Lebih kurang 3–4 hari bekerja penuh dapat dipulangkan semula kepada fokus bisnes anda!</div>
+        </div>
+
+        <div class="roi-secondary-stats">
+          <div>
+            <div class="roi-sec-val" id="resCostSaved">RM 7,800</div>
+            <div class="roi-sec-lbl">Anggaran Nilai Produktiviti Setahun</div>
+          </div>
+          <div>
+            <div class="roi-sec-val" style="color:var(--primary);" id="resLossPrevented">RM 4,200</div>
+            <div class="roi-sec-lbl">Potensi Elak Yuran Tercicir Setahun</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION: Call to Action -->
+    <section class="cta-card has-corner-marks" id="hubungiSection">
+      <h2 class="cta-title">Bersedia Memudahkan Operasi Perniagaan Anda?</h2>
+      <p class="cta-desc">
+        BizTrack telah sedia untuk dihubungkan ke pangkalan data Supabase perniagaan anda atau disesuaikan mengikut keperluan khusus organisasi anda. Hubungi pasukan KhaiSpace untuk sesi demo atau integrasi segera.
+      </p>
+      <div class="cta-buttons">
+        <a href="/contact" class="btn">
+          <i class="fa-solid fa-comments"></i> Bincang Pemasangan Bersama KhaiSpace
+        </a>
+        <a href="/projects" class="btn btn-secondary">
+          <i class="fa-solid fa-arrow-left"></i> Kembali ke Projek KhaiSpace
+        </a>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a href="/projects" class="nav-brand">
+          <span>← KhaiSpace</span>
+          <span class="nav-brand-badge">SaaS Showcase</span>
+        </a>
+      </div>
+      <ul class="footer-links">
+        <li><a href="/projects"><i class="fa-solid fa-arrow-left"></i> Portal Projek KhaiSpace</a></li>
+        <li><a href="#showcaseSection">Tinjauan Skrin</a></li>
+        <li><a href="#templateSection">Simulator Templat</a></li>
+        <li><a href="#roiSection">Kalkulator Jimat Masa</a></li>
+        <li><a href="/contact">Hubungi Kami</a></li>
+      </ul>
+    </div>
+    <div class="footer-sub">
+      &copy; 2026 BizTrack Showcase — KhaiSpace Software & Multi-Tenant SaaS Architecture.
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script>
+    // Screenshot Switcher Data
+    const screenshots = {
+      dashboard: {
+        src: '/projects/biztrack/assets/biztrack-dashboard.jpg',
+        title: 'Papan Pemuka Masa Nyata: Hasil, Pelajar & Tunggakan',
+        desc: 'Paparan pantas 4 kad metrik utama (Pelajar Aktif, Pengajar, Kutipan Bulan Ini RM 24,850, dan Amaran Tunggakan RM 1,400) berserta carta bar perbandingan Pendapatan vs Kos Operasi 6 bulan.',
+        tag: 'MODUL: DASHBOARD & REVENUE'
+      },
+      analytics: {
+        src: '/projects/biztrack/assets/biztrack-analytics.jpg',
+        title: 'Pengurusan Pengebilan Pelajar & Ringkasan Sedia Audit',
+        desc: 'Jadual terperinci pendaftaran kursus (Add Math, Sains), kadar yuran sebulan dalam Ringgit Malaysia (RM), penapis status bayaran, dan butang 1-klik cetak laporan audit A4.',
+        tag: 'MODUL: BILLING & AUDIT'
+      }
+    };
+
+    function switchScreenshot(key) {
+      const data = screenshots[key];
+      if (!data) return;
+
+      const img = document.getElementById('viewerImage');
+      const title = document.getElementById('captionTitle');
+      const desc = document.getElementById('captionDesc');
+      const tag = document.getElementById('captionTag');
+
+      img.src = data.src;
+      title.innerText = data.title;
+      desc.innerText = data.desc;
+      tag.innerText = data.tag;
+
+      document.querySelectorAll('.viewer-tab-nav .tab-btn').forEach(b => b.classList.remove('active'));
+      const activeBtn = event.currentTarget || document.querySelector(`[onclick*="${key}"]`);
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    // Business Template Simulator Data
+    const templateData = {
+      tuition: {
+        bizName: 'Pusat Tuisyen Cemerlang Gemilang',
+        badge: 'Tuition Centre',
+        lbl1: 'Pelajar Aktif',
+        val1: '148 Orang',
+        lbl2: 'Tutor / Pengajar',
+        val2: '12 Guru',
+        lbl3: 'Kelas Berjalan',
+        val3: '18 Kelas',
+        lbl4: 'Kutipan Yuran Bulanan',
+        val4: 'RM 24,850',
+        th1: 'Nama Pelajar',
+        th2: 'Kelas / Subjek',
+        th3: 'Guru Pembimbing',
+        th4: 'Yuran Bulanan',
+        rows: [
+          { c1: 'Ahmad Daniel Bin Rosli', c2: 'Tingkatan 5 Add Math', c3: 'Cikgu Hisham', c4: 'RM 180', status: 'Paid', statusClass: 'background:var(--accent-soft); color:var(--accent-strong);' },
+          { c1: 'Siti Nur Aisyah', c2: 'Tingkatan 4 Fizik', c3: 'Dr. Fauzi', c4: 'RM 170', status: 'Paid', statusClass: 'background:var(--accent-soft); color:var(--accent-strong);' },
+          { c1: 'Chong Wei Jie', c2: 'Tahun 6 Matematik DLP', c3: 'Puan Mary', c4: 'RM 140', status: 'Pending', statusClass: 'background:var(--accent-warm-soft); color:var(--accent-warm);' },
+          { c1: 'Kavitha A/P Mohan', c2: 'Tingkatan 5 Kimia', c3: 'Cikgu Hisham', c4: 'RM 180', status: 'Pending', statusClass: 'background:var(--accent-warm-soft); color:var(--accent-warm);' }
+        ]
+      },
+      gym: {
+        bizName: 'Titan Fitness & Crossfit Hub',
+        badge: 'Gym & Fitness',
+        lbl1: 'Ahli Aktif (Members)',
+        val1: '230 Ahli',
+        lbl2: 'Jurulatih (Coaches)',
+        val2: '8 Coach',
+        lbl3: 'Sesi / Slot Program',
+        val3: '24 Slot',
+        lbl4: 'Hasil Keahlian (Bulan Ini)',
+        val4: 'RM 32,200',
+        th1: 'Nama Ahli (Member)',
+        th2: 'Program / Pakej',
+        th3: 'Jurulatih Khusus',
+        th4: 'Yuran Bulanan',
+        rows: [
+          { c1: 'Mohd Faizul', c2: 'VIP Unlimited Access', c3: 'Coach Ray', c4: 'RM 220', status: 'Paid', statusClass: 'background:var(--accent-soft); color:var(--accent-strong);' },
+          { c1: 'Jessica Lim', c2: 'Pilates Morning Class', c3: 'Coach Sarah', c4: 'RM 160', status: 'Paid', statusClass: 'background:var(--accent-soft); color:var(--accent-strong);' },
+          { c1: 'Hakimi Syakir', c2: 'Strength & Conditioning', c3: 'Coach Ray', c4: 'RM 190', status: 'Pending', statusClass: 'background:var(--accent-warm-soft); color:var(--accent-warm);' },
+          { c1: 'Marcus Tan', c2: 'Basic Gym Pass', c3: 'Floor Coach', c4: 'RM 110', status: 'Paid', statusClass: 'background:var(--accent-soft); color:var(--accent-strong);' }
+        ]
+      },
+      workshop: {
+        bizName: 'Apex Motor & Car Diagnostic',
+        badge: 'Workshop & Garage',
+        lbl1: 'Klien Berdaftar',
+        val1: '95 Pelanggan',
+        lbl2: 'Mekanik & Juruteknik',
+        val2: '6 Mekanik',
+        lbl3: 'Job Order / Servis Aktif',
+        val3: '14 Kenderaan',
+        lbl4: 'Invois Terkumpul',
+        val4: 'RM 41,500',
+        th1: 'Nama Klien / No Plat',
+        th2: 'Jenis Servis / Pakej',
+        th3: 'Mekanik Mengetuai',
+        th4: 'Anggaran Invois',
+        rows: [
+          { c1: 'En. Razak (VDE 8821)', c2: 'Major Service & Timing Belt', c3: 'Pak Tam', c4: 'RM 850', status: 'Paid', statusClass: 'background:var(--accent-soft); color:var(--accent-strong);' },
+          { c1: 'Lim Kah Hoe (WYY 1092)', c2: 'Brake Pad & Suspension', c3: 'Ah Seng', c4: 'RM 620', status: 'Paid', statusClass: 'background:var(--accent-soft); color:var(--accent-strong);' },
+          { c1: 'Syed Alwi (QAA 3390)', c2: 'Aircond Overhaul', c3: 'Pak Tam', c4: 'RM 450', status: 'Pending', statusClass: 'background:var(--accent-warm-soft); color:var(--accent-warm);' },
+          { c1: 'Datin Fauziah (BNE 77)', c2: 'Full Diagnostic Scan', c3: 'Mekanik Din', c4: 'RM 280', status: 'Paid', statusClass: 'background:var(--accent-soft); color:var(--accent-strong);' }
+        ]
+      }
+    };
+
+    function setSimTemplate(type) {
+      const data = templateData[type];
+      if (!data) return;
+
+      document.getElementById('simBizName').innerText = data.bizName;
+      document.getElementById('simBadge').innerText = data.badge;
+
+      document.getElementById('simLbl1').innerText = data.lbl1;
+      document.getElementById('simVal1').innerText = data.val1;
+      document.getElementById('simLbl2').innerText = data.lbl2;
+      document.getElementById('simVal2').innerText = data.val2;
+      document.getElementById('simLbl3').innerText = data.lbl3;
+      document.getElementById('simVal3').innerText = data.val3;
+      document.getElementById('simLbl4').innerText = data.lbl4;
+      document.getElementById('simVal4').innerText = data.val4;
+
+      document.getElementById('thCol1').innerText = data.th1;
+      document.getElementById('thCol2').innerText = data.th2;
+      document.getElementById('thCol3').innerText = data.th3;
+      document.getElementById('thCol4').innerText = data.th4;
+
+      const tbody = document.getElementById('simTableBody');
+      tbody.innerHTML = data.rows.map(r => `
+        <tr>
+          <td><strong>${r.c1}</strong></td>
+          <td>${r.c2}</td>
+          <td>${r.c3}</td>
+          <td style="font-family:'JetBrains Mono', monospace; font-weight:700;">${r.c4}</td>
+          <td>
+            <span style="display:inline-block; padding:2px 8px; border-radius:4px; font-weight:700; font-size:0.75rem; ${r.statusClass}">
+              ${r.status}
+            </span>
+          </td>
+        </tr>
+      `).join('');
+
+      document.querySelectorAll('.sim-tabs .sim-tab-btn').forEach(b => b.classList.remove('active'));
+      const activeBtn = event.currentTarget || document.querySelector(`[onclick*="${type}"]`);
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    // Interactive ROI Calculator
+    function calculateROI() {
+      const students = parseInt(document.getElementById('studentCount').value, 10);
+      const hoursPerWeek = parseInt(document.getElementById('manualHours').value, 10);
+
+      document.getElementById('valStudents').innerText = `${students} Orang`;
+      document.getElementById('valHours').innerText = `${hoursPerWeek} Jam`;
+
+      // Calculation logic:
+      // BizTrack automates ~80% of repetitive verification & ledgering
+      const monthlyHoursManual = hoursPerWeek * 4.3;
+      const hoursSavedMonthly = Math.round(monthlyHoursManual * 0.78);
+      const costSavedYearly = Math.round(hoursSavedMonthly * 25 * 12); // RM25/hr admin rate
+      // Estimated untracked fee leakage prevented: approx 1.5% of total revenue assuming avg RM150/student
+      const estimatedLeakagePrevented = Math.round(students * 150 * 12 * 0.02);
+
+      document.getElementById('resHoursSaved').innerText = `${hoursSavedMonthly} Jam`;
+      document.getElementById('resCostSaved').innerText = `RM ${costSavedYearly.toLocaleString()}`;
+      document.getElementById('resLossPrevented').innerText = `RM ${estimatedLeakagePrevented.toLocaleString()}`;
+    }
+
+    // Init
+    setSimTemplate('tuition');
+    calculateROI();
+  </script>
+</body>
+</html>
