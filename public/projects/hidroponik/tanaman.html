@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Direktori & Hab Penyelidikan Tanaman Hidroponik — Khai Space</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --background: #faf8f4;
+      --foreground: #0c2340;
+      --surface: #ffffff;
+      --surface-muted: #f4f1ea;
+      --muted: #4f5f77;
+      --border: #dde3ea;
+      --border-subtle: #edf2f7;
+      --primary: #1e704a;
+      --primary-dark: #124b31;
+      --primary-foreground: #ffffff;
+      --primary-soft: #eaf6f0;
+      --accent: #22c55e;
+      --accent-strong: #15803d;
+      --accent-soft: #ecfdf5;
+      --accent-warm: #b45309;
+      --accent-warm-soft: #fef3c7;
+      --info-blue: #0284c7;
+      --info-blue-soft: #e0f2fe;
+      --danger: #dc2626;
+      --danger-soft: #fee2e2;
+      --grid-line: rgba(30, 112, 74, 0.08);
+      --shadow-sm: 0 1px 3px 0 rgba(12, 35, 64, 0.04), 0 1px 2px -1px rgba(12, 35, 64, 0.04);
+      --shadow-md: 0 4px 12px -2px rgba(12, 35, 64, 0.06), 0 2px 6px -2px rgba(12, 35, 64, 0.04);
+      --shadow-lg: 0 12px 28px -6px rgba(12, 35, 64, 0.08), 0 4px 12px -4px rgba(12, 35, 64, 0.04);
+      --radius-lg: 12px;
+      --radius-md: 8px;
+      --radius-sm: 6px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--background);
+      background-image:
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+      background-size: 40px 40px;
+      color: var(--foreground);
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+      letter-spacing: -0.02em;
+      color: var(--foreground);
+    }
+
+    /* Architectural corner marks */
+    .has-corner-marks {
+      position: relative;
+    }
+    .has-corner-marks::before,
+    .has-corner-marks::after {
+      content: '';
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .has-corner-marks::before {
+      top: -1px;
+      left: -1px;
+      border-top: 1.5px solid rgba(30, 112, 74, 0.45);
+      border-left: 1.5px solid rgba(30, 112, 74, 0.45);
+    }
+    .has-corner-marks::after {
+      bottom: -1px;
+      right: -1px;
+      border-bottom: 1.5px solid rgba(30, 112, 74, 0.45);
+      border-right: 1.5px solid rgba(30, 112, 74, 0.45);
+    }
+
+    /* Container */
+    .container {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 20px 80px;
+    }
+
+    /* Top Sticky Navigation Bar */
+    .site-nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(250, 248, 244, 0.94);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    .nav-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--foreground);
+      font-family: 'Manrope', sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-mark {
+      position: relative;
+      display: block;
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid var(--primary);
+    }
+    .brand-mark-dot {
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+    }
+
+    .nav-breadcrumb {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .nav-breadcrumb a {
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .nav-breadcrumb a:hover {
+      color: var(--foreground);
+    }
+    .nav-divider {
+      color: var(--border);
+    }
+    .breadcrumb-current {
+      color: var(--foreground);
+      font-weight: 600;
+    }
+
+    .nav-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .project-switcher {
+      display: inline-flex;
+      align-items: center;
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .switcher-btn {
+      padding: 5px 12px;
+      font-size: 0.78rem;
+      font-family: 'Manrope', sans-serif;
+      font-weight: 600;
+      text-decoration: none;
+      border-radius: 4px;
+      color: var(--muted);
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .switcher-btn.active {
+      background: var(--surface);
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+      font-weight: 700;
+    }
+
+    .switcher-btn:hover:not(.active) {
+      color: var(--foreground);
+    }
+
+    /* Hero Header Card */
+    header.hero-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 36px 32px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--primary-soft);
+      border: 1px solid #bce6d3;
+      color: var(--primary);
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      font-family: 'Manrope', sans-serif;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--foreground);
+      letter-spacing: -0.03em;
+      line-height: 1.25;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.02rem;
+      line-height: 1.6;
+      max-width: 820px;
+    }
+
+    /* Interactive Category Tab Bar */
+    .category-nav-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 6px;
+      margin-bottom: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      position: sticky;
+      top: 60px;
+      z-index: 40;
+    }
+
+    .cat-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--muted);
+      padding: 9px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      font-family: 'Manrope', sans-serif;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .cat-btn:hover {
+      background: var(--surface-muted);
+      color: var(--foreground);
+    }
+
+    .cat-btn.active {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(30, 112, 74, 0.25);
+    }
+
+    .cat-content {
+      display: none;
+      animation: tabFadeIn 0.3s ease;
+    }
+
+    .cat-content.active {
+      display: block;
+    }
+
+    @keyframes tabFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Section Header */
+    .section-header-box {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .badge-count {
+      font-size: 0.75rem;
+      background: var(--primary-soft);
+      color: var(--primary);
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-family: 'Manrope', sans-serif;
+    }
+
+    /* Plant Card Grid */
+    .plant-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .plant-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .plant-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .plant-header {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border-subtle);
+      background: linear-gradient(135deg, #ffffff 0%, #faf8f4 100%);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .plant-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .plant-icon {
+      font-size: 1.6rem;
+      line-height: 1;
+    }
+
+    .plant-name {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--foreground);
+    }
+
+    .plant-sci {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .diff-badge {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-family: 'Manrope', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .diff-easy {
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+    }
+
+    .diff-med {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
+    .diff-adv {
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+    }
+
+    .plant-body {
+      padding: 16px 18px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .plant-desc {
+      font-size: 0.86rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .spec-table {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      background: var(--surface-muted);
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .spec-cell {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .spec-cell .label {
+      font-size: 0.68rem;
+      font-family: ui-monospace, monospace;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .spec-cell .value {
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--foreground);
+      font-family: 'Manrope', sans-serif;
+    }
+
+    .plant-tips {
+      font-size: 0.8rem;
+      color: var(--foreground);
+      background: #f0fdf4;
+      border: 1px solid #c7e5d6;
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      line-height: 1.45;
+    }
+
+    /* Special Showcase Box (Bawang Dapur Step-by-Step) */
+    .special-guide-card {
+      background: var(--surface);
+      border: 1.5px solid #a7f3d0;
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      margin-bottom: 28px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .step-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .step-box {
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      position: relative;
+    }
+
+    .step-num {
+      position: absolute;
+      top: -10px;
+      left: 14px;
+      background: var(--primary);
+      color: #ffffff;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 800;
+      font-family: 'Manrope', sans-serif;
+    }
+
+    .step-box h4 {
+      font-size: 0.92rem;
+      margin-top: 4px;
+      margin-bottom: 6px;
+      color: var(--foreground);
+    }
+
+    .step-box p {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    /* 3D Model Specs Box */
+    .model-spec-card {
+      background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+      border: 1.5px solid #bae6fd;
+      border-radius: var(--radius-lg);
+      padding: 26px;
+      margin-bottom: 24px;
+    }
+
+    /* Callout & Tables */
+    .callout-box {
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-size: 0.85rem;
+      line-height: 1.45;
+      margin-top: 14px;
+    }
+    .callout-tip {
+      background: var(--primary-soft);
+      border: 1px solid #c7e5d6;
+      color: #124b31;
+    }
+    .callout-warning {
+      background: var(--accent-warm-soft);
+      border: 1px solid #fde68a;
+      color: #78350f;
+    }
+
+    /* Site Footer */
+    footer.site-footer {
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      padding: 40px 20px 28px;
+      margin-top: 40px;
+    }
+
+    .footer-inner {
+      max-width: 1080px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .footer-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .footer-brand-title {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: var(--foreground);
+    }
+
+    .footer-brand-desc {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 18px;
+      font-size: 0.82rem;
+    }
+
+    .footer-links a {
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .footer-links a:hover {
+      color: var(--foreground);
+    }
+
+    .footer-bottom {
+      max-width: 1080px;
+      margin: 20px auto 0;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Sticky Navigation Bar -->
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+        <a href="/" class="brand-link">
+          <span class="brand-mark"><span class="brand-mark-dot"></span></span>
+          Khai Space
+        </a>
+        <span class="nav-divider">/</span>
+        <div class="nav-breadcrumb">
+          <a href="/projects">Projek</a>
+          <span class="nav-divider">/</span>
+          <a href="index.html">Hidroponik</a>
+          <span class="nav-divider">/</span>
+          <span class="breadcrumb-current">Hab Penyelidikan Tanaman</span>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <!-- 3-Way Project Switcher -->
+        <div class="project-switcher" title="Tukar Paparan Projek Hidroponik">
+          <a href="index.html" class="switcher-btn">
+            <span>🥬 Pak Choy</span>
+            <span style="font-size: 0.68rem; background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 999px;">Hari 26</span>
+          </a>
+          <a href="salad.html" class="switcher-btn">
+            <span>🥗 Salad Framoc</span>
+            <span style="font-size: 0.68rem; background: rgba(30, 112, 74, 0.15); color: #1e704a; padding: 1px 6px; border-radius: 999px;">Baru</span>
+          </a>
+          <a href="tanaman.html" class="switcher-btn active">
+            <span>🌱 Direktori Tanaman</span>
+            <span style="font-size: 0.68rem; background: var(--primary); color: #fff; padding: 1px 6px; border-radius: 999px;">Hab</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <!-- Hero Header -->
+    <header class="hero-card has-corner-marks">
+      <div class="hero-badge">🔬 Khai Space // Hab Penyelidikan Hidroponik Mendalam</div>
+      <h1>Direktori & Panduan Tanaman Hidroponik</h1>
+      <p class="subtitle">
+        Kajian saintifik & komprehensif bagi pelbagai jenis tanaman yang boleh dilaksanakan melalui kaedah hidroponik di rumah — daripada sayur daun pantas, herba masakan dapur, sehingga sayur berbuah berjangka panjang.
+      </p>
+    </header>
+
+    <!-- Top Category Tabs Navigation -->
+    <div class="category-nav-bar">
+      <button class="cat-btn active" id="btn-daun" onclick="switchCategory('daun')">
+        <span>🥬 1. Sayur Daun Cepat (Kratky)</span>
+      </button>
+      <button class="cat-btn" id="btn-herba" onclick="switchCategory('herba')">
+        <span>🧅 2. Herba Dapur & Projek Bawang</span>
+      </button>
+      <button class="cat-btn" id="btn-buah" onclick="switchCategory('buah')">
+        <span>🍅 3. Sayur Berbuah & Dutch Bucket</span>
+      </button>
+      <button class="cat-btn" id="btn-hardware" onclick="switchCategory('hardware')">
+        <span>🖨️ 4. Model 3D MakerWorld & Teknikal</span>
+      </button>
+      <button class="cat-btn" id="btn-elak" onclick="switchCategory('elak')">
+        <span>🚫 5. Tanaman Perlu Dielakkan</span>
+      </button>
+    </div>
+
+    <!-- ==================== TAB 1: SAYUR DAUN CEPAT ==================== -->
+    <div class="cat-content active" id="tab-daun">
+      <div class="section-header-box">
+        <div>
+          <h2>Kategori 1: Sayur Daun Hijau Cepat Tuai (Kaedah Pasif Kratky)</h2>
+          <p style="font-size:0.86rem; color:var(--muted);">Sangat sesuai menggunakan takung biru, balang kaca, atau bekas makanan tanpa pam elektrik.</p>
+        </div>
+        <span class="badge-count">7 Varieti Disyorkan</span>
+      </div>
+
+      <div class="plant-grid">
+        <!-- Kangkung -->
+        <div class="plant-card">
+          <div class="plant-header">
+            <div class="plant-title-wrap">
+              <span class="plant-icon">🌿</span>
+              <div>
+                <div class="plant-name">Kangkung</div>
+                <div class="plant-sci">Ipomoea aquatica</div>
+              </div>
+            </div>
+            <span class="diff-badge diff-easy">Paling Mudah</span>
+          </div>
+          <div class="plant-body">
+            <p class="plant-desc">
+              Tumbuhan separa akuatik secara semulajadi. Sangat lasak, tahan panas terik Malaysia, dan pertumbuhan akar putihnya sangat agresif. Hampir mustahil gagal dalam Kratky.
+            </p>
+            <div class="spec-table">
+              <div class="spec-cell"><span class="label">Tempoh Tuai</span><span class="value">20 – 25 Hari</span></div>
+              <div class="spec-cell"><span class="label">Sasaran EC</span><span class="value">1.4 – 2.0 mS/cm</span></div>
+              <div class="spec-cell"><span class="label">Sasaran pH</span><span class="value">5.5 – 6.5</span></div>
+              <div class="spec-cell"><span class="label">Sistem</span><span class="value">Takung Kratky</span></div>
+            </div>
+            <div class="plant-tips">
+              💡 <strong>Tip Pro:</strong> Semai 8–10 biji dalam satu net pot. Boleh tuai dengan memotong 3cm dari pangkal; batang bawah akan bertunas semula untuk tuaian kedua!
+            </div>
+          </div>
+        </div>
+
+        <!-- Sawi Hijau / Choy Sum -->
+        <div class="plant-card">
+          <div class="plant-header">
+            <div class="plant-title-wrap">
+              <span class="plant-icon">🥬</span>
+              <div>
+                <div class="plant-name">Sawi Hijau / Choy Sum</div>
+                <div class="plant-sci">Brassica rapa var. parachinensis</div>
+              </div>
+            </div>
+            <span class="diff-badge diff-easy">Mudah</span>
+          </div>
+          <div class="plant-body">
+            <p class="plant-desc">
+              Satu keluarga dengan Pak Choy anda. Pertumbuhan sangat cergas, batang rangup berair, dan sukakan cahaya matahari penuh.
+            </p>
+            <div class="spec-table">
+              <div class="spec-cell"><span class="label">Tempoh Tuai</span><span class="value">25 – 30 Hari</span></div>
+              <div class="spec-cell"><span class="label">Sasaran EC</span><span class="value">1.4 – 1.8 mS/cm</span></div>
+              <div class="spec-cell"><span class="label">Sasaran pH</span><span class="value">6.0 – 6.8</span></div>
+              <div class="spec-cell"><span class="label">Sistem</span><span class="value">Kratky / Takung Biru</span></div>
+            </div>
+            <div class="plant-tips">
+              💡 <strong>Tip Pro:</strong> Amalkan 1 pokok 1 net pot untuk mendapatkan batang sawi yang tebal berisi dan bebas penyakit.
+            </div>
+          </div>
+        </div>
+
+        <!-- Kailan -->
+        <div class="plant-card">
+          <div class="plant-header">
+            <div class="plant-title-wrap">
+              <span class="plant-icon">🌱</span>
+              <div>
+                <div class="plant-name">Kailan (Chinese Broccoli)</div>
+                <div class="plant-sci">Brassica oleracea var. alboglabra</div>
+              </div>
+            </div>
+            <span class="diff-badge diff-easy">Mudah</span>
+          </div>
+          <div class="plant-body">
+            <p class="plant-desc">
+              Sayur bernilai tinggi di restoran masakan Cina. Daun tebal berkilat dan batang manis rangup. Sangat tahan penyakit kulat berbanding sawi biasa.
+            </p>
+            <div class="spec-table">
+              <div class="spec-cell"><span class="label">Tempoh Tuai</span><span class="value">40 – 50 Hari</span></div>
+              <div class="spec-cell"><span class="label">Sasaran EC</span><span class="value">1.6 – 2.0 mS/cm</span></div>
+              <div class="spec-cell"><span class="label">Sasaran pH</span><span class="value">6.0 – 6.8</span></div>
+              <div class="spec-cell"><span class="label">Sistem</span><span class="value">Takung Kratky</span></div>
+            </div>
+            <div class="plant-tips">
+              💡 <strong>Tip Pro:</strong> Sukakan baja pekat sedikit pada fasa akhir untuk memaksimumkan ketebalan batang manisnya.
+            </div>
+          </div>
+        </div>
+
+        <!-- Bayam -->
+        <div class="plant-card">
+          <div class="plant-header">
+            <div class="plant-title-wrap">
+              <span class="plant-icon">🍃</span>
+              <div>
+                <div class="plant-name">Bayam (Hijau & Merah)</div>
+                <div class="plant-sci">Amaranthus tricolor</div>
+              </div>
+            </div>
+            <span class="diff-badge diff-med">Sederhana</span>
+          </div>
+          <div class="plant-body">
+            <p class="plant-desc">
+              Kaya dengan zat besi. Menghasilkan daun lembut yang sangat sedap untuk sup. Bayam merah memberi warna visual yang sangat menawan pada takung semaian.
+            </p>
+            <div class="spec-table">
+              <div class="spec-cell"><span class="label">Tempoh Tuai</span><span class="value">25 – 30 Hari</span></div>
+              <div class="spec-cell"><span class="label">Sasaran EC</span><span class="value">1.2 – 1.8 mS/cm</span></div>
+              <div class="spec-cell"><span class="label">Sasaran pH</span><span class="value">6.0 – 7.0</span></div>
+              <div class="spec-cell"><span class="label">Sistem</span><span class="value">Kratky Sederhana</span></div>
+            </div>
+            <div class="plant-tips">
+              💡 <strong>Tip Pro:</strong> Benih sangat halus. Jangan benam dalam air; letak di permukaan span lembap untuk peratusan cambah tertinggi.
+            </div>
+          </div>
+        </div>
+
+        <!-- Kale -->
+        <div class="plant-card">
+          <div class="plant-header">
+            <div class="plant-title-wrap">
+              <span class="plant-icon">🥦</span>
+              <div>
+                <div class="plant-name">Kale (Curly / Tuscan)</div>
+                <div class="plant-sci">Brassica oleracea var. sabellica</div>
+              </div>
+            </div>
+            <span class="diff-badge diff-easy">Tahan Lama</span>
+          </div>
+          <div class="plant-body">
+            <p class="plant-desc">
+              Ratu superfood. Pokok kale hidroponik boleh hidup berbulan-bulan! Setiap kali mahu membuat salad atau jus hijau, cukup sekadar petik 3–4 helai daun bawah.
+            </p>
+            <div class="spec-table">
+              <div class="spec-cell"><span class="label">Tempoh Tuai</span><span class="value">35 Hari (Kekal 6–12 Bulan)</span></div>
+              <div class="spec-cell"><span class="label">Sasaran EC</span><span class="value">1.6 – 2.2 mS/cm</span></div>
+              <div class="spec-cell"><span class="label">Sasaran pH</span><span class="value">6.0 – 6.8</span></div>
+              <div class="spec-cell"><span class="label">Sistem</span><span class="value">Kratky Balang / Takung</span></div>
+            </div>
+            <div class="plant-tips">
+              💡 <strong>Tip Pro:</strong> Jangan cabut pokok! Amalkan teknik <em>Cut-and-Come-Again</em> dari daun paling bawah. Pokok akan meninggi seperti pokok kelapa mini.
+            </div>
+          </div>
+        </div>
+
+        <!-- Arugula / Rocket -->
+        <div class="plant-card">
+          <div class="plant-header">
+            <div class="plant-title-wrap">
+              <span class="plant-icon">🥗</span>
+              <div>
+                <div class="plant-name">Arugula / Rocket</div>
+                <div class="plant-sci">Eruca vesicaria</div>
+              </div>
+            </div>
+            <span class="diff-badge diff-med">Sederhana</span>
+          </div>
+          <div class="plant-body">
+            <p class="plant-desc">
+              Daun salad premium dengan rasa unik berempah, sedikit pedas (*peppery*) dan berlemak kacang. Sangat popular dalam piza Itali dan salad mewah.
+            </p>
+            <div class="spec-table">
+              <div class="spec-cell"><span class="label">Tempoh Tuai</span><span class="value">25 – 35 Hari</span></div>
+              <div class="spec-cell"><span class="label">Sasaran EC</span><span class="value">0.8 – 1.2 mS/cm</span></div>
+              <div class="spec-cell"><span class="label">Sasaran pH</span><span class="value">6.0 – 6.8</span></div>
+              <div class="spec-cell"><span class="label">Sistem</span><span class="value">Kratky / Cawan 90ml</span></div>
+            </div>
+            <div class="plant-tips">
+              💡 <strong>Tip Pro:</strong> Sukakan EC rendah sama seperti Salad Framoc. Jika baja terlalu pekat, rasa pedasnya menjadi terlalu pahit.
+            </div>
+          </div>
+        </div>
+
+        <!-- Swiss Chard -->
+        <div class="plant-card">
+          <div class="plant-header">
+            <div class="plant-title-wrap">
+              <span class="plant-icon">🌈</span>
+              <div>
+                <div class="plant-name">Swiss Chard (Rainbow)</div>
+                <div class="plant-sci">Beta vulgaris subsp. vulgaris</div>
+              </div>
+            </div>
+            <span class="diff-badge diff-easy">Tahan Lasak</span>
+          </div>
+          <div class="plant-body">
+            <p class="plant-desc">
+              Mempunyai pelepah batang berwarna-warni (merah ruby, kuning terang, jingga). Sangat tahan lasak dan boleh dituai daun luar berterusan.
+            </p>
+            <div class="spec-table">
+              <div class="spec-cell"><span class="label">Tempoh Tuai</span><span class="value">35 – 45 Hari</span></div>
+              <div class="spec-cell"><span class="label">Sasaran EC</span><span class="value">1.8 – 2.3 mS/cm</span></div>
+              <div class="spec-cell"><span class="label">Sasaran pH</span><span class="value">6.0 – 6.8</span></div>
+              <div class="spec-cell"><span class="label">Sistem</span><span class="value">Kratky Takung</span></div>
+            </div>
+            <div class="plant-tips">
+              💡 <strong>Tip Pro:</strong> Sangat tahan cuaca panas berbanding salad biasa, dan rasa daunnya seakan-akan bayam berlemak.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 2: HERBA & BAWANG DAPUR ==================== -->
+    <div class="cat-content" id="tab-herba">
+      <div class="section-header-box">
+        <div>
+          <h2>Kategori 2: Herba Masakan & Projek Bawang Dapur (Aromatik)</h2>
+          <p style="font-size:0.86rem; color:var(--muted);">Sangat serasi dengan cawan 90ml, balang kaca tepi tingkap, dan baki sisa dapur (Kitchen Scrap Regrowth).</p>
+        </div>
+        <span class="badge-count">Projek Praktikal Rumah</span>
+      </div>
+
+      <!-- PANDUAN KHAS: BAWANG DAPUR STEP-BY-STEP -->
+      <div class="special-guide-card">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+          <span style="font-size: 2rem;">🧅</span>
+          <div>
+            <h3 style="font-size: 1.25rem; color: var(--foreground);">Panduan Lengkap: Menanam Daun Bawang dari Ubi Bawang Dapur</h3>
+            <p style="font-size: 0.85rem; color: var(--muted);">Gunakan bawang merah kecil (*shallot*) atau bawang besar sedia ada di dapur rumah anda</p>
+          </div>
+        </div>
+
+        <p style="font-size: 0.9rem; color: var(--foreground); line-height: 1.55;">
+          Anda <strong>tidak perlukan biji benih</strong> untuk memulakan projek ini! Bawang masakan yang dibeli di pasar mengandungi rizom simpanan nutrien yang sedia bertunas sebaik sahaja tapak akarnya menyentuh air.
+        </p>
+
+        <div class="step-grid">
+          <div class="step-box">
+            <span class="step-num">1</span>
+            <h4>Pilih & Potong Hujung</h4>
+            <p>Pilih sebiji bawang merah kecil yang sihat. Buang kulit kering luar yang longgar dan potong sedikit bahagian muncung atas (1–2 mm) untuk membuka laluan tunas keluar.</p>
+          </div>
+
+          <div class="step-box">
+            <span class="step-num">2</span>
+            <h4>Letak Atas Net Pot / Cawan</h4>
+            <p>Letakkan ubi bawang di atas net pot 3D atau mulut cawan 90ml anda dengan bahagian <strong>tapak akar menghadap ke bawah</strong>.</p>
+          </div>
+
+          <div class="step-box">
+            <span class="step-num">3</span>
+            <h4>Kawal Paras Air (Penting!)</h4>
+            <p>Pastikan hanya <strong>tapak bawah akar sahaja yang menyentuh air</strong>. JANGAN tenggelamkan separuh atau seluruh ubi bawang agar ubinya tidak membusuk.</p>
+          </div>
+
+          <div class="step-box">
+            <span class="step-num">4</span>
+            <h4>Tuaian Berterusan (Regrowth)</h4>
+            <p>Hari ke-3 akar putih menjalar ke bawah. Hari ke-7 daun hijau tegak mekar. Gunting daunnya untuk hidangan sup/telur; daun akan tumbuh semula berulang kali!</p>
+          </div>
+        </div>
+
+        <div class="callout-box callout-tip">
+          💡 <strong>Tip Nutrien Bawang:</strong> Untuk 7 hari pertama, cukup gunakan <strong>air paip kosong sahaja</strong>. Selepas akar mula panjang, tambahkan baja AB nipis (EC ~0.8 – 1.0 mS/cm) supaya daun bawang kekal hijau pekat, tebal dan beraroma harum.
+        </div>
+      </div>
+
+      <div class="plant-grid">
+        <!-- Daun Kesum -->
+        <div class="plant-card">
+          <div class="plant-header">
+            <div class="plant-title-wrap">
+              <span class="plant-icon">🌿</span>
+              <div>
+                <div class="plant-name">Daun Kesum (Laksa Leaf)</div>
+                <div class="plant-sci">Persicaria odorata</div>
+              </div>
+            </div>
+            <span class="diff-badge diff-easy">Super Senang</span>
+          </div>
+          <div class="plant-body">
+            <p class="plant-desc">
+              Paling mudah dibiakkan melalui keratan batang dapur (*stem cutting*). Ambil batang kesum dari pasar, buang daun bawah, celup dalam air baja. Dalam 3–4 hari akar lebat keluar!
+            </p>
+            <div class="spec-table">
+              <div class="spec-cell"><span class="label">Tempoh Akar</span><span class="value">3 – 5 Hari</span></div>
+              <div class="spec-cell"><span class="label">Sasaran EC</span><span class="value">1.4 – 1.8 mS/cm</span></div>
+              <div class="spec-cell"><span class="label">Sasaran pH</span><span class="value">5.5 – 6.5</span></div>
+              <div class="spec-cell"><span class="label">Sistem</span><span class="value">Balang Kaca / Cawan 90ml</span></div>
+            </div>
+            <div class="plant-tips">
+              💡 <strong>Tip Pro:</strong> Sukakan air yang banyak dan cahaya pagi. Daun berbau sangat wangi untuk masak asam pedas & laksa.
+            </div>
+          </div>
+        </div>
+
+        <!-- Pudina -->
+        <div class="plant-card">
+          <div class="plant-header">
+            <div class="plant-title-wrap">
+              <span class="plant-icon">🌱</span>
+              <div>
+                <div class="plant-name">Pudina (Mint / Peppermint)</div>
+                <div class="plant-sci">Mentha spicata</div>
+              </div>
+            </div>
+            <span class="diff-badge diff-easy">Mudah</span>
+          </div>
+          <div class="plant-body">
+            <p class="plant-desc">
+              Tumbuh menjalar dengan sangat pesat. Daunnya mengeluarkan aroma menthol yang sangat menyegarkan untuk air detoks, teh pudina, dan ulaman.
+            </p>
+            <div class="spec-table">
+              <div class="spec-cell"><span class="label">Tempoh Tuai</span><span class="value">20 Hari (Kekal Hidup)</span></div>
+              <div class="spec-cell"><span class="label">Sasaran EC</span><span class="value">1.2 – 1.6 mS/cm</span></div>
+              <div class="spec-cell"><span class="label">Sasaran pH</span><span class="value">5.5 – 6.5</span></div>
+              <div class="spec-cell"><span class="label">Sistem</span><span class="value">Balang Kaca Kratky</span></div>
+            </div>
+            <div class="plant-tips">
+              💡 <strong>Tip Pro:</strong> Rajin pangkas pucuk atas. Setiap kali pucuk dipotong, 2 tunas baharu akan bercambah menjadikan pokok semakin rimbun.
+            </div>
+          </div>
+        </div>
+
+        <!-- Daun Sup / Saderi -->
+        <div class="plant-card">
+          <div class="plant-header">
+            <div class="plant-title-wrap">
+              <span class="plant-icon">🥣</span>
+              <div>
+                <div class="plant-name">Daun Sup / Saderi (Celery)</div>
+                <div class="plant-sci">Apium graveolens</div>
+              </div>
+            </div>
+            <span class="diff-badge diff-med">Sederhana</span>
+          </div>
+          <div class="plant-body">
+            <p class="plant-desc">
+              Di tanah biasa daun sup agak cerewet, tetapi di dalam hidroponik batangnya tumbuh sangat tegak, gemuk berongga, dan aromanya jauh lebih manis tanpa rasa pahit.
+            </p>
+            <div class="spec-table">
+              <div class="spec-cell"><span class="label">Tempoh Tuai</span><span class="value">45 – 60 Hari</span></div>
+              <div class="spec-cell"><span class="label">Sasaran EC</span><span class="value">1.4 – 1.8 mS/cm</span></div>
+              <div class="spec-cell"><span class="label">Sasaran pH</span><span class="value">6.0 – 6.8</span></div>
+              <div class="spec-cell"><span class="label">Sistem</span><span class="value">Takung Kratky</span></div>
+            </div>
+            <div class="plant-tips">
+              💡 <strong>Tip Pro:</strong> Petik pelepah daun bahagian luar sahaja untuk kegunaan harian; biarkan pelepah tengah terus meninggi.
+            </div>
+          </div>
+        </div>
+
+        <!-- Sweet Basil / Kemangi -->
+        <div class="plant-card">
+          <div class="plant-header">
+            <div class="plant-title-wrap">
+              <span class="plant-icon">🌿</span>
+              <div>
+                <div class="plant-name">Sweet Basil / Selasih / Kemangi</div>
+                <div class="plant-sci">Ocimum basilicum</div>
+              </div>
+            </div>
+            <span class="diff-badge diff-easy">Mudah</span>
+          </div>
+          <div class="plant-body">
+            <p class="plant-desc">
+              Paling disukai penanam hidroponik seluruh dunia. Daunnya membesar dengan saiz luar biasa di dalam larutan baja AB berbanding tanam dalam pasu tanah.
+            </p>
+            <div class="spec-table">
+              <div class="spec-cell"><span class="label">Tempoh Tuai</span><span class="value">30 – 40 Hari</span></div>
+              <div class="spec-cell"><span class="label">Sasaran EC</span><span class="value">1.0 – 1.4 mS/cm</span></div>
+              <div class="spec-cell"><span class="label">Sasaran pH</span><span class="value">5.5 – 6.5</span></div>
+              <div class="spec-cell"><span class="label">Sistem</span><span class="value">Kratky / DWC</span></div>
+            </div>
+            <div class="plant-tips">
+              💡 <strong>Tip Pro:</strong> Bila bunga mula terbit di hujung tangkai, segera pangkas bunga tersebut agar pokok terus menumpukan tenaga menghasilkan daun wangi.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 3: SAYUR BERBUAH ==================== -->
+    <div class="cat-content" id="tab-buah">
+      <div class="section-header-box">
+        <div>
+          <h2>Kategori 3: Sayur Berbuah & Buah-Buahan (Dutch Bucket / Takung 10L–18L)</h2>
+          <p style="font-size:0.86rem; color:var(--muted);">Memerlukan bekas takungan lebih besar (minima 10 Liter sebatang pokok) dan formula baja berbuah (tinggi K & P).</p>
+        </div>
+        <span class="badge-count">Kitaran Jangka Panjang</span>
+      </div>
+
+      <div class="plant-grid">
+        <!-- Tomato Ceri -->
+        <div class="plant-card">
+          <div class="plant-header">
+            <div class="plant-title-wrap">
+              <span class="plant-icon">🍅</span>
+              <div>
+                <div class="plant-name">Tomato Ceri (Cherry Tomato)</div>
+                <div class="plant-sci">Solanum lycopersicum var. cerasiforme</div>
+              </div>
+            </div>
+            <span class="diff-badge diff-med">Sederhana</span>
+          </div>
+          <div class="plant-body">
+            <p class="plant-desc">
+              Salah satu tanaman hidroponik paling memuaskan hati. Buahnya berangkai lebat, merah berkilat seperti gula-gula, dan rasa manisnya lebih tinggi tanpa rasa masam tanah.
+            </p>
+            <div class="spec-table">
+              <div class="spec-cell"><span class="label">Mula Berbuah</span><span class="value">60 – 75 Hari</span></div>
+              <div class="spec-cell"><span class="label">Sasaran EC</span><span class="value">2.0 – 2.8 mS/cm</span></div>
+              <div class="spec-cell"><span class="label">Kapasiti Air</span><span class="value">10 – 15 Liter</span></div>
+              <div class="spec-cell"><span class="label">Sistem</span><span class="value">Tong Kratky / Dutch Bucket</span></div>
+            </div>
+            <div class="plant-tips">
+              💡 <strong>Tip Pro:</strong> Memerlukan sokongan tali atau pancang kayu kerana dahan akan sangat berat apabila ratusan biji buah tomato mula masak.
+            </div>
+          </div>
+        </div>
+
+        <!-- Cili Padi & Cili Kulai -->
+        <div class="plant-card">
+          <div class="plant-header">
+            <div class="plant-title-wrap">
+              <span class="plant-icon">🌶️</span>
+              <div>
+                <div class="plant-name">Cili Padi & Cili Kulai</div>
+                <div class="plant-sci">Capsicum frutescens</div>
+              </div>
+            </div>
+            <span class="diff-badge diff-med">Kitaran 1–2 Tahun</span>
+          </div>
+          <div class="plant-body">
+            <p class="plant-desc">
+              Pokok cili hidroponik adalah pelaburan jangka panjang yang sangat menguntungkan. Sebatang pokok dalam tong 15L boleh bertahan dan berbuah lebat berterusan selama 1 hingga 2 tahun!
+            </p>
+            <div class="spec-table">
+              <div class="spec-cell"><span class="label">Mula Tuai</span><span class="value">75 – 90 Hari</span></div>
+              <div class="spec-cell"><span class="label">Sasaran EC</span><span class="value">1.8 – 2.4 mS/cm</span></div>
+              <div class="spec-cell"><span class="label">Ketahanan</span><span class="value">Panas Terik Penuh</span></div>
+              <div class="spec-cell"><span class="label">Sistem</span><span class="value">Tong Cat 18L Kratky</span></div>
+            </div>
+            <div class="plant-tips">
+              💡 <strong>Tip Pro:</strong> Pangkas pucuk pada umur 30 hari (*pruning*) untuk menggalakkan dahan bercabang membentuk pokok kanopi rimbun berbuah lebat.
+            </div>
+          </div>
+        </div>
+
+        <!-- Timun Jepun -->
+        <div class="plant-card">
+          <div class="plant-header">
+            <div class="plant-title-wrap">
+              <span class="plant-icon">🥒</span>
+              <div>
+                <div class="plant-name">Timun Jepun (Kyuri)</div>
+                <div class="plant-sci">Cucumis sativus</div>
+              </div>
+            </div>
+            <span class="diff-badge diff-easy">Cepat Berbuah</span>
+          </div>
+          <div class="plant-body">
+            <p class="plant-desc">
+              Antara tanaman berbuah paling pantas membesar. Dalam masa 40 hari sahaja, buah timun panjang rangup sudah boleh dipetik setiap 2 hari.
+            </p>
+            <div class="spec-table">
+              <div class="spec-cell"><span class="label">Mula Tuai</span><span class="value">40 – 45 Hari</span></div>
+              <div class="spec-cell"><span class="label">Sasaran EC</span><span class="value">1.8 – 2.2 mS/cm</span></div>
+              <div class="spec-cell"><span class="label">Pengambilan Air</span><span class="value">1.5 – 2.5L / Hari</span></div>
+              <div class="spec-cell"><span class="label">Sistem</span><span class="value">Dutch Bucket + Jaring</span></div>
+            </div>
+            <div class="plant-tips">
+              💡 <strong>Tip Pro:</strong> Sediakan jaring memanjat (*trellis*). Pokok timun menghirup air sangat laju ketika buah sedang memanjang.
+            </div>
+          </div>
+        </div>
+
+        <!-- Strawberi Rendah Tropika -->
+        <div class="plant-card">
+          <div class="plant-header">
+            <div class="plant-title-wrap">
+              <span class="plant-icon">🍓</span>
+              <div>
+                <div class="plant-name">Strawberi (Lowland)</div>
+                <div class="plant-sci">Fragaria × ananassa</div>
+              </div>
+            </div>
+            <span class="diff-badge diff-adv">Pakar / Teliti</span>
+          </div>
+          <div class="plant-body">
+            <p class="plant-desc">
+              Hidroponik menyelesaikan musuh nombor satu strawberi iaitu reput buah akibat tanah lembap. Buah strawberi tergantung bersih di udara dan rasanya sangat manis.
+            </p>
+            <div class="spec-table">
+              <div class="spec-cell"><span class="label">Mula Tuai</span><span class="value">60 – 80 Hari</span></div>
+              <div class="spec-cell"><span class="label">Sasaran EC</span><span class="value">1.0 – 1.4 mS/cm</span></div>
+              <div class="spec-cell"><span class="label">Sasaran pH</span><span class="value">5.5 – 6.2</span></div>
+              <div class="spec-cell"><span class="label">Sistem</span><span class="value">NFT / Pasu Bertingkat</span></div>
+            </div>
+            <div class="plant-tips">
+              💡 <strong>Tip Pro:</strong> Sensitif terhadap garam baja berlebihan. Gunakan EC rendah dan pilih varieti tahan haba tanah rendah tropika.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 4: 3D PRINT & HARDWARE ==================== -->
+    <div class="cat-content" id="tab-hardware">
+      <div class="section-header-box">
+        <div>
+          <h2>Kategori 4: Spesifikasi Perkakasan 3D Print & Analisis Jarak Tanaman</h2>
+          <p style="font-size:0.86rem; color:var(--muted);">Integrasi model MakerWorld #2665866 dan pengoptimuman susunan fizikal takung hidroponik.</p>
+        </div>
+        <span class="badge-count">Hardware & Fabrikasi</span>
+      </div>
+
+      <!-- Card Model MakerWorld -->
+      <div class="model-spec-card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 14px;">
+          <div>
+            <span style="background: #0284c7; color:#fff; font-size: 0.72rem; padding: 3px 8px; border-radius: 4px; font-weight: 800; font-family: 'Manrope', sans-serif;">MAKERWORLD MODEL #2665866</span>
+            <h3 style="font-size: 1.25rem; margin-top: 6px; color: var(--foreground);">Mini Hydro Net Insert Pot (90 ml Cup Compatible)</h3>
+            <p style="font-size: 0.84rem; color: var(--muted);">Direka oleh: aroid.cabinet • Sesuai untuk Cawan Sos / Puding 90ml (3oz)</p>
+          </div>
+          <a href="https://makerworld.com/en/models/2665866-mini-hydro-net-insert-pot-90-ml-cup-compatible?from=search#profileId-2949823" target="_blank" style="background: #ffffff; border: 1px solid #bae6fd; padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; font-weight: 700; color: #0284c7; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; box-shadow: var(--shadow-sm);">
+            Buka di MakerWorld ↗
+          </a>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 14px;">
+          <div style="background: #ffffff; padding: 12px 14px; border-radius: 6px; border: 1px solid #e0f2fe;">
+            <div style="font-size: 0.72rem; font-family: ui-monospace, monospace; color: var(--muted); text-transform: uppercase;">Filamen Disyorkan</div>
+            <div style="font-size: 1rem; font-weight: 700; color: #0369a1; margin-top: 2px;">PETG (Hitam / Gelap)</div>
+            <div style="font-size: 0.75rem; color: var(--muted); margin-top: 2px;">Tahan UV matahari tingkap & kalis air berbanding PLA biasa.</div>
+          </div>
+
+          <div style="background: #ffffff; padding: 12px 14px; border-radius: 6px; border: 1px solid #e0f2fe;">
+            <div style="font-size: 0.72rem; font-family: ui-monospace, monospace; color: var(--muted); text-transform: uppercase;">Peranan Fasa 1 (Hari 0–14)</div>
+            <div style="font-size: 1rem; font-weight: 700; color: #0369a1; margin-top: 2px;">Cawan 90ml (Micro-Kratky)</div>
+            <div style="font-size: 0.75rem; color: var(--muted); margin-top: 2px;">Sesuai untuk anak benih salad, keratan kesum, & ubi bawang.</div>
+          </div>
+
+          <div style="background: #ffffff; padding: 12px 14px; border-radius: 6px; border: 1px solid #e0f2fe;">
+            <div style="font-size: 0.72rem; font-family: ui-monospace, monospace; color: var(--muted); text-transform: uppercase;">Peranan Fasa 2 (Hari 15+)</div>
+            <div style="font-size: 1rem; font-weight: 700; color: #0369a1; margin-top: 2px;">Pindah ke Penutup Takung Besar</div>
+            <div style="font-size: 0.75rem; color: var(--muted); margin-top: 2px;">Tebuk penutup takung biru sedia ada mengikut saiz rim net pot ini.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ANALISIS JARAK TANAMAN (SPACING) -->
+      <div style="background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px;">
+        <h3 style="font-size: 1.15rem; color: var(--foreground); margin-bottom: 8px;">📐 Rumusan Saintifik: Jarak Susunan Tanaman Dalam Takung</h3>
+        <p style="font-size: 0.88rem; color: var(--muted); line-height: 1.55; margin-bottom: 14px;">
+          Setiap jenis tumbuhan mempunyai seni bina kanopi (*canopy architecture*) yang berbeza. Memahami perbezaan ini memastikan tiada daun yang reput atau diserang kulat:
+        </p>
+
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--surface-muted); border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border);">
+            <thead>
+              <tr style="background: var(--surface-muted); color: var(--muted); text-transform: uppercase; font-size: 0.72rem; letter-spacing: 0.05em;">
+                <th style="padding: 10px 14px; border-bottom: 1px solid var(--border);">Tanaman</th>
+                <th style="padding: 10px 14px; border-bottom: 1px solid var(--border);">Bentuk Kanopi</th>
+                <th style="padding: 10px 14px; border-bottom: 1px solid var(--border);">Jarak Minimum</th>
+                <th style="padding: 10px 14px; border-bottom: 1px solid var(--border);">Boleh Susun Rapat?</th>
+                <th style="padding: 10px 14px; border-bottom: 1px solid var(--border);">Risiko Jika Rapat</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom: 1px solid var(--border-subtle);">
+                <td style="padding: 10px 14px; font-weight: 700; color: var(--foreground);">Pak Choy</td>
+                <td style="padding: 10px 14px;">Tegak ke atas (Roset Padat)</td>
+                <td style="padding: 10px 14px; font-weight: 600; color: var(--primary);">10 – 12 cm</td>
+                <td style="padding: 10px 14px; color: #15803d; font-weight: 700;">Boleh (Sederhana)</td>
+                <td style="padding: 10px 14px; color: var(--muted);">Tangkai bersentuhan tetapi tahan lebam.</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--border-subtle); background: #f0fdf4;">
+                <td style="padding: 10px 14px; font-weight: 700; color: var(--foreground);">Salad Framoc</td>
+                <td style="padding: 10px 14px;">Kembang melebar mendatar (Kelopak)</td>
+                <td style="padding: 10px 14px; font-weight: 700; color: #b45309;">15 – 20 cm</td>
+                <td style="padding: 10px 14px; color: #b91c1c; font-weight: 700;">TIDAK DIGALAKKAN</td>
+                <td style="padding: 10px 14px; color: #b91c1c;">Hujung daun hangus (<em>Tip Burn</em>) & daun bawah reput.</td>
+              </tr>
+              <tr style="border-bottom: 1px solid var(--border-subtle);">
+                <td style="padding: 10px 14px; font-weight: 700; color: var(--foreground);">Kangkung</td>
+                <td style="padding: 10px 14px;">Batang memanjang kurus</td>
+                <td style="padding: 10px 14px; font-weight: 600; color: var(--primary);">5 – 8 cm</td>
+                <td style="padding: 10px 14px; color: #15803d; font-weight: 700;">Sangat Boleh (Rapat)</td>
+                <td style="padding: 10px 14px; color: var(--muted);">Makin rapat makin lurus batangnya memanjat.</td>
+              </tr>
+              <tr>
+                <td style="padding: 10px 14px; font-weight: 700; color: var(--foreground);">Bawang Dapur</td>
+                <td style="padding: 10px 14px;">Daun silinder tegak lurus</td>
+                <td style="padding: 10px 14px; font-weight: 600; color: var(--primary);">5 – 8 cm</td>
+                <td style="padding: 10px 14px; color: #15803d; font-weight: 700;">Boleh Rapat</td>
+                <td style="padding: 10px 14px; color: var(--muted);">Tiada daun melebar, udara mengalir bebas.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 5: TANAMAN PERLU DIELAKKAN ==================== -->
+    <div class="cat-content" id="tab-elak">
+      <div class="section-header-box">
+        <div>
+          <h2>Kategori 5: Tanaman Yang Perlu Dielakkan Bagi Hidroponik Rumah</h2>
+          <p style="font-size:0.86rem; color:var(--muted);">Ketahui batasan sistem agar tidak membuang masa, kos baja, dan ruang balkoni/tingkap anda.</p>
+        </div>
+        <span class="badge-count" style="background: var(--danger-soft); color: var(--danger);">Elak Kerugian</span>
+      </div>
+
+      <div class="plant-grid">
+        <!-- Buah Berkayu -->
+        <div class="plant-card" style="border-top: 3px solid var(--danger);">
+          <div class="plant-header">
+            <div class="plant-title-wrap">
+              <span class="plant-icon">🥭</span>
+              <div>
+                <div class="plant-name">Pokok Buah Berkayu Besar</div>
+                <div class="plant-sci">Mangga, Durian, Rambutan</div>
+              </div>
+            </div>
+            <span class="diff-badge" style="background:#fee2e2; color:#dc2626;">Tidak Sesuai</span>
+          </div>
+          <div class="plant-body">
+            <p class="plant-desc">
+              Memerlukan akar tunjang kayu yang sangat dalam dan berat pokok mencecah puluhan kilogram. Batang kayu besar tidak boleh disokong oleh larutan air atau media ringan.
+            </p>
+          </div>
+        </div>
+
+        <!-- Ubi Berskala Besar -->
+        <div class="plant-card" style="border-top: 3px solid var(--danger);">
+          <div class="plant-header">
+            <div class="plant-title-wrap">
+              <span class="plant-icon">🥔</span>
+              <div>
+                <div class="plant-name">Ubi Kayu & Keledek Skala Penuh</div>
+                <div class="plant-sci">Manihot esculenta</div>
+              </div>
+            </div>
+            <span class="diff-badge" style="background:#fee2e2; color:#dc2626;">Tidak Praktikal</span>
+          </div>
+          <div class="plant-body">
+            <p class="plant-desc">
+              Walaupun daun pucuk ubi boleh hidup dalam air, ubi di bawah tanah memerlukan ruang isi padu yang sangat besar. Merendam ubi dalam air bertakung lama akan menyebabkannya mereput busuk.
+            </p>
+          </div>
+        </div>
+
+        <!-- Jagung -->
+        <div class="plant-card" style="border-top: 3px solid var(--danger);">
+          <div class="plant-header">
+            <div class="plant-title-wrap">
+              <span class="plant-icon">🌽</span>
+              <div>
+                <div class="plant-name">Jagung Manis (Corn)</div>
+                <div class="plant-sci">Zea mays</div>
+              </div>
+            </div>
+            <span class="diff-badge" style="background:#fee2e2; color:#dc2626;">Tidak Efisien</span>
+          </div>
+          <div class="plant-body">
+            <p class="plant-desc">
+              Jagung memerlukan pendebungaan debu angin secara berkelompok besar (puluhan pokok serentak) agar tongkol jagung penuh berbiji. Sebatang dua pokok jagung di tepi tingkap akan menghasilkan jagungompong tanpa biji.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Site Footer -->
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="footer-brand-title">Khai Space</span>
+          <span class="footer-brand-desc">Hab Penyelidikan & Direktori Lengkap Agroteknologi Hidroponik Pasif</span>
+        </div>
+        <div class="footer-links">
+          <a href="index.html">Projek Pak Choy</a>
+          <a href="salad.html">Projek Salad Framoc</a>
+          <a href="tanaman.html" style="color: var(--primary); font-weight:700;">Direktori Tanaman</a>
+          <a href="/projects">Semua Projek</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 Khai Space. Hak cipta terpelihara.</span>
+        <span>khaispace.com • Built with Next.js & Tailwind CSS</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    function switchCategory(catId) {
+      // Deactivate all buttons
+      document.querySelectorAll('.cat-btn').forEach(btn => btn.classList.remove('active'));
+      // Deactivate all tabs
+      document.querySelectorAll('.cat-content').forEach(tab => tab.classList.remove('active'));
+
+      // Activate selected
+      const activeBtn = document.getElementById('btn-' + catId);
+      const activeTab = document.getElementById('tab-' + catId);
+
+      if (activeBtn) activeBtn.classList.add('active');
+      if (activeTab) activeTab.classList.add('active');
+
+      // Scroll smoothly to category tab bar
+      activeBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  </script>
+</body>
+</html>

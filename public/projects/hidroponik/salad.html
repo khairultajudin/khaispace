@@ -1,0 +1,1808 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panduan Hidroponik Salad / Lettuce Framoc (Kaedah Kratky) + Penjejak Tumbesaran</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --background: #faf8f4;
+      --foreground: #0c2340;
+      --surface: #ffffff;
+      --surface-muted: #f4f1ea;
+      --muted: #4f5f77;
+      --border: #dde3ea;
+      --border-subtle: #edf2f7;
+      --primary: #1e704a;
+      --primary-dark: #124b31;
+      --primary-foreground: #ffffff;
+      --primary-soft: #eaf6f0;
+      --accent: #22c55e;
+      --accent-strong: #15803d;
+      --accent-soft: #ecfdf5;
+      --accent-warm: #b45309;
+      --accent-warm-soft: #fef3c7;
+      --danger: #dc2626;
+      --danger-soft: #fee2e2;
+      --grid-line: rgba(30, 112, 74, 0.08);
+      --shadow-sm: 0 1px 3px 0 rgba(12, 35, 64, 0.04), 0 1px 2px -1px rgba(12, 35, 64, 0.04);
+      --shadow-md: 0 4px 12px -2px rgba(12, 35, 64, 0.06), 0 2px 6px -2px rgba(12, 35, 64, 0.04);
+      --shadow-lg: 0 12px 28px -6px rgba(12, 35, 64, 0.08), 0 4px 12px -4px rgba(12, 35, 64, 0.04);
+      --radius-lg: 12px;
+      --radius-md: 8px;
+      --radius-sm: 6px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--background);
+      background-image:
+        linear-gradient(var(--grid-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+      background-size: 40px 40px;
+      color: var(--foreground);
+      min-height: 100vh;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+      font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+      letter-spacing: -0.02em;
+      color: var(--foreground);
+    }
+
+    /* Architectural corner marks */
+    .has-corner-marks {
+      position: relative;
+    }
+    .has-corner-marks::before,
+    .has-corner-marks::after {
+      content: '';
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .has-corner-marks::before {
+      top: -1px;
+      left: -1px;
+      border-top: 1.5px solid rgba(30, 112, 74, 0.45);
+      border-left: 1.5px solid rgba(30, 112, 74, 0.45);
+    }
+    .has-corner-marks::after {
+      bottom: -1px;
+      right: -1px;
+      border-bottom: 1.5px solid rgba(30, 112, 74, 0.45);
+      border-right: 1.5px solid rgba(30, 112, 74, 0.45);
+    }
+
+    /* Container */
+    .container {
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 0 20px 80px;
+    }
+
+    /* Top Sticky Navigation Bar */
+    .site-nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(250, 248, 244, 0.94);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+
+    .nav-inner {
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .brand-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: var(--foreground);
+      font-family: 'Manrope', sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-mark {
+      position: relative;
+      display: block;
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid var(--primary);
+    }
+    .brand-mark-dot {
+      position: absolute;
+      bottom: -2px;
+      right: -2px;
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+    }
+
+    .nav-breadcrumb {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .nav-breadcrumb a {
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .nav-breadcrumb a:hover {
+      color: var(--foreground);
+    }
+    .nav-divider {
+      color: var(--border);
+    }
+    .breadcrumb-current {
+      color: var(--foreground);
+      font-weight: 600;
+    }
+
+    .nav-actions {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .nav-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      font-size: 0.72rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+
+    .project-switcher {
+      display: inline-flex;
+      align-items: center;
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .switcher-btn {
+      padding: 5px 12px;
+      font-size: 0.78rem;
+      font-family: 'Manrope', sans-serif;
+      font-weight: 600;
+      text-decoration: none;
+      border-radius: 4px;
+      color: var(--muted);
+      transition: all 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .switcher-btn.active {
+      background: var(--surface);
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+      font-weight: 700;
+    }
+
+    .switcher-btn:hover:not(.active) {
+      color: var(--foreground);
+    }
+
+    /* Hero Header Card */
+    header.hero-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 36px 32px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--primary-soft);
+      border: 1px solid #bce6d3;
+      color: var(--primary);
+      padding: 5px 12px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      font-family: 'Manrope', sans-serif;
+    }
+
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      color: var(--foreground);
+      letter-spacing: -0.03em;
+      line-height: 1.25;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.02rem;
+      line-height: 1.6;
+      max-width: 800px;
+    }
+
+    .project-specs {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .spec-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .spec-label {
+      font-size: 0.72rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .spec-val {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--foreground);
+      font-family: 'Manrope', sans-serif;
+    }
+
+    /* Live Status Banner */
+    .status-alert-box {
+      background: linear-gradient(135deg, #ffffff 0%, #f4fbf7 100%);
+      border: 1.5px solid #a3e2c6;
+      border-radius: var(--radius-lg);
+      padding: 24px 28px;
+      margin-bottom: 28px;
+      box-shadow: var(--shadow-md);
+      position: relative;
+    }
+
+    .status-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .status-title-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .live-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--accent-strong);
+      border-radius: 50%;
+      box-shadow: 0 0 0 0 rgba(21, 128, 61, 0.7);
+      animation: pulseGreen 2s infinite;
+    }
+
+    @keyframes pulseGreen {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(21, 128, 61, 0.7);
+      }
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(21, 128, 61, 0);
+      }
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(21, 128, 61, 0);
+      }
+    }
+
+    .status-heading {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--foreground);
+      letter-spacing: -0.01em;
+    }
+
+    .status-tag {
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+      border: 1px solid #a3e2c6;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      font-family: 'Manrope', sans-serif;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .action-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .action-item:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .action-icon {
+      font-size: 1.4rem;
+      line-height: 1;
+      padding: 8px;
+      background: var(--surface-muted);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      flex-shrink: 0;
+    }
+
+    .action-text h4 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--foreground);
+      margin-bottom: 4px;
+    }
+
+    .action-text p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    /* Seed Profile Card */
+    .seed-profile-card {
+      background: var(--surface);
+      border: 1.5px solid #c7e5d6;
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .seed-profile-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .seed-brand-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #14532d;
+      color: #ffffff;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-family: 'Manrope', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .seed-info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .seed-data-item {
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+    }
+
+    .seed-data-item .lbl {
+      font-size: 0.72rem;
+      font-family: ui-monospace, monospace;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 3px;
+    }
+
+    .seed-data-item .val {
+      font-family: 'Manrope', sans-serif;
+      font-size: 0.96rem;
+      font-weight: 700;
+      color: var(--foreground);
+    }
+
+    .seed-data-item .desc {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* General Section Cards */
+    .section-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 20px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .section-icon {
+      width: 42px;
+      height: 42px;
+      background: var(--primary-soft);
+      border: 1px solid #c7e5d6;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      color: var(--primary);
+      flex-shrink: 0;
+    }
+
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--foreground);
+    }
+
+    /* Comparison / Key Parameters Grid */
+    .param-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .param-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: all 0.2s ease;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .param-card:hover {
+      border-color: var(--primary);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .param-title {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .param-value {
+      font-family: 'Manrope', sans-serif;
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .param-sub {
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    /* Timeline Interactive Tracker */
+    .timeline-interactive {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .stage-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      transition: all 0.2s ease;
+    }
+
+    .stage-card.completed {
+      background: #f8fafc;
+      border-color: var(--border);
+    }
+
+    .stage-card.current {
+      border: 2px solid var(--primary);
+      background: var(--primary-soft);
+      box-shadow: 0 4px 16px rgba(30, 112, 74, 0.12);
+    }
+
+    .stage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .stage-title {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--foreground);
+    }
+
+    .stage-card.current .stage-title {
+      color: var(--primary);
+    }
+
+    .stage-pill {
+      font-size: 0.72rem;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-family: 'Manrope', sans-serif;
+    }
+
+    .pill-done {
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+      border: 1px solid #a3e2c6;
+    }
+
+    .pill-active {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    .pill-upcoming {
+      background: var(--surface-muted);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .stage-body {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .stage-body ul {
+      margin-left: 20px;
+      margin-top: 8px;
+    }
+    .stage-body li {
+      margin-bottom: 4px;
+    }
+
+    /* Comparison Box (Pak Choy vs Salad) */
+    .vs-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 16px 0;
+    }
+
+    @media (max-width: 680px) {
+      .vs-box {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .vs-card {
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+    }
+
+    .vs-card h4 {
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Routine & Inventory Grid */
+    .inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+    }
+
+    .inventory-item {
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .inventory-item .check-icon {
+      color: var(--accent-strong);
+      font-size: 1.1rem;
+      font-weight: bold;
+      margin-top: 1px;
+    }
+
+    .inventory-item h4 {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: var(--foreground);
+      margin-bottom: 2px;
+    }
+
+    .inventory-item p {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .routine-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    .routine-card {
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px;
+    }
+
+    .routine-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--foreground);
+      margin-bottom: 10px;
+    }
+
+    .checklist {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .checklist li {
+      font-size: 0.86rem;
+      color: var(--muted);
+      line-height: 1.45;
+      position: relative;
+      padding-left: 18px;
+    }
+
+    .checklist li::before {
+      content: '•';
+      position: absolute;
+      left: 0;
+      top: 0;
+      color: var(--primary);
+      font-weight: bold;
+    }
+
+    /* Callout Boxes */
+    .callout-box {
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-size: 0.85rem;
+      line-height: 1.45;
+      margin-top: 10px;
+    }
+    .callout-tip {
+      background: var(--primary-soft);
+      border: 1px solid #c7e5d6;
+      color: #124b31;
+    }
+    .callout-warning {
+      background: var(--accent-warm-soft);
+      border: 1px solid #fde68a;
+      color: #78350f;
+    }
+    .callout-info {
+      background: var(--accent-soft);
+      border: 1px solid #a3e2c6;
+      color: #164e33;
+    }
+
+    /* Interactive Calculator Section */
+    .calc-box {
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-top: 14px;
+    }
+
+    .calc-row {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .calc-input-group {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .calc-input-group label {
+      font-size: 0.75rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .calc-input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--foreground);
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .calc-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(30, 112, 74, 0.15);
+    }
+
+    .calc-result {
+      background: var(--primary-soft);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      border: 1px solid #c7e5d6;
+      display: flex;
+      justify-content: space-around;
+      text-align: center;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .res-item .res-val {
+      font-family: 'Manrope', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .res-item .res-lbl {
+      font-size: 0.75rem;
+      font-family: ui-monospace, monospace;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    /* Start Date Setter Widget */
+    .start-date-widget {
+      background: linear-gradient(135deg, #f0fdf4 0%, #e6f7ee 100%);
+      border: 1.5px dashed var(--primary);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-top: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .date-input-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-action-primary {
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      padding: 9px 18px;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      font-family: 'Manrope', sans-serif;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+      box-shadow: var(--shadow-sm);
+    }
+    .btn-action-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* Common FAQ / Troubleshoot */
+    .faq-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .faq-question {
+      padding: 14px 18px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--foreground);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+      transition: background 0.15s;
+    }
+
+    .faq-question:hover {
+      background: var(--surface-muted);
+      color: var(--primary);
+    }
+
+    .faq-answer {
+      padding: 0 18px 14px;
+      font-size: 0.88rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border-subtle);
+      padding-top: 12px;
+      line-height: 1.55;
+    }
+
+    /* Site Footer */
+    footer.site-footer {
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      padding: 40px 20px 28px;
+      margin-top: 40px;
+    }
+
+    .footer-inner {
+      max-width: 1060px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .footer-brand {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .footer-brand-title {
+      font-family: 'Manrope', sans-serif;
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: var(--foreground);
+    }
+
+    .footer-brand-desc {
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 18px;
+      font-size: 0.82rem;
+    }
+
+    .footer-links a {
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .footer-links a:hover {
+      color: var(--foreground);
+    }
+
+    .footer-bottom {
+      max-width: 1060px;
+      margin: 20px auto 0;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--muted);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Sticky Navigation Bar with Multi-Project Switcher -->
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+        <a href="/" class="brand-link">
+          <span class="brand-mark"><span class="brand-mark-dot"></span></span>
+          Khai Space
+        </a>
+        <span class="nav-divider">/</span>
+        <div class="nav-breadcrumb">
+          <a href="/projects">Projek</a>
+          <span class="nav-divider">/</span>
+          <a href="index.html">Hidroponik</a>
+          <span class="nav-divider">/</span>
+          <span class="breadcrumb-current">Salad / Lettuce Framoc</span>
+        </div>
+      </div>
+
+      <div class="nav-actions">
+        <!-- Switcher between Pak Choy and Salad -->
+        <div class="project-switcher" title="Tukar Paparan Projek Hidroponik">
+          <a href="index.html" class="switcher-btn">
+            <span>🥬 Pak Choy</span>
+            <span style="font-size: 0.68rem; background: rgba(0,0,0,0.06); padding: 1px 6px; border-radius: 999px;">Hari 26</span>
+          </a>
+          <a href="salad.html" class="switcher-btn active">
+            <span>🥗 Salad Framoc</span>
+            <span style="font-size: 0.68rem; background: var(--primary); color: #fff; padding: 1px 6px; border-radius: 999px;">Baru</span>
+          </a>
+          <a href="tanaman.html" class="switcher-btn">
+            <span>🌱 Direktori Tanaman</span>
+            <span style="font-size: 0.68rem; background: rgba(14, 165, 233, 0.15); color: #0284c7; padding: 1px 6px; border-radius: 999px;">Hab</span>
+          </a>
+        </div>
+
+        <span class="nav-tag">PROJEK #04 // SALAD KRATKY</span>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <!-- Header Hero Card -->
+    <header class="hero-card has-corner-marks">
+      <div class="hero-badge">🥗 Projek Khai Space // Panduan & Penjejak Hidroponik Baru</div>
+      <h1>Panduan Menanam Sayur Salad / Lettuce (Framoc)</h1>
+      <p class="subtitle">
+        Kaedah Kratky Pasif (Tanpa Pam & Elektrik) Menggunakan Benih Framoc Eco-Shop & Penjejak Tumbesaran Pintar Sedia Mula.
+      </p>
+
+      <div class="project-specs">
+        <div class="spec-item">
+          <span class="spec-label">Varieti Tanaman</span>
+          <span class="spec-val">Lettuce / Salad / 生菜 (Framoc)</span>
+        </div>
+        <div class="spec-item">
+          <span class="spec-label">Kaedah Penanaman</span>
+          <span class="spec-val">Kratky Pasif (Takungan Air)</span>
+        </div>
+        <div class="spec-item">
+          <span class="spec-label">Sasaran EC / Baja</span>
+          <span class="spec-val" style="color: var(--primary);">1.0 – 1.4 mS/cm (Lebih Sensitif)</span>
+        </div>
+        <div class="spec-item">
+          <span class="spec-label">Status Semasa</span>
+          <span class="spec-val" style="color: var(--accent-strong);" id="header-status-badge">Template Bersedia (Hari 0)</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- LIVE STATUS & READINESS BANNER -->
+    <div class="status-alert-box">
+      <div class="status-header-row">
+        <div class="status-title-area">
+          <div class="live-dot"></div>
+          <div class="status-heading" id="status-title-text">
+            Status Persediaan: Benih Framoc Diterima — Template & Panduan Bersedia Sedia Mula 🌱🥗
+          </div>
+        </div>
+        <div class="status-tag" id="status-day-pill">
+          Fasa Pra-Semaian (Hari 0 • Boleh Mula Bila-Bila Masa)
+        </div>
+      </div>
+
+      <p style="font-size: 0.95rem; color: var(--foreground); margin-bottom: 14px;" id="status-desc-text">
+        Projek hidroponik baharu anda menggunakan benih <strong>Framoc Lettuce / Salad / 生菜</strong> (pek Eco-Shop, Kod: 62035066). Pakej ini telah didokumentasikan sepenuhnya dengan protokol khas sayur salad. Sayur salad mempunyai karakter yang berbeza berbanding Pak Choy: ia memerlukan <strong>kepekatan nutrien (EC) yang lebih lembut (1.0–1.4 mS/cm)</strong> untuk mengelakkan daun terbakar (<em>tip burn</em>) dan suhu redup bagi mengelakkan daun menjadi pahit.
+      </p>
+
+      <!-- Action Grid for Getting Started -->
+      <div class="action-grid">
+        <div class="action-item" style="border-color: rgba(34, 197, 94, 0.4); background: rgba(240, 253, 244, 0.7);">
+          <div class="action-icon">💧</div>
+          <div class="action-text">
+            <h4>1. Rendam Media Span / Rockwool</h4>
+            <p>Basahkan kiub span semaian atau rockwool dengan air paip kosong (tanpa baja). Jangan terlalu bertakung, cukup sekadar lembap basah serata.</p>
+          </div>
+        </div>
+
+        <div class="action-item">
+          <div class="action-icon">🌱</div>
+          <div class="action-text">
+            <h4>2. Letak 2–3 Biji Benih di Permukaan</h4>
+            <p>Biji benih salad sangat halus. Letakkan 2–3 biji di permukaan lubang span. Jangan kambus terlalu dalam kerana benih salad memerlukan sedikit cahaya untuk bercambah.</p>
+          </div>
+        </div>
+
+        <div class="action-item">
+          <div class="action-icon">🌑</div>
+          <div class="action-text">
+            <h4>3. Simpan Tempat Redup & Sejuk (1–2 Hari)</h4>
+            <p>Letak bekas semaian di tempat redup dan sejuk selama 24–48 jam sehingga benih mula merekah dan mengeluarkan tunas putih pertama.</p>
+          </div>
+        </div>
+
+        <div class="action-item">
+          <div class="action-icon">☀️</div>
+          <div class="action-text">
+            <h4>4. Dedahkan Segera ke Matahari Pagi</h4>
+            <p>Sebaik sahaja tunas hijau (kotiledon) muncul, pindahkan segera ke tepi tingkap untuk menerima cahaya matahari pagi 4–6 jam bagi mengelak pokok kurus (kutilang).</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Start Date Selector / Interactive Widget -->
+      <div class="start-date-widget">
+        <div>
+          <div style="font-weight: 700; color: var(--foreground); font-size: 0.92rem; margin-bottom: 2px;">
+            🗓️ Tetapkan Tarikh Mula Semaian Anda:
+          </div>
+          <div style="font-size: 0.8rem; color: var(--muted);">
+            Pilih tarikh bila anda mula semai benih untuk mengira hari tumbesaran secara automatik.
+          </div>
+        </div>
+        <div class="date-input-group">
+          <input type="date" id="seedlingStartDate" class="calc-input" style="padding: 7px 12px; font-size: 0.85rem;">
+          <button type="button" class="btn-action-primary" onclick="setStartDate()">
+            <span>Aktifkan Penjejak Harian</span>
+          </button>
+          <button type="button" style="background: transparent; border: 1px solid var(--border); padding: 7px 12px; border-radius: var(--radius-sm); font-size: 0.8rem; cursor: pointer; color: var(--muted);" onclick="resetStartDate()">
+            Reset
+          </button>
+        </div>
+      </div>
+      <div id="date-calculation-result" style="display: none; margin-top: 12px; padding: 10px 14px; background: #ffffff; border-radius: 6px; border-left: 3px solid var(--primary); font-size: 0.86rem; color: var(--foreground);"></div>
+    </div>
+
+    <!-- SEED PROFILE CARD (FROM USER'S SEED PACKET) -->
+    <div class="seed-profile-card">
+      <div class="seed-profile-header">
+        <div>
+          <span class="seed-brand-tag">🌿 FRAMOC SEEDS // ECO-SHOP</span>
+          <h2 style="font-size: 1.25rem; margin-top: 6px;">Profil Rasmi Biji Benih: Lettuce / Salad / 生菜</h2>
+          <p style="font-size: 0.84rem; color: var(--muted);">Spesifikasi tepat daripada bungkusan fizikal benih tanaman anda</p>
+        </div>
+        <div style="text-align: right;">
+          <span style="font-family: ui-monospace, monospace; font-size: 0.8rem; background: var(--surface-muted); padding: 4px 10px; border-radius: 4px; border: 1px solid var(--border);">
+            KOD BARCODE: <strong>62035066</strong>
+          </span>
+        </div>
+      </div>
+
+      <div class="seed-info-grid">
+        <div class="seed-data-item">
+          <div class="lbl">Jenama & Pengedar</div>
+          <div class="val">Framoc</div>
+          <div class="desc">Diedarkan oleh Eco-Shop Marketing Berhad (Johor, Malaysia)</div>
+        </div>
+
+        <div class="seed-data-item">
+          <div class="lbl">Berat Bersih (Net Weight)</div>
+          <div class="val">± 1 Gram</div>
+          <div class="desc">Mengandungi ~800 hingga 1,000 butir biji benih halus</div>
+        </div>
+
+        <div class="seed-data-item">
+          <div class="lbl">Tarikh Luput (Best Before)</div>
+          <div class="val" style="color: var(--accent-strong);">30 / 12 / 2029</div>
+          <div class="desc">Kadar kebolehcambahan sangat tinggi & segar</div>
+        </div>
+
+        <div class="seed-data-item">
+          <div class="lbl">Varieti Salad</div>
+          <div class="val">Looseleaf Green Salad</div>
+          <div class="desc">Daun hijau muda kerinting, rangup, tahan cuaca panas tropika</div>
+        </div>
+
+        <div class="seed-data-item">
+          <div class="lbl">Tempoh Tuai (Hidroponik)</div>
+          <div class="val" style="color: var(--primary);">35 – 45 Hari</div>
+          <div class="desc">(Pek labelkan 70–80 hari untuk tanah konvensional)</div>
+        </div>
+
+        <div class="seed-data-item">
+          <div class="lbl">Kaedah Penyimpanan Baki</div>
+          <div class="val">Peti Sejuk (Chiller)</div>
+          <div class="desc">Simpan baki benih dalam bekas kedap udara di bahagian sayur peti sejuk</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUICK PARAMETERS FOR SALAD / LETTUCE -->
+    <div class="param-grid">
+      <div class="param-card">
+        <span class="param-title">🎯 Sasaran EC Nutrien</span>
+        <span class="param-value">1.0 – 1.4 <small style="font-size:0.9rem">mS/cm</small></span>
+        <span class="param-sub">Peringkat awal: 0.6–0.8 mS/cm • Jangan lebih 1.5</span>
+      </div>
+      <div class="param-card">
+        <span class="param-title">🧪 Nilai pH Optimum</span>
+        <span class="param-value">5.8 – 6.2</span>
+        <span class="param-sub">Mencegah daun hangus (Tip Burn)</span>
+      </div>
+      <div class="param-card">
+        <span class="param-title">☀️ Keperluan Cahaya</span>
+        <span class="param-value">4 – 6 <small style="font-size:0.9rem">Jam</small></span>
+        <span class="param-sub">Cahaya pagi redup / Elak terik tengah hari >33°C</span>
+      </div>
+      <div class="param-card">
+        <span class="param-title">⏱️ Tempoh Tuai</span>
+        <span class="param-value">30 – 45 <small style="font-size:0.9rem">Hari</small></span>
+        <span class="param-sub">Boleh tuai helaian daun (cut & come again)</span>
+      </div>
+    </div>
+
+    <!-- PERBEZAAN PENTING: PAK CHOY VS SALAD DALAM KRATKY -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon">⚖️</div>
+        <div>
+          <h2>Perbezaan Penting: Menanam Salad vs Pak Choy (Kaedah Kratky)</h2>
+          <p style="font-size:0.85rem; color:var(--muted);">Ketahui pelarasan teknikal agar semaian salad anda tidak pahit atau layu</p>
+        </div>
+      </div>
+
+      <div class="vs-box">
+        <div class="vs-card" style="border-left: 3px solid #2563eb;">
+          <h4 style="color: #1d4ed8;">🥬 Pokok Pak Choy Hijau (Projek Sedia Ada)</h4>
+          <ul class="checklist">
+            <li><strong>Keperluan EC:</strong> Lebih tinggi (1.4 – 1.8 mS/cm). Tahan kepekatan garam baja.</li>
+            <li><strong>Ketahanan Haba:</strong> Sangat tahan haba dan menyukai matahari langsung yang kuat.</li>
+            <li><strong>Biji Benih:</strong> Biji bulat hitam agak keras; boleh dibenam 3–5 mm ke dalam rockwool.</li>
+            <li><strong>Tekstur Daun:</strong> Daun tebal berkilat dengan batang berisi padat.</li>
+            <li><strong>Tuaian:</strong> Biasanya dituai sekaligus pada Hari 28–35 (roset penuh).</li>
+          </ul>
+        </div>
+
+        <div class="vs-card" style="border-left: 3px solid #16a34a; background: #f0fdf4;">
+          <h4 style="color: #15803d;">🥗 Pokok Salad / Lettuce (Projek Baru Ini)</h4>
+          <ul class="checklist">
+            <li><strong>Keperluan EC:</strong> Lebih rendah & lembut (1.0 – 1.4 mS/cm). EC tinggi menyebabkan <em>Tip Burn</em>!</li>
+            <li><strong>Ketahanan Haba:</strong> Sensitif pada cuaca panas lampau. Haba terik menyebabkan rasa pahit & <em>bolting</em> (pokok tinggi berbunga).</li>
+            <li><strong>Biji Benih:</strong> Biji bujur sangat halus; letak di permukaan span (perlukan sedikit cahaya).</li>
+            <li><strong>Tekstur Daun:</strong> Daun lembut, berombak kerinting, rangup dan segar.</li>
+            <li><strong>Tuaian:</strong> Boleh dituai helaian daun luar berulang kali (<em>cut-and-come-again</em>) selama berminggu-minggu!</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout-box callout-warning">
+        ⚠️ <strong>Peraturan Emas Salad:</strong> Jangan gunakan sukatan baja Pak Choy (EC 1.8 mS/cm) untuk Salad! Pastikan bancuhan baja AB sentiasa lebih cair (EC ~1.1 - 1.3 mS/cm) agar daun salad kekal manis, tidak pahit, dan hujung daun tidak hangus hitam.
+      </div>
+    </div>
+
+    <!-- GROWTH PHASES & TIMELINE TRACKER FOR SALAD -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon">📈</div>
+        <div>
+          <h2>Garis Masa & Fasa Tumbesaran Salad (Hari 0 hingga Hari 45)</h2>
+          <p style="font-size:0.85rem; color:var(--muted);">Rujukan panduan fasa demi fasa dari percambahan hingga tuaian segar</p>
+        </div>
+      </div>
+
+      <div class="timeline-interactive">
+        <!-- Fasa 1 -->
+        <div class="stage-card current" id="stage-card-1">
+          <div class="stage-header">
+            <div class="stage-title">
+              <span>🌱 Fasa 1: Penyemaian Biji Benih & Percambahan (Hari 0 – 3)</span>
+            </div>
+            <span class="stage-pill pill-active" id="pill-stage-1">SEMAK PERSEDIAAN</span>
+          </div>
+          <div class="stage-body">
+            <p><strong>Langkah Pelaksanaan:</strong></p>
+            <ul>
+              <li>Gunakan span hidroponik atau kiub rockwool yang dibasahkan dengan air paip kosong (tiada baja).</li>
+              <li>Letakkan <strong>2 hingga 3 biji benih salad</strong> di bahagian celah atas span. Jangan tekan terlalu dalam.</li>
+              <li>Simpan bekas semaian di tempat redup dan gelap (suhu bilik 24–28°C) selama 24–48 jam.</li>
+              <li>Pastikan span sentiasa lembap tetapi tidak tenggelam banjir.</li>
+            </ul>
+            <div style="margin-top: 8px; font-size: 0.8rem; color: var(--primary); font-weight: 600;">
+              Sasaran: Tunas putih mula keluar dan memacak ke dalam media dalam tempoh 1–3 hari.
+            </div>
+          </div>
+        </div>
+
+        <!-- Fasa 2 -->
+        <div class="stage-card" id="stage-card-2">
+          <div class="stage-header">
+            <div class="stage-title">
+              <span>☀️ Fasa 2: Kemunculan Kotiledon & Pendedahan Matahari Pagi (Hari 3 – 7)</span>
+            </div>
+            <span class="stage-pill pill-upcoming" id="pill-stage-2">AKAN DATANG</span>
+          </div>
+          <div class="stage-body">
+            <p><strong>Langkah Pelaksanaan:</strong></p>
+            <ul>
+              <li>Sebaik sahaja sepasang daun benih (kotiledon) terbuka menghijau, <strong>WAJIB segera bawa ke cahaya matahari pagi</strong>.</li>
+              <li>Letak di tepi tingkap atau anjung dengan sinaran pagi 3–5 jam. Jangan biar di tempat gelap untuk elak anak benih kurus meninggi (<em>etiolation/kutilang</em>).</li>
+              <li>Kekalkan kelembapan span hanya dengan air kosong. Jangan beri baja pada fasa ini.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Fasa 3 -->
+        <div class="stage-card" id="stage-card-3">
+          <div class="stage-header">
+            <div class="stage-title">
+              <span>🍃 Fasa 3: Daun Sebenar Pertama & Nutrien Nipis (Hari 7 – 12)</span>
+            </div>
+            <span class="stage-pill pill-upcoming" id="pill-stage-3">AKAN DATANG</span>
+          </div>
+          <div class="stage-body">
+            <p><strong>Langkah Pelaksanaan:</strong></p>
+            <ul>
+              <li>Apabila daun sebenar (<em>true leaves</em>) yang bergerigi/berombak mula muncul (sepasang pertama), mulakan pembajaan nipis (<em>starter dose</em>).</li>
+              <li>Bancuhan baja AB nipis: <strong>EC 0.5 – 0.7 mS/cm</strong> (~2.0 ml A + 2.0 ml B bagi setiap 1 Liter air).</li>
+              <li>Gunakan kaedah rendaman dasar (<em>bottom feeding</em>) cetek 1–2 mm di tapak bekas semaian.</li>
+              <li>Jika ada 2–3 anak pokok dalam satu kiub span, lakukan <strong>penjarangan (thinning)</strong>: gunting anak pokok yang paling lemah dan tinggalkan hanya 1 pokok paling tegap bagi setiap kiub.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Fasa 4 -->
+        <div class="stage-card" id="stage-card-4">
+          <div class="stage-header">
+            <div class="stage-title">
+              <span>🪴 Fasa 4: Pemindahan ke Takung Kratky (Hari 12 – 15)</span>
+            </div>
+            <span class="stage-pill pill-upcoming" id="pill-stage-4">AKAN DATANG</span>
+          </div>
+          <div class="stage-body">
+            <p><strong>Langkah Pelaksanaan:</strong></p>
+            <ul>
+              <li>Anak pokok sudah mempunyai 3–4 helai daun sejati dan akar putih mula terkeluar menembusi span.</li>
+              <li>Pindahkan span ke dalam net pot dan letakkan ke dalam penutup takung hidroponik.</li>
+              <li>Bancuh larutan baja dalam takung pada nilai <strong>EC 0.9 – 1.1 mS/cm</strong> (~3.0 ml A + 3.0 ml B per Liter).</li>
+              <li><strong>Paras Air:</strong> Sentuh 1/3 hingga 1/2 bahagian bawah net pot. Jangan tenggelamkan seluruh net pot.</li>
+              <li>Pastikan takung legap atau dibalut kerajang aluminium/kadbod kalis lumut.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Fasa 5 -->
+        <div class="stage-card" id="stage-card-5">
+          <div class="stage-header">
+            <div class="stage-title">
+              <span>🥗 Fasa 5: Tumbesaran Vegetatif Pesat & Zon Akar Udara (Hari 16 – 32)</span>
+            </div>
+            <span class="stage-pill pill-upcoming" id="pill-stage-5">AKAN DATANG</span>
+          </div>
+          <div class="stage-body">
+            <p><strong>Langkah Pelaksanaan:</strong></p>
+            <ul>
+              <li>Daun salad mula membesar dengan tekstur kerinting yang lebat dan kanopi bulat.</li>
+              <li>Air takung akan mula surut — <strong>JANGAN isi semula sehingga penuh</strong>! Biarkan ruang udara terbentuk agar akar pernafasan dapat menghirup oksigen bebas.</li>
+              <li>Jika perlu menambah air (apabila air tinggal kurang 30%), isi setakat 40–50% takung dengan air baja pada <strong>EC 1.1 – 1.3 mS/cm</strong>.</li>
+              <li>Kekalkan teduhan jika cuaca petang terlalu panas terik (>33°C).</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Fasa 6 -->
+        <div class="stage-card" id="stage-card-6">
+          <div class="stage-header">
+            <div class="stage-title">
+              <span>🎉 Fasa 6: Penuaian Daun Segar (Hari 30 – 45+)</span>
+            </div>
+            <span class="stage-pill pill-upcoming" id="pill-stage-6">AKAN DATANG</span>
+          </div>
+          <div class="stage-body">
+            <p><strong>Dua Cara Menuai Salad:</strong></p>
+            <ul>
+              <li><strong>Kaedah 1: Petik Daun Luar (Cut-and-Come-Again):</strong> Petik 3–5 helai daun luar yang paling besar untuk hidangan salad/burger. Biarkan daun tengah terus membesar untuk tuaian berterusan setiap beberapa hari!</li>
+              <li><strong>Kaedah 2: Tuai Sekaligus (Head Harvest):</strong> Potong keseluruhan pokok di pangkal batang apabila kanopi mencapai kematangan penuh pada Hari 35–45.</li>
+              <li><em>Tip Keenakan:</em> Top up air takung dengan air paip kosong 2 hari sebelum tuai untuk membuang baki garam mineral dan menjadikan salad lebih manis & rangup!</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INTERACTIVE NUTRIENT CALCULATOR FOR SALAD -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon">🧮</div>
+        <div>
+          <h2>Kalkulator Bancuhan Baja AB Khas Salad / Lettuce</h2>
+          <p style="font-size:0.85rem; color:var(--muted);">Kira sukatan ml cecair Pati A & B mengikut kapasiti takungan dan toleransi khusus salad</p>
+        </div>
+      </div>
+
+      <div class="calc-box">
+        <div class="calc-row">
+          <div class="calc-input-group">
+            <label for="saladWaterLiters">Kapasiti Air Bekas (Liter):</label>
+            <input type="number" id="saladWaterLiters" class="calc-input" value="5" min="1" max="100" oninput="calculateSaladBaja()">
+          </div>
+          <div class="calc-input-group">
+            <label for="saladGrowthStage">Peringkat Pokok Salad:</label>
+            <select id="saladGrowthStage" class="calc-input" onchange="calculateSaladBaja()">
+              <option value="early">Anak Benih Awal (Hari 7-12 | EC 0.5 - 0.7 mS/cm | ~2.0 ml/L)</option>
+              <option value="transplant" selected>Pindah Takung (Hari 13-18 | EC 0.9 - 1.1 mS/cm | ~3.0 ml/L)</option>
+              <option value="mature">Vegetatif Matang (Hari 19-35 | EC 1.1 - 1.3 mS/cm | ~4.0 ml/L)</option>
+              <option value="flush">Flushing Pra-Tuai (2 Hari Sebelum Tuai | EC 0 mS/cm | 0 ml)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="calc-result">
+          <div class="res-item">
+            <div class="res-val" id="resSaladA">15 ml</div>
+            <div class="res-lbl">Pati Cecair A</div>
+          </div>
+          <div class="res-item">
+            <div class="res-val" id="resSaladB">15 ml</div>
+            <div class="res-lbl">Pati Cecair B</div>
+          </div>
+          <div class="res-item">
+            <div class="res-val" id="resSaladEC">0.9 - 1.1</div>
+            <div class="res-lbl">Sasaran EC (mS/cm)</div>
+          </div>
+        </div>
+
+        <div style="margin-top: 14px; font-size: 0.82rem; color: var(--muted); text-align: center;">
+          💡 <em>Nota: Formula ini dilaraskan khas untuk sayur salad agar lebih lembut berbanding formula Pak Choy (5.0 ml/L) bagi mengelak kerinting terbakar.</em>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHECKLIST PERSEDIAAN ALATAN & BAHAN -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon">📦</div>
+        <div>
+          <h2>Senarai Semak Alatan & Persediaan Projek Salad</h2>
+          <p style="font-size:0.85rem; color:var(--muted);">Semua keperluan sedia ada yang boleh digunakan serta-merta</p>
+        </div>
+      </div>
+
+      <div class="inventory-grid">
+        <div class="inventory-item">
+          <div class="check-icon">✓</div>
+          <div>
+            <h4>Biji Benih Salad Framoc (Eco-Shop)</h4>
+            <p>1 pek ±1gm (Barcode: 62035066, Exp 2029). Simpan baki benih dalam beg zip kedap udara.</p>
+          </div>
+        </div>
+
+        <div class="inventory-item">
+          <div class="check-icon">✓</div>
+          <div>
+            <h4>Span Semaian / Kiub Rockwool</h4>
+            <p>Media tanpa tanah yang bersih dan mudah ditembusi akar halus salad.</p>
+          </div>
+        </div>
+
+        <div class="inventory-item">
+          <div class="check-icon">✓</div>
+          <div>
+            <h4>Baja A & B Cecair (Formula Sayur Daun)</h4>
+            <p>Pati cecair siap bancuh anda. Sukatan salad menggunakan dos lebih nipis (2.0–4.0 ml/L).</p>
+          </div>
+        </div>
+
+        <div class="inventory-item">
+          <div class="check-icon">✓</div>
+          <div>
+            <h4>Bekas Takungan / Balang Kaca & Foil</h4>
+            <p>Boleh guna takung biru, bekas makanan hitam, atau balang kaca dibalut foil kalis lumut.</p>
+          </div>
+        </div>
+
+        <div class="inventory-item" style="border-left: 3px solid var(--primary); background: #f0fdf4;">
+          <div class="check-icon">✓</div>
+          <div>
+            <h4>Net Pot: 3D Print Mini Hydro Insert (MakerWorld #2665866)</h4>
+            <p>Model khas <em>"Mini Hydro Net Insert Pot (90 ml Cup Compatible)"</em>. Muat tepat dalam cawan 90ml untuk semaian/micro-Kratky atau ditebuk masuk ke penutup takung besar. Cetak menggunakan filamen PETG/PLA gelap.</p>
+          </div>
+        </div>
+
+        <div class="inventory-item">
+          <div class="check-icon">✓</div>
+          <div>
+            <h4>Meter EC & TDS</h4>
+            <p>Sangat berguna untuk menyemak bancuhan agar tidak melebihi paras selamat salad (1.4 mS/cm).</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANDUAN MENGELAKKAN 4 MASALAH UTAMA SAYUR SALAD -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon">🛡️</div>
+        <div>
+          <h2>Panduan Mengatasi 4 Risiko Lazim Sayur Salad</h2>
+          <p style="font-size:0.85rem; color:var(--muted);">Langkah pencegahan awal untuk kualiti salad yang rangup dan manis</p>
+        </div>
+      </div>
+
+      <div class="routine-grid">
+        <div class="routine-card" style="border-left: 3px solid #dc2626;">
+          <h3 style="color: #b91c1c;">1. Daun Terbakar (Tip Burn)</h3>
+          <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 8px;">
+            Hujung daun menjadi coklat, kering atau terbakar. Ini berpunca daripada kepekatan baja terlalu tinggi atau kekurangan kalsium akibat pengudaraan yang kurang.
+          </p>
+          <div style="font-size: 0.82rem; color: var(--foreground); font-weight: 600;">
+            Penyelesaian: Kekalkan EC bawah 1.4 mS/cm dan pastikan ada pergerakan udara sepoi-sepoi bahasa di tepi tingkap.
+          </div>
+        </div>
+
+        <div class="routine-card" style="border-left: 3px solid #f59e0b;">
+          <h3 style="color: #b45309;">2. Batang Tinggi & Daun Pahit (Bolting)</h3>
+          <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 8px;">
+            Pokok tiba-tiba memanjang ke atas dan mahu berbunga. Ini berlaku jika pokok mengalami kejutan haba panas terik (>34°C). Getah putih pekat akan keluar dan rasa jadi pahit.
+          </p>
+          <div style="font-size: 0.82rem; color: var(--foreground); font-weight: 600;">
+            Penyelesaian: Letak di kawasan cahaya pagi sahaja. Alihkan ke tempat teduh jika tengah hari sangat panas.
+          </div>
+        </div>
+
+        <div class="routine-card" style="border-left: 3px solid #3b82f6;">
+          <h3 style="color: #1d4ed8;">3. Anak Pokok Kutilang (Etiolation)</h3>
+          <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 8px;">
+            Batang anak benih kurus panjang melidi dan mudah rebah kerana diletakkan di tempat terlalu gelap selepas benih bercambah.
+          </p>
+          <div style="font-size: 0.82rem; color: var(--foreground); font-weight: 600;">
+            Penyelesaian: Pada hari ke-2 atau ke-3 sebaik sahaja tunas muncul, segera dedahkan kepada cahaya matahari pagi.
+          </div>
+        </div>
+
+        <div class="routine-card" style="border-left: 3px solid #10b981;">
+          <h3 style="color: #047857;">4. Lumut Hijau Dalam Takungan</h3>
+          <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 8px;">
+            Lumut tumbuh membiak jika air takungan baja terkena cahaya matahari langsung, merebut nutrien pokok dan menyebabkan bau busuk.
+          </p>
+          <div style="font-size: 0.82rem; color: var(--foreground); font-weight: 600;">
+            Penyelesaian: Balut bekas takung telus dengan foil aluminium atau kadbod tebal kedap cahaya seperti pada projek Pak Choy anda.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FAQ KHAS SALAD -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-icon">❓</div>
+        <div>
+          <h2>Soalan Lazim Penanaman Salad Hidroponik</h2>
+          <p style="font-size:0.85rem; color:var(--muted);">Jawapan kepada persoalan biasa bagi penanam salad pemula</p>
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>Bolehkah saya guna baja AB cecair yang sama dengan Pak Choy saya?</span>
+          <span>▾</span>
+        </div>
+        <div class="faq-answer">
+          Ya, tepat sekali! Anda boleh menggunakan baja AB cecair sedia ada anda. Cuma perbezaannya adalah pada <strong>sukatan bancuhan</strong>. Salad memerlukan bancuhan yang lebih cair (sekitar 3.0–4.0 ml/L, EC ~1.1–1.3 mS/cm) berbanding Pak Choy (5.0 ml/L, EC ~1.6 mS/cm). Gunakan kalkulator di atas untuk sukatan yang tepat.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>Berapa biji benih salad patut diletak dalam satu lubang span?</span>
+          <span>▾</span>
+        </div>
+        <div class="faq-answer">
+          Letakkan <strong>2 hingga 3 biji benih</strong> setiap lubang span. Apabila anak pokok berumur 7–10 hari (keluar sepasang daun sebenar), pilih <strong>1 anak pokok yang paling kuat dan tegap</strong>, lalu potong/buang yang selebihnya. 1 pokok bagi setiap net pot menghasilkan salad yang kembang bulat dan lebat.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>Kenapa pada paket tertera waktu tuai 70–80 hari, tetapi panduan ini sebut 35–45 hari?</span>
+          <span>▾</span>
+        </div>
+        <div class="faq-answer">
+          Label "70–80 hari" pada bungkusan biji benih merujuk kepada kaedah penanaman di tanah tradisional secara semaian terbuka. Dalam sistem <strong>hidroponik pasif Kratky</strong>, akar sentiasa mempunyai akses terus kepada larutan nutrien dan air tanpa halangan tanah, menyebabkan kadar pembesaran hampir 2 kali ganda lebih laju! Anda boleh mula menuai daun luar salad seawal hari ke-28 hingga ke-35.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span>Bagaimanakah cara menyimpan baki benih Framoc yang belum digunakan?</span>
+          <span>▾</span>
+        </div>
+        <div class="faq-answer">
+          Bungkus baki benih semula, lipat kemas dan masukkan ke dalam beg kedap udara (ziplock) atau bekas kedap kecil. Simpan di bahagian laci sayur (<em>chiller</em>) peti sejuk rumah anda. Jangan letak di bahagian beku (<em>freezer</em>). Dengan kaedah ini, benih Framoc anda kekal bercambah dengan baik sehingga tarikh luput 30 Disember 2029!
+        </div>
+      </div>
+    </div>
+
+    <!-- Site Footer -->
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <span class="footer-brand-title">Khai Space</span>
+          <span class="footer-brand-desc">Dokumentasi Projek Agroteknologi Hidroponik Pasif • Salad / Lettuce Framoc</span>
+        </div>
+        <div class="footer-links">
+          <a href="index.html">Projek Pak Choy</a>
+          <a href="salad.html" style="color: var(--primary); font-weight:600;">Projek Salad</a>
+          <a href="tanaman.html" style="color: #0284c7; font-weight:600;">🌱 Direktori Tanaman</a>
+          <a href="/projects">Semua Projek</a>
+          <a href="/about">Tentang</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 Khai Space. Hak cipta terpelihara.</span>
+        <span>khaispace.com • Built with Next.js & Tailwind CSS</span>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    // Calculator for Salad Baja
+    function calculateSaladBaja() {
+      const liters = parseFloat(document.getElementById('saladWaterLiters').value) || 0;
+      const stage = document.getElementById('saladGrowthStage').value;
+      
+      let ratePerLiter = 3.0;
+      let targetEC = '0.9 - 1.1';
+
+      if (stage === 'early') {
+        ratePerLiter = 2.0;
+        targetEC = '0.5 - 0.7';
+      } else if (stage === 'transplant') {
+        ratePerLiter = 3.0;
+        targetEC = '0.9 - 1.1';
+      } else if (stage === 'mature') {
+        ratePerLiter = 4.0;
+        targetEC = '1.1 - 1.3';
+      } else if (stage === 'flush') {
+        ratePerLiter = 0.0;
+        targetEC = 'Air Paip (0.0)';
+      }
+
+      let totalA = Math.round(liters * ratePerLiter * 10) / 10;
+      let totalB = totalA;
+
+      document.getElementById('resSaladA').innerText = totalA + ' ml';
+      document.getElementById('resSaladB').innerText = totalB + ' ml';
+      document.getElementById('resSaladEC').innerText = targetEC;
+    }
+
+    // Toggle FAQ
+    function toggleFaq(el) {
+      const answer = el.nextElementSibling;
+      if (answer.style.display === 'none' || getComputedStyle(answer).display === 'none') {
+        answer.style.display = 'block';
+        el.querySelector('span:last-child').innerText = '▾';
+      } else {
+        answer.style.display = 'none';
+        el.querySelector('span:last-child').innerText = '▸';
+      }
+    }
+
+    // Date Tracker Integration
+    const STORAGE_KEY = 'khai_salad_start_date';
+
+    function setStartDate() {
+      const input = document.getElementById('seedlingStartDate');
+      const val = input.value;
+      if (!val) {
+        alert('Sila pilih tarikh mula semaian.');
+        return;
+      }
+      localStorage.setItem(STORAGE_KEY, val);
+      updateDayTracker(val);
+    }
+
+    function resetStartDate() {
+      localStorage.removeItem(STORAGE_KEY);
+      document.getElementById('seedlingStartDate').value = '';
+      document.getElementById('date-calculation-result').style.display = 'none';
+      document.getElementById('header-status-badge').innerText = 'Template Bersedia (Hari 0)';
+      document.getElementById('status-day-pill').innerText = 'Fasa Pra-Semaian (Hari 0 • Boleh Mula Bila-Bila Masa)';
+      document.getElementById('status-title-text').innerText = 'Status Persediaan: Benih Framoc Diterima — Template & Panduan Bersedia Sedia Mula 🌱🥗';
+      
+      // Reset stages
+      document.querySelectorAll('.stage-card').forEach((card, idx) => {
+        card.classList.remove('current', 'completed');
+        const pill = card.querySelector('.stage-pill');
+        if (idx === 0) {
+          card.classList.add('current');
+          if (pill) {
+            pill.className = 'stage-pill pill-active';
+            pill.innerText = 'SEMAK PERSEDIAAN';
+          }
+        } else {
+          if (pill) {
+            pill.className = 'stage-pill pill-upcoming';
+            pill.innerText = 'AKAN DATANG';
+          }
+        }
+      });
+    }
+
+    function updateDayTracker(startDateStr) {
+      const start = new Date(startDateStr);
+      const today = new Date();
+      
+      // Difference in days
+      const diffTime = today - start;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      
+      const resBox = document.getElementById('date-calculation-result');
+      resBox.style.display = 'block';
+
+      if (diffDays < 0) {
+        resBox.innerHTML = `⏳ Tarikh mula ditetapkan pada <strong>${startDateStr}</strong> (Dijadualkan bermula dalam ${Math.abs(diffDays)} hari lagi).`;
+        return;
+      }
+
+      const currentDay = diffDays;
+      let phaseName = 'Percambahan';
+      let activeStageIndex = 1;
+
+      if (currentDay <= 3) {
+        phaseName = 'Fasa 1: Penyemaian & Percambahan';
+        activeStageIndex = 1;
+      } else if (currentDay <= 7) {
+        phaseName = 'Fasa 2: Kotiledon & Pendedahan Matahari Pagi';
+        activeStageIndex = 2;
+      } else if (currentDay <= 12) {
+        phaseName = 'Fasa 3: Daun Sebenar Pertama & Nutrien Nipis';
+        activeStageIndex = 3;
+      } else if (currentDay <= 15) {
+        phaseName = 'Fasa 4: Pemindahan ke Takung Kratky';
+        activeStageIndex = 4;
+      } else if (currentDay <= 32) {
+        phaseName = 'Fasa 5: Tumbesaran Vegetatif & Zon Akar Udara';
+        activeStageIndex = 5;
+      } else {
+        phaseName = 'Fasa 6: Matang & Fasa Penuaian Daun Segar';
+        activeStageIndex = 6;
+      }
+
+      document.getElementById('header-status-badge').innerText = `Hari Ke-${currentDay} (${phaseName})`;
+      document.getElementById('status-day-pill').innerText = `Hari Ke-${currentDay} • ${phaseName}`;
+      document.getElementById('status-title-text').innerText = `Status Semasa: Hari Ke-${currentDay} — ${phaseName} 🌿🥗`;
+
+      resBox.innerHTML = `
+        🌱 <strong>Penjejak Aktif:</strong> Tarikh mula semai: <strong>${startDateStr}</strong>.<br>
+        Hari ini adalah <strong>Hari Ke-${currentDay}</strong> semaian anda (${phaseName}).<br>
+        Baki anggaran menuju tuaian pertama: <strong>~${Math.max(0, 35 - currentDay)} hari</strong> lagi!
+      `;
+
+      // Update stage cards
+      for (let i = 1; i <= 6; i++) {
+        const card = document.getElementById('stage-card-' + i);
+        const pill = document.getElementById('pill-stage-' + i);
+        if (!card || !pill) continue;
+
+        card.classList.remove('current', 'completed');
+        if (i < activeStageIndex) {
+          card.classList.add('completed');
+          pill.className = 'stage-pill pill-done';
+          pill.innerText = 'SELESAI ✓';
+        } else if (i === activeStageIndex) {
+          card.classList.add('current');
+          pill.className = 'stage-pill pill-active';
+          pill.innerText = `AKTIF KINI (HARI ${currentDay})`;
+        } else {
+          pill.className = 'stage-pill pill-upcoming';
+          pill.innerText = 'AKAN DATANG';
+        }
+      }
+    }
+
+    // Auto-load saved start date on launch
+    window.addEventListener('DOMContentLoaded', () => {
+      calculateSaladBaja();
+      const savedDate = localStorage.getItem(STORAGE_KEY);
+      if (savedDate) {
+        document.getElementById('seedlingStartDate').value = savedDate;
+        updateDayTracker(savedDate);
+      } else {
+        // Default date picker to today's date so it's 1-click ready
+        const todayStr = new Date().toISOString().split('T')[0];
+        document.getElementById('seedlingStartDate').value = todayStr;
+      }
+    });
+  </script>
+</body>
+</html>
