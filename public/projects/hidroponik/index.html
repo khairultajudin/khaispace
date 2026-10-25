@@ -1168,6 +1168,49 @@
       flex-wrap: wrap;
       gap: 8px;
     }
+
+    /* Start Date Setter Widget */
+    .start-date-widget {
+      background: linear-gradient(135deg, #f0f7ff 0%, #e8f1fa 100%);
+      border: 1.5px dashed var(--primary);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-top: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .date-input-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn-action-primary {
+      background: var(--primary);
+      color: #ffffff;
+      border: none;
+      padding: 9px 18px;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      font-family: 'Manrope', sans-serif;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+      box-shadow: var(--shadow-sm);
+    }
+    .btn-action-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
   </style>
 </head>
 <body>
@@ -1235,7 +1278,7 @@
         </div>
         <div class="spec-item">
           <span class="spec-label">Status Semasa</span>
-          <span class="spec-val" style="color: var(--accent-strong);">Fasa Roset Matang & Pra-Tuai (Hari Ke-26)</span>
+          <span class="spec-val" style="color: var(--accent-strong);" id="pakchoy-header-status">Fasa Roset Matang & Pra-Tuai (Hari Ke-26)</span>
         </div>
       </div>
     </header>
@@ -1245,9 +1288,9 @@
       <div class="status-header-row">
         <div class="status-title-area">
           <div class="live-dot"></div>
-          <div class="status-heading">Status Semasa: Hari Ke-26 — Air Mula Surut & Zon Akar Oksigen Kratky Meluas, EC Stabil 970–1042 µS/cm (Pra-Tuai) 🌿🥬💧</div>
+          <div class="status-heading" id="pakchoy-status-heading">Status Semasa: Hari Ke-26 — Air Mula Surut & Zon Akar Oksigen Kratky Meluas, EC Stabil 970–1042 µS/cm (Pra-Tuai) 🌿🥬💧</div>
         </div>
-        <div class="status-tag" style="background: rgba(16, 185, 129, 0.25); color: var(--accent-strong); border: 1px solid rgba(16, 185, 129, 0.5);">Hari Ke-26 (Zon Udara Matang • Baki ~2–9 Hari Tuai)</div>
+        <div class="status-tag" id="pakchoy-status-tag" style="background: rgba(16, 185, 129, 0.25); color: var(--accent-strong); border: 1px solid rgba(16, 185, 129, 0.5);">Hari Ke-26 (Zon Udara Matang • Baki ~2–9 Hari Tuai)</div>
       </div>
 
       <p style="font-size: 0.95rem; color: var(--foreground); margin-bottom: 12px;">
@@ -1287,6 +1330,28 @@
           </div>
         </div>
       </div>
+
+      <!-- Start Date Selector / Interactive Widget for Pak Choy -->
+      <div class="start-date-widget">
+        <div>
+          <div style="font-weight: 700; color: var(--foreground); font-size: 0.92rem; margin-bottom: 2px;">
+            🗓️ Penjejak Tarikh & Hari Tumbesaran Pak Choy:
+          </div>
+          <div style="font-size: 0.8rem; color: var(--muted);">
+            Pilih atau kemas kini tarikh mula semai untuk mengira umur pokok dan jangkaan tuaian secara automatik.
+          </div>
+        </div>
+        <div class="date-input-group">
+          <input type="date" id="pakchoyStartDate" class="calc-input" style="padding: 7px 12px; font-size: 0.85rem;">
+          <button type="button" class="btn-action-primary" onclick="setPakchoyStartDate()">
+            <span>Kemas Kini Hari</span>
+          </button>
+          <button type="button" style="background: transparent; border: 1px solid var(--border); padding: 7px 12px; border-radius: var(--radius-sm); font-size: 0.8rem; cursor: pointer; color: var(--muted);" onclick="resetPakchoyStartDate()">
+            Reset (Hari 26)
+          </button>
+        </div>
+      </div>
+      <div id="pakchoy-date-calculation-result" style="display: none; margin-top: 12px; padding: 10px 14px; background: #ffffff; border-radius: 6px; border-left: 3px solid var(--primary); font-size: 0.86rem; color: var(--foreground);"></div>
     </div>
 
     <!-- JURNAL BERGAMBAR TUMBESARAN (PHOTO GROWTH JOURNAL) -->
@@ -2743,6 +2808,94 @@
       if (activeBtn) activeBtn.classList.add('active');
       if (activeContent) activeContent.classList.add('active');
     }
+
+    // Pak Choy Date Tracker Integration
+    const PAKCHOY_STORAGE_KEY = 'khai_pakchoy_start_date';
+    const DEFAULT_PAKCHOY_START_DATE = '2026-09-29'; // Yields Hari Ke-26 on 2026-10-25
+
+    function setPakchoyStartDate() {
+      const input = document.getElementById('pakchoyStartDate');
+      const val = input.value;
+      if (!val) {
+        alert('Sila pilih tarikh mula semaian Pak Choy.');
+        return;
+      }
+      localStorage.setItem(PAKCHOY_STORAGE_KEY, val);
+      updatePakchoyDayTracker(val);
+    }
+
+    function resetPakchoyStartDate() {
+      localStorage.removeItem(PAKCHOY_STORAGE_KEY);
+      document.getElementById('pakchoyStartDate').value = DEFAULT_PAKCHOY_START_DATE;
+      updatePakchoyDayTracker(DEFAULT_PAKCHOY_START_DATE);
+    }
+
+    function updatePakchoyDayTracker(startDateStr) {
+      const start = new Date(startDateStr);
+      const today = new Date();
+      
+      const diffTime = today - start;
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      
+      const resBox = document.getElementById('pakchoy-date-calculation-result');
+      if (!resBox) return;
+      resBox.style.display = 'block';
+
+      if (diffDays < 0) {
+        resBox.innerHTML = `⏳ Tarikh mula ditetapkan pada <strong>${startDateStr}</strong> (Dijadualkan bermula dalam ${Math.abs(diffDays)} hari lagi).`;
+        return;
+      }
+
+      const currentDay = diffDays;
+      let phaseName = 'Fasa Roset Matang & Pra-Tuai';
+      let remainingDays = Math.max(0, 35 - currentDay);
+
+      if (currentDay <= 2) {
+        phaseName = 'Fasa 1: Penyemaian Biji Benih';
+      } else if (currentDay <= 6) {
+        phaseName = 'Fasa 2: Benih Bercambah & Pendedahan Cahaya';
+      } else if (currentDay <= 10) {
+        phaseName = 'Fasa 3: Kemunculan Daun Sebenar & Baja Nipis';
+      } else if (currentDay <= 12) {
+        phaseName = 'Fasa 4: Penjarangan & Pemindahan Takung Kratky';
+      } else if (currentDay <= 27) {
+        phaseName = 'Fasa 5: Tumbesaran Vegetatif & Zon Udara Kratky';
+      } else {
+        phaseName = 'Fasa 6: Kematangan & Tuaian Segar';
+      }
+
+      const headerStatus = document.getElementById('pakchoy-header-status');
+      if (headerStatus) {
+        headerStatus.innerText = `${phaseName} (Hari Ke-${currentDay})`;
+      }
+
+      const statusHeading = document.getElementById('pakchoy-status-heading');
+      if (statusHeading) {
+        statusHeading.innerText = `Status Semasa: Hari Ke-${currentDay} — Air Mula Surut & Zon Akar Oksigen Kratky Meluas, EC Stabil 970–1042 µS/cm (Pra-Tuai) 🌿🥬💧`;
+      }
+
+      const statusTag = document.getElementById('pakchoy-status-tag');
+      if (statusTag) {
+        statusTag.innerText = `Hari Ke-${currentDay} (Zon Udara Matang • Baki ~${remainingDays} Hari Tuai)`;
+      }
+
+      resBox.innerHTML = `
+        🥬 <strong>Penjejak Pak Choy Aktif:</strong> Tarikh mula semai: <strong>${startDateStr}</strong>.<br>
+        Hari ini adalah <strong>Hari Ke-${currentDay}</strong> semaian anda (${phaseName}).<br>
+        Baki anggaran menuju tuaian penuh: <strong>~${remainingDays} hari</strong> lagi (Hari Ke-28–35)!
+      `;
+    }
+
+    // Auto-load on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      calculateBaja();
+      const savedDate = localStorage.getItem(PAKCHOY_STORAGE_KEY) || DEFAULT_PAKCHOY_START_DATE;
+      const dateInput = document.getElementById('pakchoyStartDate');
+      if (dateInput) {
+        dateInput.value = savedDate;
+        updatePakchoyDayTracker(savedDate);
+      }
+    });
   </script>
 
 </body>
