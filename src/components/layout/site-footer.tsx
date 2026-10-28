@@ -11,16 +11,31 @@ export function SiteFooter() {
           <p className="mt-3 max-w-sm text-sm text-muted">
             {siteConfig.positioning}
           </p>
-          {siteConfig.contactEmail && (
-            <p className="mt-4 text-sm">
-              <a
-                href={`mailto:${siteConfig.contactEmail}`}
-                className="text-muted transition-colors hover:text-foreground"
-              >
-                {siteConfig.contactEmail}
-              </a>
-            </p>
-          )}
+          <div className="mt-4 space-y-2 text-sm">
+            {siteConfig.contactEmail && (
+              <p>
+                <a
+                  href={`mailto:${siteConfig.contactEmail}`}
+                  className="text-muted transition-colors hover:text-foreground"
+                >
+                  {siteConfig.contactEmail}
+                </a>
+              </p>
+            )}
+            {siteConfig.whatsappUrl && (
+              <p>
+                <a
+                  href={siteConfig.whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-muted transition-colors hover:text-foreground"
+                >
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent" aria-hidden />
+                  <span>WhatsApp: {siteConfig.whatsappNumber}</span>
+                </a>
+              </p>
+            )}
+          </div>
         </div>
         <nav aria-label="Footer">
           <ul className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
