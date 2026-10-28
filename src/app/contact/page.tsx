@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
@@ -113,17 +112,15 @@ export default function ContactPage() {
                 </div>
 
                 {qrImage && (
-                  <div className="flex flex-col items-center justify-center border border-border bg-white p-3 text-center sm:w-36 shrink-0">
-                    <Image
+                  <div className="flex items-center justify-center border border-border bg-white p-2.5 shrink-0 self-center sm:self-auto">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
                       src={qrImage}
-                      alt="WhatsApp QR Code to chat with Khai Space"
-                      width={112}
-                      height={112}
+                      alt="WhatsApp QR Code"
+                      width={120}
+                      height={120}
                       className="h-28 w-28 object-contain"
                     />
-                    <p className="mt-1.5 text-[10px] uppercase tracking-wider text-muted font-medium">
-                      Scan to chat
-                    </p>
                   </div>
                 )}
               </div>
