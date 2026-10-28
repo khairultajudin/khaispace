@@ -6,6 +6,7 @@ import { CornerMarks } from "@/components/ui/corner-marks";
 import { PageIntro } from "@/components/ui/page-intro";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { siteConfig } from "@/lib/site";
+import { whatsappQrBase64 } from "@/lib/whatsapp-qr-base64";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -111,18 +112,16 @@ export default function ContactPage() {
                   </p>
                 </div>
 
-                {qrImage && (
-                  <div className="flex items-center justify-center border border-border bg-white p-2.5 shrink-0 self-center sm:self-auto">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={qrImage}
-                      alt="WhatsApp QR Code"
-                      width={120}
-                      height={120}
-                      className="h-28 w-28 object-contain"
-                    />
-                  </div>
-                )}
+                <div className="flex items-center justify-center border border-border bg-white p-2.5 shrink-0 self-center sm:self-auto shadow-sm">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={whatsappQrBase64}
+                    alt="WhatsApp QR Code"
+                    width={120}
+                    height={120}
+                    className="h-28 w-28 object-contain"
+                  />
+                </div>
               </div>
 
               <div className="mt-8">
