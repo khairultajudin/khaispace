@@ -26,6 +26,18 @@ export type Project = {
  */
 export const projects: readonly Project[] = [
   {
+    slug: "memburu-jejak",
+    title: "Memburu Jejak: Langkah Pertama",
+    category: "Digital Publishing & Interactive Reader",
+    summary:
+      "Hab penerbitan digital dan dashboard analitikal novel remaja penyiasatan 32 bab — merangkumi pembaca novel interaktif, dossier watak, graf ketegangan naratif, dan pembaca komik web.",
+    status: "Completed",
+    visual: "software",
+    cover: "/projects/memburu-jejak/cover_front.jpg",
+    href: "/projects/memburu-jejak/",
+  },
+
+  {
     slug: "biztrack",
     title: "BizTrack: Sistem Pengurusan Operasi & Yuran",
     category: "Software / Multi-Tenant SaaS",

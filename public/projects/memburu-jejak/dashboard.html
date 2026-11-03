@@ -1,0 +1,2349 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Papan Pemuka Rasmi: Memburu Jejak – Langkah Pertama</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0a0d14;
+      --bg-surface: #121624;
+      --bg-surface-elevated: #1a2035;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(139, 92, 246, 0.4);
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent-purple: #8b5cf6;
+      --accent-cyan: #06b6d4;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-emerald: #10b981;
+      --accent-blue: #3b82f6;
+      --glass-bg: rgba(18, 22, 36, 0.85);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-image: 
+        radial-gradient(circle at 15% 10%, rgba(139, 92, 246, 0.1) 0%, transparent 40%),
+        radial-gradient(circle at 85% 60%, rgba(6, 182, 212, 0.08) 0%, transparent 45%);
+    }
+
+    /* Header Nav */
+    header {
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 0.85rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .brand-badge {
+      background: linear-gradient(135deg, var(--accent-purple), #6366f1);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+
+    .brand-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #fff;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 0.5rem;
+      background: rgba(10, 13, 20, 0.6);
+      padding: 0.35rem;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    .nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-btn.active {
+      color: #fff;
+      background: var(--accent-purple);
+      box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);
+    }
+
+    /* Main Container */
+    main {
+      flex: 1;
+      max-width: 1440px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 2rem;
+    }
+
+    .tab-pane {
+      display: none;
+      animation: fadeIn 0.3s ease forwards;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-header {
+      margin-bottom: 1.8rem;
+    }
+
+    .section-tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      display: inline-block;
+      margin-bottom: 0.35rem;
+    }
+
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.85rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+
+    .section-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-top: 0.25rem;
+    }
+
+    /* Stats Grid */
+    .grid-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.35rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--border-hover);
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--card-accent, var(--accent-purple));
+    }
+
+    .stat-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2.2rem;
+      font-weight: 800;
+      margin: 0.4rem 0 0.2rem;
+      color: #fff;
+      display: flex;
+      align-items: baseline;
+      gap: 0.35rem;
+    }
+
+    .stat-sub {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    /* Tension Curve & Highlights */
+    .dashboard-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .card-panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      padding: 1.5rem;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+
+    .panel-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .curve-canvas-wrap {
+      width: 100%;
+      height: 230px;
+      position: relative;
+    }
+
+    /* Chapter Browser */
+    .chapter-browser {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 1.5rem;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      overflow: hidden;
+      min-height: 680px;
+    }
+
+    .chapter-sidebar {
+      background: rgba(10, 13, 20, 0.4);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .chapter-search-box {
+      padding: 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 0.7rem 0.95rem;
+      color: #fff;
+      font-family: inherit;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent-purple);
+    }
+
+    .chapter-list {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 600px;
+      padding: 0.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .chapter-item {
+      padding: 0.85rem 0.95rem;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.15s ease;
+      background: transparent;
+      border: 1px solid transparent;
+    }
+
+    .chapter-item:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: var(--border-color);
+    }
+
+    .chapter-item.active {
+      background: rgba(139, 92, 246, 0.15);
+      border-color: var(--accent-purple);
+    }
+
+    .item-left {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .item-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+    }
+
+    .item-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 200px;
+    }
+
+    .chapter-item.active .item-title {
+      color: #c4b5fd;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .badge-purple { background: rgba(139, 92, 246, 0.15); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.3); }
+    .badge-cyan { background: rgba(6, 182, 212, 0.15); color: #67e8f9; border: 1px solid rgba(6, 182, 212, 0.3); }
+    .badge-amber { background: rgba(245, 158, 11, 0.15); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-rose { background: rgba(244, 63, 94, 0.15); color: #fda4af; border: 1px solid rgba(244, 63, 94, 0.3); }
+    .badge-emerald { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border: 1px solid rgba(16, 185, 129, 0.3); }
+
+    /* Detail Inspector */
+    .chapter-detail-pane {
+      padding: 2.2rem;
+      overflow-y: auto;
+      max-height: 680px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .detail-head {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1.25rem;
+    }
+
+    .detail-chapter-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--accent-purple);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .detail-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.9rem;
+      font-weight: 800;
+      color: #fff;
+      margin-top: 0.2rem;
+    }
+
+    .meta-pills {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.85rem;
+      flex-wrap: wrap;
+    }
+
+    .meta-pill {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      padding: 0.35rem 0.85rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .meta-pill strong {
+      color: #fff;
+    }
+
+    .detail-section {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.35rem;
+    }
+
+    .detail-section h4 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .cast-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+
+    .cast-tag {
+      background: rgba(139, 92, 246, 0.12);
+      color: #ddd6fe;
+      border: 1px solid rgba(139, 92, 246, 0.25);
+      padding: 0.3rem 0.7rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    /* Story Arcs Grid */
+    .arc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .arc-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+      position: relative;
+    }
+
+    .arc-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 4px;
+      bottom: 0;
+      border-radius: 16px 0 0 16px;
+      background: var(--arc-accent, var(--accent-purple));
+    }
+
+    .arc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .arc-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .arc-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      font-size: 0.88rem;
+      color: #cbd5e1;
+      margin-top: 0.35rem;
+    }
+
+    .arc-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+    }
+
+    .step-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--accent-cyan);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      white-space: nowrap;
+      margin-top: 0.15rem;
+    }
+
+    /* Characters Grid */
+    .char-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 1.35rem;
+    }
+
+    .char-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.35rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      transition: all 0.2s ease;
+    }
+
+    .char-card:hover {
+      border-color: var(--accent-purple);
+      transform: translateY(-2px);
+    }
+
+    .char-avatar-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .char-avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, var(--char-bg-1, #6366f1), var(--char-bg-2, #8b5cf6));
+    }
+
+    .char-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .char-role {
+      font-size: 0.78rem;
+      color: var(--accent-cyan);
+      font-weight: 600;
+    }
+
+    .char-desc {
+      font-size: 0.86rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .char-chapters {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      border-top: 1px solid var(--border-color);
+      padding-top: 0.65rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding: 1.5rem 2rem;
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      background: var(--glass-bg);
+    }
+
+    @media (max-width: 900px) {
+      .dashboard-row { grid-template-columns: 1fr; }
+      .chapter-browser { grid-template-columns: 1fr; }
+      .chapter-sidebar { border-right: none; border-bottom: 1px solid var(--border-color); }
+    }
+  
+    .char-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .char-card:hover {
+      border-color: var(--accent-purple);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 30px rgba(139, 92, 246, 0.18);
+    }
+
+    .char-thumb-wrap {
+      position: relative;
+      width: 100%;
+      height: 165px;
+      background: #0d111a;
+      cursor: pointer;
+      overflow: hidden;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .char-thumb-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top center;
+      transition: transform 0.4s ease;
+      display: block;
+    }
+
+    .char-card:hover .char-thumb-img {
+      transform: scale(1.06);
+    }
+
+    .char-thumb-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 40%, rgba(10, 13, 20, 0.85) 100%);
+      display: flex;
+      align-items: flex-end;
+      padding: 0.65rem;
+      opacity: 0.9;
+      transition: opacity 0.2s ease;
+    }
+
+    .char-card:hover .char-thumb-overlay {
+      opacity: 1;
+      background: linear-gradient(180deg, rgba(139, 92, 246, 0.1) 0%, rgba(10, 13, 20, 0.9) 100%);
+    }
+
+    .view-pill {
+      background: rgba(18, 22, 36, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.2s ease;
+    }
+
+    .char-card:hover .view-pill {
+      background: var(--accent-purple);
+      border-color: var(--accent-purple);
+    }
+
+    .char-body {
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      flex: 1;
+    }
+
+    /* Image Modal Lightbox */
+    .img-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 999;
+      background: rgba(4, 7, 13, 0.88);
+      backdrop-filter: blur(12px);
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .img-modal.active {
+      display: flex;
+      opacity: 1;
+    }
+    .img-modal-content {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: 18px;
+      max-width: 1200px;
+      width: 100%;
+      max-height: 92vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.75);
+    }
+    .img-modal-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(10, 13, 20, 0.6);
+    }
+    .img-modal-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .img-modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.8rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0.2rem 0.5rem;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+    .img-modal-close:hover {
+      color: #fff;
+      transform: scale(1.1);
+    }
+    .img-modal-body {
+      padding: 1.25rem;
+      overflow: auto;
+      text-align: center;
+      background: #080b12;
+    }
+    .img-modal-body img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 10px;
+      display: block;
+      margin: 0 auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+
+  </style>
+
+  <style>
+    /* Master Dossier Styling */
+    .master-dossier-card {
+      background: linear-gradient(135deg, rgba(30, 27, 75, 0.65), rgba(15, 23, 42, 0.85));
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      border-radius: 20px;
+      padding: 1.75rem;
+      margin-bottom: 2.5rem;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .master-dossier-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #8b5cf6, #06b6d4, #10b981);
+    }
+
+    .dossier-grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 1.75rem;
+    }
+
+    @media (max-width: 960px) {
+      .dossier-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .dossier-left {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .dossier-img-box {
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .dossier-img-box:hover {
+      transform: translateY(-2px);
+      border-color: #8b5cf6;
+    }
+
+    .dossier-img-box img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .dossier-img-badge {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      color: #38bdf8;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .dossier-quote-box {
+      background: rgba(10, 13, 20, 0.6);
+      border-left: 3px solid #8b5cf6;
+      border-radius: 10px;
+      padding: 1rem 1.15rem;
+      font-size: 0.86rem;
+      color: #c4b5fd;
+      font-style: italic;
+      line-height: 1.6;
+    }
+
+    .dossier-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .dossier-badge-item {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.3rem 0.65rem;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #e2e8f0;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .dossier-badge-purple { background: rgba(139, 92, 246, 0.2); color: #c4b5fd; border-color: rgba(139, 92, 246, 0.4); }
+    .dossier-badge-cyan { background: rgba(6, 182, 212, 0.2); color: #67e8f9; border-color: rgba(6, 182, 212, 0.4); }
+    .dossier-badge-emerald { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.4); }
+    .dossier-badge-amber { background: rgba(245, 158, 11, 0.2); color: #fde68a; border-color: rgba(245, 158, 11, 0.4); }
+
+    .dossier-right {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .dossier-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 0.75rem;
+    }
+
+    .dossier-name {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: #fff;
+      font-family: 'Outfit', sans-serif;
+      letter-spacing: -0.01em;
+    }
+
+    .dossier-role-subtitle {
+      font-size: 0.9rem;
+      color: #06b6d4;
+      font-weight: 600;
+      margin-top: 0.15rem;
+    }
+
+    .dossier-section-block {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 12px;
+      padding: 1.15rem 1.35rem;
+    }
+
+    .dossier-sec-head {
+      font-size: 0.82rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #a78bfa;
+      margin-bottom: 0.6rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .dossier-props-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+    }
+
+    .dossier-props-table td {
+      padding: 0.45rem 0.6rem;
+      vertical-align: top;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .dossier-props-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .dossier-props-table td:first-child {
+      width: 28%;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+
+    .dossier-props-table td:last-child {
+      color: #f1f5f9;
+      line-height: 1.5;
+    }
+
+    .dossier-relation-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .relation-item {
+      background: rgba(10, 13, 20, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.82rem;
+    }
+
+    .relation-item strong {
+      color: #38bdf8;
+      display: block;
+      margin-bottom: 0.2rem;
+    }
+
+    .relation-item span {
+      color: #cbd5e1;
+      line-height: 1.4;
+    }
+  </style>
+
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <span class="brand-badge">Edisi Rasmi</span>
+      <div class="brand-title">Memburu Jejak – Langkah Pertama</div>
+    </div>
+    <nav class="nav-tabs">
+      <button class="nav-btn active" onclick="switchTab('overview')">
+        <span>📊</span> Metrik Rasmi
+      </button>
+      <button class="nav-btn" onclick="switchTab('chapters')">
+        <span>📖</span> Penjelajah Bab
+      </button>
+      <button class="nav-btn" onclick="switchTab('arcs')">
+        <span>🗺️</span> Arka Penceritaan
+      </button>
+      <button class="nav-btn" onclick="switchTab('characters')">
+        <span>👥</span> Dossier Watak
+      </button>
+      <a href="reader.html" class="nav-btn" style="text-decoration: none; border-color: rgba(16, 185, 129, 0.5); background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.2)); color: #fff;"><span>📖</span> Buka Novel Reader (32 Bab)</a>
+      <a href="komik_reader.html" class="nav-btn" style="text-decoration: none; border-color: rgba(139, 92, 246, 0.5); background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(6, 182, 212, 0.2)); color: #fff;">
+        <span>🎨</span> Komik Episod 01 (Bercetak & Webtoon)
+      </a>
+      <a href="Komik/Memburu_Jejak_Episod_01_Komik.pdf" download class="nav-btn" style="text-decoration: none; border-color: rgba(239, 68, 68, 0.5); background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(244, 63, 94, 0.2)); color: #fff;">
+        <span>📥</span> PDF Komik (4 Muka)
+      </a>
+      <button class="nav-btn" onclick="switchTab('publishing')">
+        <span>📚</span> Kulit & Penerbitan
+      </button>
+      <a href="/projects" class="nav-btn" style="text-decoration: none; border-color: rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.08); color: #cbd5e1; margin-left: auto;"><span>←</span> Kembali ke KhaiSpace</a>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+
+    <!-- TAB 1: METRIK RASMI -->
+    <div id="tab-overview" class="tab-pane active">
+      <div class="section-header">
+        <span class="section-tag">Audit Terkini</span>
+        <h2 class="section-title">Metrik Rasmi & Struktur Manuskrip</h2>
+        <p class="section-desc">Profil komprehensif manuskrip lengkap 32 bab novel 'Memburu Jejak – Langkah Pertama'.</p>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="grid-stats">
+        <div class="stat-card" style="--card-accent: var(--accent-purple);">
+          <div class="stat-label">Jumlah Bab</div>
+          <div class="stat-value">32 <span class="stat-sub">Bab</span></div>
+          <div class="stat-sub">Lengkap dari Riuh 5 Alfa hingga Penutup</div>
+        </div>
+        <div class="stat-card" style="--card-accent: var(--accent-cyan);">
+          <div class="stat-label">Jumlah Perkataan</div>
+          <div class="stat-value">31,328 <span class="stat-sub">Patah</span></div>
+          <div class="stat-sub">Purata ~979 perkataan setiap bab</div>
+        </div>
+        <div class="stat-card" style="--card-accent: var(--accent-amber);">
+          <div class="stat-label">Kepadatan Dialog</div>
+          <div class="stat-value">1,161 <span class="stat-sub">Dialog</span></div>
+          <div class="stat-sub">38% interaksi lisan autentik & segar</div>
+        </div>
+        <div class="stat-card" style="--card-accent: var(--accent-emerald);">
+          <div class="stat-label">Status Kesinambungan</div>
+          <div class="stat-value">100% <span class="stat-sub">Sempurna</span></div>
+          <div class="stat-sub">Kalis plot hole & sedia terbit</div>
+        </div>
+      </div>
+
+      <!-- Chart & High Level Insights -->
+      <div class="dashboard-row">
+        <div class="card-panel">
+          <div class="panel-head">
+            <div class="panel-title">📈 Keluk Ketegangan Naratif (Narrative Tension Curve)</div>
+            <span class="badge badge-purple">Bab 1 hingga Bab 32</span>
+          </div>
+          <div class="curve-canvas-wrap">
+            <canvas id="tensionCanvas"></canvas>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">
+            <span>Bab 1: 5 Alfa</span>
+            <span>Bab 8: Taklimat Pengawas</span>
+            <span>Bab 13: Kes Kecurian</span>
+            <span>Bab 19: Surau Lama</span>
+            <span>Bab 30: Perangkap Beg</span>
+            <span>Bab 31: Bilik Disiplin</span>
+            <span>Bab 32: Keadilan</span>
+          </div>
+        </div>
+
+        <div class="card-panel">
+          <div class="panel-head">
+            <div class="panel-title">⭐ Ringkasan Kualiti Naratif</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 0.85rem; font-size: 0.88rem;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Pacing & Ritma Pembacaan</span>
+              <span class="badge badge-emerald">Cemerlang (9.6 / 10)</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Kerapian Garis Masa & Petunjuk</span>
+              <span class="badge badge-emerald">Kalis Cacat (9.8 / 10)</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Autentisiti Dialog Remaja</span>
+              <span class="badge badge-emerald">Sangat Hidup (9.4 / 10)</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Penyelarasan Bahasa Baku</span>
+              <span class="badge badge-emerald">100% Piawai DBP</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Nilai Moral & Tawakal Khalid</span>
+              <span class="badge badge-cyan">Teras Kekuatan Novel</span>
+            </div>
+          </div>
+          <div style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-color); font-size: 0.82rem; color: #cbd5e1; line-height: 1.5;">
+            💡 <em>Penceritaan kini bergerak pantas tanpa benang tergantung. Watak Khalid menonjolkan kebijaksanaan akal dan kejernihan hati dalam menghadapi fitnah.</em>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: CHAPTER EXPLORER -->
+    <div id="tab-chapters" class="tab-pane">
+      <div class="section-header">
+        <span class="section-tag">Penjelajah Kandungan</span>
+        <h2 class="section-title">Penjelajah Bab demi Bab (Bab 1 – Bab 32)</h2>
+        <p class="section-desc">Pilih mana-mana bab untuk membaca sinopsis, watak yang hadir, dan titik tolak naratif bab berkenaan.</p>
+      </div>
+
+      <div class="chapter-browser">
+        <!-- Sidebar -->
+        <div class="chapter-sidebar">
+          <div class="chapter-search-box">
+            <input type="text" id="chapterSearch" class="search-input" placeholder="🔍 Cari tajuk, watak, atau kategori..." oninput="filterChapters()">
+          </div>
+          <div class="chapter-list" id="chapterList"></div>
+        </div>
+
+        <!-- Detail Pane -->
+        <div class="chapter-detail-pane" id="chapterDetail"></div>
+      </div>
+    </div>
+
+    <!-- TAB 3: STORY ARCS -->
+    <div id="tab-arcs" class="tab-pane">
+      <div class="section-header">
+        <span class="section-tag">Struktur Plot</span>
+        <h2 class="section-title">Arka Penceritaan Utama (Story Arcs)</h2>
+        <p class="section-desc">Bagaimana setiap benang misteri dan konflik dihubungkan dari permulaan hingga penamat.</p>
+      </div>
+
+      <div class="arc-grid">
+        <!-- Arc 1 -->
+        <div class="arc-card" style="--arc-accent: var(--accent-orange, #f97316);">
+          <div class="arc-header">
+            <h3 class="arc-title">1. Arka Kit & Amaran Jalanan</h3>
+            <span class="badge badge-amber">Saling Berhubung</span>
+          </div>
+          <div class="arc-steps">
+            <div class="arc-step">
+              <span class="step-badge">Bab 3</span>
+              <span>Pertemuan di kedai makan & kejaran malam; Kit menyelamatkan Khalid dari ancaman penyerang berparang.</span>
+            </div>
+            <div class="arc-step">
+              <span class="step-badge">Bab 4</span>
+              <span>Khalid menemui nota tulisan Kit: amaran agar jangan sesekali mempercayai budak pengawas bernama Edy.</span>
+            </div>
+            <div class="arc-step">
+              <span class="step-badge">Bab 32</span>
+              <span>Di luar pagar sekolah, Kit membalas senyuman Khalid dengan tabik hormat dua jari—maruah lamanya ditebus.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Arc 2 -->
+        <div class="arc-card" style="--arc-accent: var(--accent-rose);">
+          <div class="arc-header">
+            <h3 class="arc-title">2. Arka Dalang Cikgu Muzammil & Edy</h3>
+            <span class="badge badge-rose">Konspirasi</span>
+          </div>
+          <div class="arc-steps">
+            <div class="arc-step">
+              <span class="step-badge">Bab 8</span>
+              <span>Cikgu Muzammil mengendalikan taklimat pengawas dan menyerahkan amanah kunci stor sukan kepada Edy.</span>
+            </div>
+            <div class="arc-step">
+              <span class="step-badge">Bab 13–18</span>
+              <span>Edy dan Zamani menyalahgunakan kuasa pengawas untuk mengintip dan menjayakan kes kecurian.</span>
+            </div>
+            <div class="arc-step">
+              <span class="step-badge">Bab 27–32</span>
+              <span>Bukti dokumen pelupusan sampah mengaitkan Cikgu Muzammil sehingga membawa penangkapannya oleh pihak polis.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Arc 3 -->
+        <div class="arc-card" style="--arc-accent: var(--accent-cyan);">
+          <div class="arc-header">
+            <h3 class="arc-title">3. Arka Surau Lama & Markas Rahsia</h3>
+            <span class="badge badge-cyan">Misteri Lokasi</span>
+          </div>
+          <div class="arc-steps">
+            <div class="arc-step">
+              <span class="step-badge">Bab 19</span>
+              <span>Solat Asar di surau lama; kisah seram pembunuhan lama terbongkar sebagai helah untuk mengosongkan kawasan.</span>
+            </div>
+            <div class="arc-step">
+              <span class="step-badge">Bab 20</span>
+              <span>Ustazah Rahimah mengesahkan kes pecah masuk zaman dahulu yang disenyapkan demi menjaga nama sekolah.</span>
+            </div>
+            <div class="arc-step">
+              <span class="step-badge">Bab 29</span>
+              <span>Stor belakang surau lama disahkan menjadi tempat pengumpulan barangan curi sebelum diseludup keluar.</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Arc 4 -->
+        <div class="arc-card" style="--arc-accent: var(--accent-purple);">
+          <div class="arc-header">
+            <h3 class="arc-title">4. Arka Latar MRSM & Tawakal Khalid</h3>
+            <span class="badge badge-purple">Jiwa Protagonis</span>
+          </div>
+          <div class="arc-steps">
+            <div class="arc-step">
+              <span class="step-badge">Bab 1–6</span>
+              <span>Kemasukan Khalid membawa beban rahsia lama MRSM dan nasihat berharga Profesor Tarmizi.</span>
+            </div>
+            <div class="arc-step">
+              <span class="step-badge">Bab 31</span>
+              <span>Cikgu Bakar mengungkit fail rekod MRSM semasa menyoal siasat; Khalid teguh bertawakal kepada Allah.</span>
+            </div>
+            <div class="arc-step">
+              <span class="step-badge">Bab 32</span>
+              <span>Kebenaran terbukti; Khalid menginsafi bahawa segala kemenangan dan perlindungan datang daripada Allah.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: CHARACTERS -->
+    <div id="tab-characters" class="tab-pane">
+      <div class="section-header">
+        <span class="section-tag">Barisan Tokoh</span>
+        <h2 class="section-title">Dossier Watak & Hubungan Naratif</h2>
+        <p class="section-desc">Profil lengkap tokoh-tokoh utama yang menggerakkan jalan cerita novel.</p>
+      </div>
+
+      
+      <!-- MASTER CANON DOSSIER: MOHD KHALID BIN TARMIZI -->
+      <div class="master-dossier-card">
+        <div class="dossier-grid">
+          
+          <!-- Sisi Kiri: Gambar Rujukan & Petikan Canon -->
+          <div class="dossier-left">
+            <div class="dossier-img-box" onclick="openImageModal('Komik/karakter/khalid_concept.jpg', 'Mohd Khalid bin Tarmizi • Helaian Konsep Rasmi')" title="Klik untuk paparan penuh">
+              <img src="Komik/karakter/khalid_concept.jpg" alt="Mohd Khalid bin Tarmizi">
+              <div class="dossier-img-badge">Canon 16:9 HD</div>
+            </div>
+
+            <div class="dossier-badges">
+              <span class="dossier-badge-item dossier-badge-purple">Protagonis Utama</span>
+              <span class="dossier-badge-item dossier-badge-cyan">Tingkatan 5 Alfa</span>
+              <span class="dossier-badge-item dossier-badge-emerald">Bekas MRSM</span>
+              <span class="dossier-badge-item dossier-badge-amber">Anak Prof UTM</span>
+            </div>
+
+            <div class="dossier-quote-box">
+              “Kadang-kadang bukan semua benda kita boleh kekalkan, kan? Ada yang Allah ubah untuk uji kita.”
+              <div style="margin-top: 0.4rem; font-size: 0.75rem; color: #a78bfa; font-weight: 700; text-align: right;">— Bab 2: Pelajar Baharu</div>
+            </div>
+
+            <div style="background: rgba(10, 13, 20, 0.4); padding: 0.85rem; border-radius: 10px; font-size: 0.78rem; color: #94a3b8; border: 1px dashed rgba(255, 255, 255, 0.1);">
+              <strong style="color: #38bdf8; display: block; margin-bottom: 0.2rem;">Simbolisme Naratif:</strong>
+              “Cahaya kebenaran di tengah kegelapan fitnah. Hero intelek dan spiritual yang merungkai misteri dengan akal budi dan iman.”
+            </div>
+          </div>
+
+          <!-- Sisi Kanan: Analisis Terperinci Mengikut Novel & Karekter.txt -->
+          <div class="dossier-right">
+            
+            <div class="dossier-title-row">
+              <div>
+                <div class="dossier-name">MOHD KHALID BIN TARMIZI</div>
+                <div class="dossier-role-subtitle">Watak Utama &bull; Pelajar Pindahan MRSM &bull; Penyelidik Kebenaran</div>
+              </div>
+              <span class="badge badge-purple" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">Status: Canon Mutlak</span>
+            </div>
+
+            <!-- Blok 1: Profil Asas & Latar Belakang -->
+            <div class="dossier-section-block">
+              <div class="dossier-sec-head">📋 Profil Latar Belakang (Rujukan: Karekter.txt)</div>
+              <table class="dossier-props-table">
+                <tr>
+                  <td>Latar Keluarga</td>
+                  <td>Anak kepada <strong>Profesor Tarmizi</strong>, seorang pensyarah universiti (UTM) yang berpendidikan tinggi dan disegani.</td>
+                </tr>
+                <tr>
+                  <td>Asal Usul Sekolah</td>
+                  <td>Pelajar pintar dari <strong>Maktab Rendah Sains MARA (MRSM)</strong>. Berpindah ke SMK Sri Dian selepas insiden huru-hara tidak disebut di sekolah lamanya.</td>
+                </tr>
+                <tr>
+                  <td>Misteri Silam</td>
+                  <td>Fail disiplin MRSMnya dibawa ke SMK Sri Dian dan disimpan oleh Cikgu Bakar, mencetuskan prasangka awal guru disiplin (Bab 31).</td>
+                </tr>
+                <tr>
+                  <td>Perkembangan Watak</td>
+                  <td>Bermula sebagai pelajar baharu yang tenang tetapi disalah erti, kemudian berubah menjadi wira penyiasat yang membongkar kes kecurian dan konspirasi sekolah.</td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- Blok 2: Ciri Fizikal & Penampilan Visual Canon -->
+            <div class="dossier-section-block">
+              <div class="dossier-sec-head">🎨 Spesifikasi Visual & Busana Canon (Untuk Adaptasi Komik)</div>
+              <table class="dossier-props-table">
+                <tr>
+                  <td>Rupa Paras</td>
+                  <td>Kacak, manis, bersih dan bersopan. Kehadirannya menarik perhatian siswi 5 Alfa seperti Suria dan Yana sejak hari pertama (Bab 2).</td>
+                </tr>
+                <tr>
+                  <td>Gaya Rambut</td>
+                  <td>Rambut hitam lurus beralun sedikit, belah tengah/tepi klasik 90-an (*neat curtains/comma hairstyle*). Bukan rambut pacak (*spiky*).</td>
+                </tr>
+                <tr>
+                  <td>Pakaian Hari Pertama</td>
+                  <td>Kemeja putih lengan pendek rasmi dengan <strong>Lencana Perisai Biru/Merah MRSM</strong> pada poket dada kiri, tanda nama hitam <code>KHALID</code>, tali pinggang hitam, seluar hijau zaitun (*dark olive green*).</td>
+                </tr>
+                <tr>
+                  <td>Ekspresi & Bahasa Badan</td>
+                  <td>Tenang, senyuman nipis beradab, mata tajam dan peka (*observant*), berdiri tegap dan tidak tergesa-gesa.</td>
+                </tr>
+              </table>
+            </div>
+
+            <!-- Blok 3: Teras Psikologi & Kerohanian -->
+            <div class="dossier-section-block">
+              <div class="dossier-sec-head">🧠 Teras Psikologi & Asas Spiritual</div>
+              <div style="font-size: 0.86rem; color: #cbd5e1; line-height: 1.6; display: flex; flex-direction: column; gap: 0.5rem;">
+                <p><strong>1. Ketenangan Luar Biasa (92 Kali Disebut 'Tenang'):</strong> Jarang panik, tidak bertindak terburu-buru, dan mampu mengawal emosi walaupun disoal siasat secara keras oleh Cikgu Bakar atau berdepan fitnah beg sekolah (Bab 30-31).</p>
+                <p><strong>2. Minda Analitikal & Pemerhati Tajam:</strong> Suka meneliti bukti, mencatat kronologi masa, dan menghubungkan petunjuk kecil sebelum membuat sebarang tuduhan.</p>
+                <p><strong>3. Asas Rohani & Tawakal:</strong> Surau sekolah adalah zon muhasabah dirinya; solat, zikir, dan keyakinan bahawa kebenaran akan sentiasa dilindungi Allah menjadi benteng pertahanannya.</p>
+                <p><strong>4. Nilai Utama:</strong> Iman, kejujuran, dan keberanian menegakkan kebenaran walau disalah faham.</p>
+              </div>
+            </div>
+
+            <!-- Blok 4: Matriks Hubungan Naratif -->
+            <div class="dossier-section-block">
+              <div class="dossier-sec-head">👥 Matriks Hubungan Utama Watak</div>
+              <div class="dossier-relation-grid">
+                <div class="relation-item">
+                  <strong>Saiful Anuar (Ketua Kelas)</strong>
+                  <span>Sahabat karib di meja hadapan. Pelengkap sisi ceria dan orang pertama yang mempercayai kejujuran Khalid semasa dituduh.</span>
+                </div>
+                <div class="relation-item">
+                  <strong>Fahmi (Ketua Pengawas)</strong>
+                  <span>Hubungan saling menghormati antara dua minda rasional; saksi utama yang mengemukakan CCTV untuk membersihkan nama Khalid.</span>
+                </div>
+                <div class="relation-item">
+                  <strong>Kit (Sekutu Jalanan)</strong>
+                  <span>Pertemuan dramatik di kedai makan (Bab 3); saling membantu di luar pagar sekolah melawan sindiket berbahaya.</span>
+                </div>
+                <div class="relation-item">
+                  <strong>Munir ('Otai' Bilik Darjah)</strong>
+                  <span>Penyendiri sinis di tingkap yang memberi amaran awal tentang konspirasi dan jerangkap samar sekolah.</span>
+                </div>
+                <div class="relation-item">
+                  <strong>Mariam (Pemerhati Senyap)</strong>
+                  <span>Pelajar perpustakaan bertudung labuh; menganalisis peta kawasan sekolah serta sejarah kes lama bersama Khalid.</span>
+                </div>
+                <div class="relation-item">
+                  <strong>Cikgu Bakar & Cikgu Muzammil</strong>
+                  <span>Berdepan ketegasan disiplin Cikgu Bakar dan membongkar kepura-puraan Cikgu Muzammil selaku dalang sindiket sekolah.</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Header Sub-Seksyen Galeri Penuh -->
+      <div class="section-header" style="margin-top: 1.5rem; margin-bottom: 1.25rem;">
+        <span class="section-tag">Koleksi Lengkap 27 Watak</span>
+        <h3 class="section-title" style="font-size: 1.35rem;">Galeri & Rujukan Lengkap Tokoh Novel</h3>
+      </div>
+
+      <div class="char-grid" id="charactersGrid"></div>
+    </div>
+
+
+    <!-- TAB 5: KULIT & PENERBITAN -->
+    <div id="tab-publishing" class="tab-pane">
+      <div class="section-header">
+        <span class="section-tag">Spesifikasi & Pemasaran</span>
+        <h2 class="section-title">Reka Bentuk Kulit & Pelan Penerbitan</h2>
+        <p class="section-desc">Front cover rasmi, teks blurb belakang buku, dan hala tuju sekuel.</p>
+      </div>
+
+      <div class="dashboard-row" style="grid-template-columns: 320px 1fr; align-items: start;">
+        <!-- Cover Preview -->
+        <div class="card-panel" style="padding: 1rem; text-align: center;">
+          <div style="border-radius: 14px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.5); border: 1px solid var(--border-color);">
+            <img src="cover_front.jpg" alt="Kulit Depan Novel Memburu Jejak: Langkah Pertama" style="width: 100%; height: auto; display: block;">
+          </div>
+          <div style="margin-top: 1rem; font-size: 0.82rem; color: var(--text-muted);">
+            Reka Bentuk Kulit Rasmi (Nisbah 2:3)
+          </div>
+        </div>
+
+        <!-- Publishing Specs & Blurb -->
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+          <div class="card-panel">
+            <div class="panel-head">
+              <div class="panel-title">📖 Teks Blurb Belakang Buku (Back Cover Blurb)</div>
+              <span class="badge badge-emerald">Sedia Cetak</span>
+            </div>
+            <div style="font-size: 0.92rem; color: #cbd5e1; line-height: 1.7; background: rgba(10, 13, 20, 0.4); padding: 1.25rem; border-radius: 12px; border-left: 3px solid var(--accent-cyan);">
+              <p style="font-style: italic; color: var(--accent-cyan); margin-bottom: 0.5rem;">“Jangan percaya pada budak pengawas bernama Edy.”</p>
+              <p>Sekeping nota koyak yang diselitkan ke dalam poket jaketnya mengubah hari pertama Khalid di SMK Sri Dian menjadi sebuah medan perburuan yang merbahaya. Dia datang membawa masa silam kelam dari MRSM—berazam mahu menjadi pelajar biasa yang tenang di Kelas 5 Alfa.</p>
+              <p style="margin-top: 0.6rem;">Namun, apabila satu demi satu kes kecurian melanda sekolah, tuduhan mula menghala ke arahnya. Di sebalik bangunan surau lama yang diselubungi mitos berdarah zaman dahulu, ada sindiket terancang yang sedang bergerak dalam gelap.</p>
+              <p style="margin-top: 0.6rem;">Siapakah Kit—remaja jalanan yang menyelamatkannya pada malam berdarah itu? Dan apakah rahsia di sebalik senyuman tenang guru penasihat pengawas yang disegani ramai?</p>
+              <p style="margin-top: 0.6rem; font-weight: 600; color: #fff;">Sebuah novel misteri penyiasatan sekolah yang mendebarkan, penuh rahsia, dan sarat nilai tawakal.</p>
+            </div>
+          </div>
+
+          <div class="grid-stats" style="margin-bottom: 0;">
+            <div class="stat-card" style="--card-accent: var(--accent-purple);">
+              <div class="stat-label">Format Fizikal</div>
+              <div class="stat-value" style="font-size: 1.5rem;">A5 / B-Format</div>
+              <div class="stat-sub">130 mm x 195 mm</div>
+            </div>
+            <div class="stat-card" style="--card-accent: var(--accent-cyan);">
+              <div class="stat-label">Anggaran Halaman</div>
+              <div class="stat-value" style="font-size: 1.5rem;">216 – 224 m/s</div>
+              <div class="stat-sub">Fon 10.5pt, Langkau 1.25</div>
+            </div>
+            <div class="stat-card" style="--card-accent: var(--accent-amber);">
+              <div class="stat-label">Harga Cadangan</div>
+              <div class="stat-value" style="font-size: 1.5rem;">RM 25.00</div>
+              <div class="stat-sub">RRP Pasaran Semenanjung</div>
+            </div>
+          </div>
+
+          <div class="card-panel">
+            <div class="panel-head">
+              <div class="panel-title">🚀 Rancangan Sekuel: 'Langkah Kedua'</div>
+              <span class="badge badge-purple">Francais Novel</span>
+            </div>
+            <p style="font-size: 0.88rem; color: #cbd5e1; line-height: 1.6;">
+              Sindiket kecurian Cikgu Muzammil di sekolah hanyalah cabang kecil kepada pasaran gelap di luar pagar sekolah—kumpulan yang sama memburu Kit di lorong malam (Bab 3). Dalam <strong>Langkah Kedua</strong>, Kit menghubungi Khalid meminta pertolongan apabila rakan gelandangannya diculik, membawa penyiasatan Khalid melangkaui batas undang-undang institusi ke lorong-lorong rahsia bandar.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p>Studio Pengurusan Manuskrip &bull; <strong>Memburu Jejak – Langkah Pertama</strong> &bull; Hak Cipta Terpelihara KAI</p>
+  </footer>
+
+  <script>
+    const chaptersData = [
+  {
+    "num": 1,
+    "title": "Bab 1 – Riuh 5 Alfa",
+    "shortTitle": "Riuh 5 Alfa",
+    "words": 903,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Haziq",
+      "Fahmi",
+      "Zubir",
+      "Suria",
+      "Yana",
+      "Cikgu Fauziah",
+      "Amri",
+      "Jeffri",
+      "Siti",
+      "Halijah",
+      "Syikin",
+      "Safwan",
+      "Hazwan"
+    ],
+    "category": "Pengenalan",
+    "tension": 25,
+    "summary": "Pembukaan dunia sekolah harian biasa. Suasana kelas 5 Alfa yang riuh dengan perbualan bola sepak dan teknologi sebelum berita kedatangan pelajar baharu MRSM tersebar.",
+    "highlight": "Pengenalan atmosfera dinamik 5 Alfa dan watak-watak teras kelas."
+  },
+  {
+    "num": 2,
+    "title": "Bab 2 – Pelajar Baharu",
+    "shortTitle": "Pelajar Baharu",
+    "words": 997,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Haziq",
+      "Fahmi",
+      "Suria",
+      "Yana",
+      "Prof. Tarmizi",
+      "Zubir"
+    ],
+    "category": "Pengenalan",
+    "tension": 35,
+    "summary": "Khalid memperkenalkan diri dengan tenang dan bersopan. Hubungan persahabatan awal bersama Saiful terjalin. Bayangan masa silam MRSM dan pesanan 'Hati-hati' di surau mula ditanam.",
+    "highlight": "Membina asas watak Khalid yang tenang, beradab dan berjiwa rohani."
+  },
+  {
+    "num": 3,
+    "title": "Bab 3 – Pertemuan Tak Terduga",
+    "shortTitle": "Pertemuan Tak Terduga",
+    "words": 1237,
+    "cast": [
+      "Khalid",
+      "Kit",
+      "Datuk Ramli",
+      "Pak Yusuf",
+      "Cikgu Fatimah",
+      "Prof. Tarmizi"
+    ],
+    "category": "Konflik Luar",
+    "tension": 55,
+    "summary": "Insiden di kedai makan: Kit memukul Datuk Ramli kerana mempertahankan maruah. Khalid mengekori Kit sehingga berdepan kejaran bersenjata parang di lorong gelap sebelum diselamatkan oleh Kit.",
+    "highlight": "Pertemuan penting dengan Kit dan aksi kejaran malam yang mendebarkan."
+  },
+  {
+    "num": 4,
+    "title": "Bab 4 – Langkah di Ambang Rahsia",
+    "shortTitle": "Langkah di Ambang Rahsia",
+    "words": 1157,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Haziq",
+      "Fahmi",
+      "Suria",
+      "Kit",
+      "Edy",
+      "Zubir",
+      "Tinesh"
+    ],
+    "category": "Siasatan",
+    "tension": 45,
+    "summary": "Khalid terjaga dengan lebam di lengan dan menemui nota rahsia Kit di dalam poket jaketnya yang memberi amaran agar tidak mempercayai budak pengawas bernama Edy.",
+    "highlight": "Titik mula penyiasatan rahsia Khalid terhadap lembaga pengawas sekolah."
+  },
+  {
+    "num": 5,
+    "title": "Bab 5 – Teguran Pertama",
+    "shortTitle": "Teguran Pertama",
+    "words": 1040,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Haziq",
+      "Fahmi",
+      "Suria",
+      "Yana",
+      "Munir",
+      "Cikgu Fatimah",
+      "Zubir",
+      "Cikgu Bakri"
+    ],
+    "category": "Dinamik Kelas",
+    "tension": 42,
+    "summary": "Cikgu Fatimah mendenda Khalid, Saiful, Haziq dan Zubir kerana lewat masuk kelas. Munir 'otai sekolah' diperkenalkan dan mula berkongsi kisah lama sekolah.",
+    "highlight": "Interaksi realistik disiplin guru dan keakraban persahabatan 5 Alfa."
+  },
+  {
+    "num": 6,
+    "title": "Bab 6 – Antara Gelak dan Teka-Teki",
+    "shortTitle": "Antara Gelak dan Teka-Teki",
+    "words": 939,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Haziq",
+      "Fahmi",
+      "Suria",
+      "Yana",
+      "Munir",
+      "Cikgu Bakri",
+      "Cikgu Fatimah",
+      "Prof. Tarmizi",
+      "Zubir",
+      "Tinesh"
+    ],
+    "category": "Refleksi",
+    "tension": 40,
+    "summary": "Sesi permainan kuiz dan matematik santai bersama Cikgu Bakri menceriakan kelas. Pada sebelah malam, perbualan dengan Profesor Tarmizi menyentuh keazaman Khalid untuk tidak mengulangi sejarah lama.",
+    "highlight": "Keseimbangan antara humor santai sekolah dengan refleksi moral bapa-anak."
+  },
+  {
+    "num": 7,
+    "title": "Bab 7 – Bentesan Pertama",
+    "shortTitle": "Bentesan Pertama",
+    "words": 833,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Haziq",
+      "Fahmi",
+      "Suria",
+      "Yana",
+      "Munir",
+      "Cikgu Zul",
+      "Zubir"
+    ],
+    "category": "Sukan & Pasukan",
+    "tension": 48,
+    "summary": "Aktiviti bola sepak di padang di bawah bimbingan Cikgu Zul. Khalid mempamerkan bakat dan mula memerhatikan kelompok pengawas di sekitar stor peralatan.",
+    "highlight": "Membina dinamik sukan bola sepak dan pendedahan persekitaran padang."
+  },
+  {
+    "num": 8,
+    "title": "Bab 8 – Saksi Tanpa Sengaja",
+    "shortTitle": "Saksi Tanpa Sengaja",
+    "words": 1473,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Haziq",
+      "Fahmi",
+      "Suria",
+      "Yana",
+      "Mariam",
+      "Munir",
+      "Kit",
+      "Cikgu Muzammil",
+      "Edy",
+      "Zamani",
+      "Cikgu Zul"
+    ],
+    "category": "Petunjuk Kunci",
+    "tension": 58,
+    "summary": "Mariam memerhatikan gerak-geri mencurigakan dari perpustakaan. Khalid menyaksikan taklimat pengawas yang dikendalikan oleh Cikgu Muzammil bersama Fahmi, Edy dan Zamani.",
+    "highlight": "Pengenalan berwibawa Cikgu Muzammil dan penyerahan kunci stor kepada Edy."
+  },
+  {
+    "num": 9,
+    "title": "Bab 9 – Janji di Sebalik Rotan",
+    "shortTitle": "Janji di Sebalik Rotan",
+    "words": 1016,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Haziq",
+      "Fahmi",
+      "Cikgu Bakar"
+    ],
+    "category": "Disiplin",
+    "tension": 52,
+    "summary": "Cikgu Bakar menjalankan pemeriksaan mengejut dan memberi amaran keras tentang disiplin serta integriti warga sekolah.",
+    "highlight": "Menonjolkan ketegasan dan wibawa Cikgu Bakar sebagai ketua disiplin."
+  },
+  {
+    "num": 10,
+    "title": "Bab 10 – Pintu yang Terbuka",
+    "shortTitle": "Pintu yang Terbuka",
+    "words": 1028,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Prof. Tarmizi"
+    ],
+    "category": "Persahabatan",
+    "tension": 45,
+    "summary": "Ikatan persahabatan antara Khalid dan Saiful bertambah erat melalui perbualan mendalam tentang amanah, keluarga dan prinsip hidup.",
+    "highlight": "Memperkukuh 'brotherhood' antara Khalid dan Saiful sebagai nadi emosi cerita."
+  },
+  {
+    "num": 11,
+    "title": "Bab 11 – Manusia Tidak Mampu Meramal Masa Depan",
+    "shortTitle": "Manusia Tidak Mampu Meramal Masa Depan",
+    "words": 1023,
+    "cast": [
+      "Khalid",
+      "Munir",
+      "Cikgu Bakar",
+      "Cikgu Fatimah"
+    ],
+    "category": "Misteri",
+    "tension": 60,
+    "summary": "Munir mendedahkan sisi gelap peraturan sekolah dan memberi peringatan bahawa ada kuasa terselindung yang memanipulasi keadaan.",
+    "highlight": "Dialog falsafah Munir yang membuka perspektif konspirasi sekolah."
+  },
+  {
+    "num": 12,
+    "title": "Bab 12 – Di Balik Bisikan Koridor",
+    "shortTitle": "Di Balik Bisikan Koridor",
+    "words": 1065,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Haziq",
+      "Mariam",
+      "Munir",
+      "Cikgu Bakar",
+      "Cikgu Fatimah",
+      "Tinesh"
+    ],
+    "category": "Pemerhatian",
+    "tension": 62,
+    "summary": "Bisikan dan amaran mula tersebar di koridor sekolah. Khalid semakin peka terhadap waktu-waktu ketiadaan pengawas tertentu di kawasan tugas.",
+    "highlight": "Membina suasana mencurigakan di lorong-lorong bangunan sekolah."
+  },
+  {
+    "num": 13,
+    "title": "Bab 13 – Tuduhan",
+    "shortTitle": "Tuduhan",
+    "words": 1161,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Fahmi",
+      "Suria",
+      "Yana",
+      "Mariam",
+      "Kit",
+      "Cikgu Bakar",
+      "Edy",
+      "Zamani"
+    ],
+    "category": "Titik Krisis",
+    "tension": 75,
+    "summary": "Kes kecurian pertama meletus apabila telefon bimbit Suria hilang dari beg. Khalid yang berada sendirian di kelas sebelum rehat mula dipandang curiga oleh Edy dan Zamani.",
+    "highlight": "Titik tolak krisis utama yang memulakan rentetan tuduhan dan fitnah."
+  },
+  {
+    "num": 14,
+    "title": "Bab 14 – Antara Tuduhan dan Kebenaran",
+    "shortTitle": "Antara Tuduhan dan Kebenaran",
+    "words": 1058,
+    "cast": [
+      "Khalid",
+      "Fahmi",
+      "Suria",
+      "Mariam",
+      "Cikgu Bakar",
+      "Zamani",
+      "Cikgu Malik",
+      "Prof. Tarmizi"
+    ],
+    "category": "Penyiasatan",
+    "tension": 70,
+    "summary": "Siasatan awal oleh pihak guru. Cikgu Malik menjadi penenang moral kepada pelajar yang tertekan, manakala Khalid mula mengumpul bukti alibi.",
+    "highlight": "Peranan empati Cikgu Malik dalam menyeimbangkan ketegangan siasatan."
+  },
+  {
+    "num": 15,
+    "title": "Bab 15 – Hari yang Panjang",
+    "shortTitle": "Hari yang Panjang",
+    "words": 1069,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Haziq",
+      "Fahmi",
+      "Cikgu Bakar",
+      "Cikgu Fatimah"
+    ],
+    "category": "Tekanan",
+    "tension": 68,
+    "summary": "Sesi soal siasat yang panjang dan meletihkan terhadap kelas 5 Alfa. Saiful tetap berdiri teguh mempertahankan kejujuran Khalid.",
+    "highlight": "Ujian kesetiaan sahabat dan ketahanan emosi para pelajar."
+  },
+  {
+    "num": 16,
+    "title": "Bab 16 – Langkah di Lorong Sunyi",
+    "shortTitle": "Langkah di Lorong Sunyi",
+    "words": 901,
+    "cast": [
+      "Khalid",
+      "Haziq",
+      "Fahmi",
+      "Suria",
+      "Mariam",
+      "Cikgu Bakar"
+    ],
+    "category": "Pengintipan",
+    "tension": 72,
+    "summary": "Khalid menjejaki langkah pengawas di lorong sunyi antara blok bilik darjah dan mendapati terdapat pintu stor yang sering dibuka tanpa rekod rasmi.",
+    "highlight": "Penyelidikan fizikal kawasan terpencil yang membina rasa ingin tahu."
+  },
+  {
+    "num": 17,
+    "title": "Bab 17 – Jejak di Kafeteria",
+    "shortTitle": "Jejak di Kafeteria",
+    "words": 1194,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Haziq",
+      "Fahmi",
+      "Edy",
+      "Zamani"
+    ],
+    "category": "Konfrontasi",
+    "tension": 76,
+    "summary": "Pertembungan lisan yang tegang di kafeteria antara Khalid, Saiful dan Haziq menentang provokasi Edy dan Zamani.",
+    "highlight": "Ketegangan konfrontasi bersemuka yang menyerlahkan sifat angkuh Edy."
+  },
+  {
+    "num": 18,
+    "title": "Bab 18 – Jejak di Antara Dua Blok",
+    "shortTitle": "Jejak di Antara Dua Blok",
+    "words": 1270,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Haziq",
+      "Fahmi",
+      "Suria",
+      "Mariam",
+      "Cikgu Bakar",
+      "Edy",
+      "Zamani"
+    ],
+    "category": "Siasatan Bersama",
+    "tension": 78,
+    "summary": "Pencarian petunjuk fizikal di antara dua blok bangunan lama. Fahmi selaku ketua pengawas mula menyatakan keraguan terhadap buku log tugas Edy.",
+    "highlight": "Kerjasama senyap antara Khalid dan Fahmi mula terbentuk."
+  },
+  {
+    "num": 19,
+    "title": "Bab 19 – Tirai Surau Lama",
+    "shortTitle": "Tirai Surau Lama",
+    "words": 896,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Haziq",
+      "Fahmi",
+      "Cikgu Muzammil",
+      "Edy",
+      "Zamani",
+      "Cikgu Zul"
+    ],
+    "category": "Misteri Surau",
+    "tension": 80,
+    "summary": "Khalid dan Saiful solat Asar di surau lama. Kisah seram dan khabar angin pembunuhan zaman dahulu terbongkar sebagai helah untuk mengosongkan kawasan stor simpanan barang curi.",
+    "highlight": "Pembongkaran fungsi sebenar surau lama sebagai markas rahsia operasi."
+  },
+  {
+    "num": 20,
+    "title": "Bab 20 – Gema Rahsia Silam",
+    "shortTitle": "Gema Rahsia Silam",
+    "words": 1438,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Haziq",
+      "Fahmi",
+      "Suria",
+      "Cikgu Bakar",
+      "Edy",
+      "Ustazah Rahimah",
+      "Kamarul"
+    ],
+    "category": "Sejarah Silam",
+    "tension": 82,
+    "summary": "Ustazah Rahimah berkongsi kisah pecah masuk makmal lama bertahun dahulu. Kamarul dihubungi bagi mendapatkan nasihat spiritual dan ketenangan tawakal.",
+    "highlight": "Pertemuan rohani dan pengukuhan tema tawakal dalam menghadapi fitnah."
+  },
+  {
+    "num": 21,
+    "title": "Bab 21 – Tawa di Sebalik Disiplin",
+    "shortTitle": "Tawa di Sebalik Disiplin",
+    "words": 779,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Haziq",
+      "Mariam",
+      "Cikgu Fatimah"
+    ],
+    "category": "Kelegaan Emosi",
+    "tension": 60,
+    "summary": "Cikgu Fatimah menunjukkan sisi peribadi yang penyayang dan terhibur dengan telatah lucu Saiful yang tersalah membawa buku rujukan.",
+    "highlight": "Momen kelegaan komedi yang memanusiakan watak guru garang."
+  },
+  {
+    "num": 22,
+    "title": "Bab 22 – Amaran di Ambang Pintu",
+    "shortTitle": "Amaran di Ambang Pintu",
+    "words": 726,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Munir",
+      "Cikgu Bakar",
+      "Cikgu Fatimah",
+      "Zubir"
+    ],
+    "category": "Amaran Bahaya",
+    "tension": 78,
+    "summary": "Munir menemui Khalid di ambang pintu dan memberi amaran bahawa perangkap fitnah yang lebih besar sedang dipasang untuk menghancurkan namanya.",
+    "highlight": "Menaikkan debaran sebelum badai perangkap kemuncak tiba."
+  },
+  {
+    "num": 23,
+    "title": "Bab 23 – Jejak di Padang",
+    "shortTitle": "Jejak di Padang",
+    "words": 768,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Haziq",
+      "Fahmi",
+      "Edy",
+      "Zamani",
+      "Cikgu Zul"
+    ],
+    "category": "Siasatan Padang",
+    "tension": 74,
+    "summary": "Pemerhatian terhadap gelagat Edy dan Zamani semasa latihan bola sepak mendedahkan perbualan rahsia tentang penjualan barangan berharga.",
+    "highlight": "Bukti lisan awal mengenai aktiviti penjualan barang curi ke pihak luar."
+  },
+  {
+    "num": 24,
+    "title": "Bab 24 – Suara di Sebalik Rahsia",
+    "shortTitle": "Suara di Sebalik Rahsia",
+    "words": 745,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Suria",
+      "Cikgu Bakar",
+      "Edy",
+      "Zamani"
+    ],
+    "category": "Intipan Rahsia",
+    "tension": 84,
+    "summary": "Khalid berjaya mencuri dengar arahan khusus yang diberikan kepada Edy untuk menyasarkan mangsa seterusnya bagi menutup mulut pihak pengurusan.",
+    "highlight": "Babak intipan berisiko tinggi yang mendedahkan perancangan musuh."
+  },
+  {
+    "num": 25,
+    "title": "Bab 25 – Jejak yang Belum Padam",
+    "shortTitle": "Jejak yang Belum Padam",
+    "words": 682,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Mariam",
+      "Cikgu Fatimah"
+    ],
+    "category": "Petunjuk Kukuh",
+    "tension": 79,
+    "summary": "Mariam bersama Khalid di perpustakaan menganalisis peta kawasan blok lama dan surau serta mendedahkan kaitan kes pembunuhan 3 tahun lalu. Pada masa yang sama, Khalid meluahkan rahsia insiden kematian pelajar di stor sekolah lamanya kepada Saiful.",
+    "highlight": "Petunjuk logistik yang melengkapkan garis masa penyiasatan."
+  },
+  {
+    "num": 26,
+    "title": "Bab 26 – Siulan Malam dan Dua Soalan",
+    "shortTitle": "Siulan Malam dan Dua Soalan",
+    "words": 878,
+    "cast": [
+      "Khalid",
+      "Suria",
+      "Munir",
+      "Edy",
+      "Zamani",
+      "Kamarul"
+    ],
+    "category": "Suspens Malam",
+    "tension": 85,
+    "summary": "Gangguan siulan malam yang mencurigakan di luar rumah Khalid. Khalid memperkukuh pergantungan doanya kepada Allah untuk menghadapi hari penentuan.",
+    "highlight": "Ketegangan psikologi malam sebelum hari pendedahan bukti."
+  },
+  {
+    "num": 27,
+    "title": "Bab 27 – Petunjuk di Sebalik Sampah",
+    "shortTitle": "Petunjuk di Sebalik Sampah",
+    "words": 810,
+    "cast": [
+      "Khalid",
+      "Cikgu Bakar",
+      "Cikgu Muzammil",
+      "Edy",
+      "Zamani"
+    ],
+    "category": "Penemuan Bukti",
+    "tension": 86,
+    "summary": "Penemuan dokumen dan sampul terbuang berhampiran tempat pembuangan yang mengesahkan penglibatan Cikgu Muzammil dalam menyalurkan dana peralatan sukan.",
+    "highlight": "Petunjuk material yang menghubungkan guru penasihat dengan pengawas bermasalah."
+  },
+  {
+    "num": 28,
+    "title": "Bab 28 – Tandatangan dan Teguran",
+    "shortTitle": "Tandatangan dan Teguran",
+    "words": 839,
+    "cast": [
+      "Khalid",
+      "Cikgu Bakar",
+      "Cikgu Fatimah",
+      "Cikgu Malik"
+    ],
+    "category": "Prosedur & Nasihat",
+    "tension": 75,
+    "summary": "Cikgu Malik membantu Khalid menyelesaikan urusan denda dan memberikan kata-kata semangat agar sentiasa yakin bahawa kebenaran pasti menang.",
+    "highlight": "Sokongan moral seorang pendidik sejati kepada pelajar yang teraniaya."
+  },
+  {
+    "num": 29,
+    "title": "Bab 29 – Jejak di Sebalik Nama",
+    "shortTitle": "Jejak di Sebalik Nama",
+    "words": 714,
+    "cast": [
+      "Khalid",
+      "Cikgu Muzammil",
+      "Edy",
+      "Zamani"
+    ],
+    "category": "Rangkaian Bukti",
+    "tension": 88,
+    "summary": "Khalid menyusun kronologi lengkap nama, masa dan lokasi kejadian, bersiap sedia untuk berdepan konfrontasi akhir.",
+    "highlight": "Fasa sintesis deduksi penyiasatan Khalid."
+  },
+  {
+    "num": 30,
+    "title": "Bab 30 – Tanda yang Ditinggalkan",
+    "shortTitle": "Tanda yang Ditinggalkan",
+    "words": 774,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Suria",
+      "Cikgu Bakar",
+      "Edy",
+      "Balkis"
+    ],
+    "category": "Kemuncak Perangkap",
+    "tension": 98,
+    "summary": "Barang kemas berharga milik Balkis hilang dan ditemui sengaja diselitkan ke dalam beg sekolah Khalid semasa pemeriksaan mengejut! Khalid ditahan pihak disiplin.",
+    "highlight": "Kemuncak krisis emosi dan fitnah terbesar yang menimpa watak utama."
+  },
+  {
+    "num": 31,
+    "title": "Bab 31 – Kebenaran yang Terpendam",
+    "shortTitle": "Kebenaran yang Terpendam",
+    "words": 951,
+    "cast": [
+      "Khalid",
+      "Fahmi",
+      "Cikgu Bakar",
+      "Edy",
+      "Zamani",
+      "Balkis"
+    ],
+    "category": "Pemberihan Nama",
+    "tension": 95,
+    "summary": "Di bilik disiplin, Cikgu Bakar menyoal siasat Khalid dan mengungkit rekod silam MRSMnya. Fahmi masuk membawa rakaman CCTV dan log yang membersihkan nama Khalid serta mendedahkan perbuatan Edy.",
+    "highlight": "Klimaks keadilan tertegak; peranan wira intelek Fahmi dan ketabahan Khalid."
+  },
+  {
+    "num": 32,
+    "title": "Bab 32 – Penutup Sebuah Rahsia",
+    "shortTitle": "Penutup Sebuah Rahsia",
+    "words": 964,
+    "cast": [
+      "Khalid",
+      "Saiful",
+      "Fahmi",
+      "Suria",
+      "Kit",
+      "Cikgu Bakar",
+      "Cikgu Fatimah",
+      "Cikgu Muzammil",
+      "Edy",
+      "Zamani"
+    ],
+    "category": "Peleraian & Keamanan",
+    "tension": 40,
+    "summary": "Cikgu Muzammil ditangkap oleh pihak polis. Pengumuman rasmi pengetua mengembalikan maruah Khalid. Di luar pagar sekolah, Kit memberikan tabik hormat mengakui keadilan telah tercapai.",
+    "highlight": "Peleraian sempurna, pengukuhan nilai tawakal, dan penyelesaian seluruh arka watak."
+  }
+];
+    const charactersData = [{"name": "Mohd Khalid bin Tarmizi", "role": "Protagonis Utama (Bekas MRSM)", "count": "32 Bab (Lengkap)", "desc": "Pelajar baharu 5 Alfa anak Prof Tarmizi. Tenang luar biasa, beradab, analitikal, dan berjiwa spiritual. Membawa lencana MRSM lama dan berjaya membongkar konspirasi kecurian sekolah dengan iman serta kebenaran.", "colors": ["#8b5cf6", "#6d28d9"], "image": "Komik/karakter/khalid_concept.jpg"}, {"name": "Saiful", "role": "Sahabat Karib / Ketua Kelas", "count": "23 Bab", "desc": "Sahabat karib Khalid di sekolah baharu. Ceria, bertanggungjawab, suka makan karipap, anak orang berada. Pelengkap sisi humor dan individu pertama yang mempercayai Khalid.", "colors": ["#06b6d4", "#0891b2"], "image": "Komik/karakter/saiful_concept.jpg"}, {"name": "Fahmi", "role": "Ketua Pengawas", "count": "19 Bab", "desc": "Tenang, rasional dan berintegriti tinggi. Memakai blazer biru gelap polos standard. Kunci penyiasat rasmi yang membongkar rakaman CCTV dan membersihkan nama Khalid.", "colors": ["#3b82f6", "#1d4ed8"], "image": "Komik/karakter/fahmi_concept.jpg"}, {"name": "Haziq", "role": "Sahabat / Tonggak Bola", "count": "17 Bab", "desc": "Rakan sekelas yang aktif, cergas, suka menyakat dan menjadi tonggak pertahanan pasukan bola sepak sekolah.", "colors": ["#10b981", "#059669"], "image": "Komik/karakter/haziq_concept.jpg"}, {"name": "Suria", "role": "Rakan Sekelas (Mood-Maker)", "count": "16 Bab", "desc": "Pelajar perempuan yang ceria, manis, bertudung bawal putih kemas; mangsa awal kecurian telefon bimbit yang mencetuskan rentetan siasatan.", "colors": ["#ec4899", "#be185d"], "image": "Komik/karakter/suria_concept.jpg"}, {"name": "Yana", "role": "Sahabat Karib Suria", "count": "7 Bab", "desc": "Sahabat karib Suria di 5 Alfa, lincah, bijak menyakat, dan sentiasa memerhatikan perkembangan kelas bersama Suria.", "colors": ["#f43f5e", "#be123c"], "image": "Komik/karakter/yana_concept.jpg"}, {"name": "Zubir", "role": "Geng 5 Alfa / Peminat Bola", "count": "7 Bab", "desc": "Rakan sekelas peminat bola sepak dan gusti yang digelar 'anak ayah'. Ceria, manja, dan paling cepat menggelabah apabila berdepan Cikgu Bakar.", "colors": ["#10b981", "#047857"], "image": "Komik/karakter/zubir_concept.jpg"}, {"name": "Mariam", "role": "Pemerhati Senyap & Minda Tajam", "count": "8 Bab", "desc": "Pelajar intelek bertudung labuh yang gemar membaca di perpustakaan; menganalisis peta kawasan sekolah dan mendedahkan kaitan kes pembunuhan lama kepada Khalid.", "colors": ["#f59e0b", "#d97706"], "image": "Komik/karakter/mariam_concept.jpg"}, {"name": "Munir", "role": "Pelajar Senior / 'Otai Kelas'", "count": "8 Bab", "desc": "Kaki ponteng rasmi yang bijak dan berkarisma; mengenali rahsia dan lapisan gelap sekolah serta memberi amaran strategik kepada Khalid.", "colors": ["#64748b", "#334155"], "image": "Komik/karakter/munir_concept.jpg"}, {"name": "Kit", "role": "Sekutu Luar / Bekas Pelajar", "count": "5 Bab (2 Fizikal, 3 Nota/Ingatan)", "desc": "Remaja Melayu jalanan (17 tahun) yang berani dan lurus. Menyelamatkan nyawa Khalid, meninggalkan nota amaran tentang Edy, dan ditebus maruahnya pada babak akhir.", "colors": ["#f97316", "#c2410c"], "image": "Komik/karakter/kit_concept.jpg"}, {"name": "Edy", "role": "Pengawas (Antagonis)", "count": "15 Bab", "desc": "Pengawas tampan berkuasa yang memegang kunci stor sukan; dalang pelaksana kecurian dan perancang fitnah beg Khalid di bawah arahan Cikgu Muzammil.", "colors": ["#ef4444", "#b91c1c"], "image": "Komik/karakter/edy_concept.jpg"}, {"name": "Zamani", "role": "Pengawas (Antagonis)", "count": "13 Bab", "desc": "Pembantu setia Edy yang memegang buku log tugas; bermata tajam curiga dan bertindak sebagai pengintip dalaman sindiket sekolah.", "colors": ["#dc2626", "#991b1b"], "image": "Komik/karakter/zamani_concept.jpg"}, {"name": "Cikgu Bakar", "role": "Ketua Guru Disiplin", "count": "15 Bab", "desc": "Ketua Guru Disiplin legenda berotan lebah yang amat digeruni; tegas, berprinsip, dan tidak memilih bulu dalam menegakkan keadilan sekolah.", "colors": ["#475569", "#1e293b"], "image": "Komik/karakter/cikgu_bakar_concept.jpg"}, {"name": "Cikgu Muzammil", "role": "Dalang Utama (Antagonis)", "count": "5 Bab", "desc": "Guru penasihat pengawas berkaca mata perak yang berwibawa di luar namun menjadi ketua sindiket penyelewengan dana dan manipulasi kecurian.", "colors": ["#7f1d1d", "#450a0a"], "image": "Komik/karakter/cikgu_muzammil_concept.jpg"}, {"name": "Cikgu Fauziah", "role": "Guru Kelas 5 Alfa & Bahasa Melayu", "count": "4 Bab", "desc": "Guru wanita yang anggun, penyayang, dan mengambil berat tentang kebajikan pelajar 5 Alfa serta membimbing Khalid pada hari pertama.", "colors": ["#8b5cf6", "#a855f7"], "image": "Komik/karakter/cikgu_fauziah_concept.jpg"}, {"name": "Cikgu Fatimah", "role": "Guru Kimia / Makmal Sains", "count": "11 Bab", "desc": "Guru kimia berkaca mata dan berkot makmal; garang dan tegas di bilik darjah namun menyimpan sifat keibuan serta sejarah masa silam bersama Kit dan Munir.", "colors": ["#14b8a6", "#0f766e"], "image": "Komik/karakter/cikgu_fatimah_concept.jpg"}, {"name": "Cikgu Rahim", "role": "Guru Matematik Tambahan", "count": "3 Bab", "desc": "Guru muda berusia 30 tahun yang tampan, tenang, dan menjadikan subjek Add-Math yang digeruni bertukar menjadi subjek kegemaran ramai.", "colors": ["#0284c7", "#0369a1"], "image": "Komik/karakter/cikgu_rahim_concept.jpg"}, {"name": "Cikgu Malik", "role": "Guru PJK & Pembimbing Empati", "count": "2 Bab", "desc": "Guru Pendidikan Jasmani & Kesihatan yang ceria, mesra, dan kelakar. Menjadi figura pendidik berhati mulia yang memberi dorongan moral dan ketenangan jiwa kepada Khalid.", "colors": ["#10b981", "#047857"], "image": "Komik/karakter/cikgu_malik_concept.jpg"}, {"name": "Cikgu Bakri", "role": "Guru Kuiz & Minda Santai 5 Alfa", "count": "2 Bab", "desc": "Guru subjek yang mesra, ramah dan berjiwa muda; menceriakan kelas 5 Alfa melalui kuiz pengetahuan am dan teka-teki matematik santai.", "colors": ["#0ea5e9", "#0284c7"], "image": "Komik/karakter/guru_concept.jpg"}, {"name": "Ustazah Rahimah", "role": "Guru Pendidikan Islam", "count": "1 Bab", "desc": "Guru Pendidikan Islam berpengalaman 7 tahun di SMK Sri Dian. Lembut dan berhemah tinggi; menyimpan sejarah misteri pencerobohan lama dan membimbing rohani pelajar.", "colors": ["#0d9488", "#115e59"], "image": "Komik/karakter/ustazah_rahimah_concept.jpg"}, {"name": "Prof. Tarmizi", "role": "Ayah Khalid & Pensyarah UTM", "count": "1 Bab (Fizikal) / 3 Bab (Dirujuk)", "desc": "Pensyarah UTM yang bijaksana dan tenang. Figura bapa yang menyayangi Khalid, menjadi rujukan moral, namun menyimpan resah mendalam terhadap trauma masa silam anaknya.", "colors": ["#3b82f6", "#1e40af"], "image": "Komik/karakter/prof_tarmizi_concept.jpg"}, {"name": "Amri", "role": "Geng Gajet 5 Alfa / Anak Orang Kaya", "count": "2 Bab", "desc": "Pelajar 5 Alfa yang suka bermegah dengan gajet mahal pemberian ayahnya. Menjadi pemangkin visual kepada isu status kekayaan dan kecurian gajet di sekolah.", "colors": ["#3b82f6", "#1d4ed8"], "image": "Komik/karakter/amri_jeffri_concept.jpg"}, {"name": "Jeffri", "role": "Peminat Teknologi & Apple", "count": "1 Bab", "desc": "Pelajar 5 Alfa peminat tegar gajet Apple; pendengar setia Amri yang terpegun dan menyimpan impian memiliki telefon pintar canggih suatu hari nanti.", "colors": ["#6366f1", "#4338ca"], "image": "Komik/karakter/amri_jeffri_concept.jpg"}, {"name": "Siti", "role": "Wartawan Sensasi 5 Alfa", "count": "1 Bab", "desc": "Pelajar perempuan 5 Alfa yang kepoh, ekspresif, dan bertindak sebagai 'wartawan kelas' yang membawakan berita sensasi ketibaan budak baru MRSM dari pejabat.", "colors": ["#ec4899", "#be185d"], "image": "Komik/karakter/siti_halijah_syikin_concept.jpg"}, {"name": "Halijah", "role": "Pembantu Liputan 5 Alfa", "count": "1 Bab", "desc": "Sahabat rapat Siti yang comel dan berkaca mata; sentiasa bersedia dengan buku catatan dan mengesahkan setiap berita panas yang dilaporkan Siti.", "colors": ["#f43f5e", "#9f1239"], "image": "Komik/karakter/siti_halijah_syikin_concept.jpg"}, {"name": "Syikin", "role": "Pengulas Witty 5 Alfa", "count": "1 Bab", "desc": "Pelengkap trio wartawan kelas yang anggun dan berani; gemar menyakat pelajar lelaki dan berbisik menyalurkan info terkini kepada geng perempuan.", "colors": ["#fb7185", "#e11d48"], "image": "Komik/karakter/siti_halijah_syikin_concept.jpg"}, {"name": "Safwan", "role": "Penganalisis Taktikal Ferguson", "count": "5 Bab", "desc": "Pelajar 5 Alfa yang analitikal dan berfalsafah bola sepak klasik; mempertahankan taktikal disiplin Sir Alex Ferguson sewaktu riuh di dalam kelas.", "colors": ["#10b981", "#047857"], "image": "Komik/karakter/safwan_hazwan_concept.jpg"}, {"name": "Hazwan", "role": "Peminat Taktikal Guardiola", "count": "1 Bab", "desc": "Rakan sekelas yang cergas dan meminati sistem bola sepak moden; gemar berbalah mesra mempertahankan penguasaan taktikal Pep Guardiola.", "colors": ["#14b8a6", "#0f766e"], "image": "Komik/karakter/safwan_hazwan_concept.jpg"}];
+
+    let currentChapterIndex = 0;
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+      
+      const target = document.getElementById('tab-' + tabId);
+      if (target) target.classList.add('active');
+
+      const btn = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
+
+      if (tabId === 'overview') {
+        setTimeout(renderTensionChart, 50);
+      }
+    }
+
+    function renderChapterList(items = chaptersData) {
+      const listEl = document.getElementById('chapterList');
+      listEl.innerHTML = '';
+      items.forEach((item) => {
+        const div = document.createElement('div');
+        div.className = 'chapter-item ' + (item.num - 1 === currentChapterIndex ? 'active' : '');
+        div.onclick = () => selectChapter(item.num - 1);
+        
+        let badgeClass = 'badge-purple';
+        if (item.category.includes('Krisis') || item.category.includes('Kemuncak')) badgeClass = 'badge-rose';
+        else if (item.category.includes('Siasatan') || item.category.includes('Kunci')) badgeClass = 'badge-cyan';
+        else if (item.category.includes('Peleraian') || item.category.includes('Pemberihan')) badgeClass = 'badge-emerald';
+        else if (item.category.includes('Misteri')) badgeClass = 'badge-amber';
+
+        div.innerHTML = `
+          <div class="item-left">
+            <span class="item-num">BAB ${String(item.num).padStart(2, '0')}</span>
+            <span class="item-title">${item.shortTitle}</span>
+          </div>
+          <span class="badge ${badgeClass}" style="font-size: 0.65rem; padding: 0.15rem 0.5rem;">${item.category}</span>
+        `;
+        listEl.appendChild(div);
+      });
+    }
+
+    function selectChapter(index) {
+      currentChapterIndex = index;
+      renderChapterList();
+      const ch = chaptersData[index];
+      const detailEl = document.getElementById('chapterDetail');
+
+      let badgeClass = 'badge-purple';
+      if (ch.category.includes('Krisis') || ch.category.includes('Kemuncak')) badgeClass = 'badge-rose';
+      else if (ch.category.includes('Siasatan') || ch.category.includes('Kunci')) badgeClass = 'badge-cyan';
+      else if (ch.category.includes('Peleraian') || ch.category.includes('Pemberihan')) badgeClass = 'badge-emerald';
+
+      detailEl.innerHTML = `
+        <div class="detail-head">
+          <div class="detail-chapter-tag">BAB ${String(ch.num).padStart(2, '0')} &bull; DOSSIER KANDUNGAN</div>
+          <h2 class="detail-title">${ch.title}</h2>
+          <div class="meta-pills">
+            <span class="meta-pill">Panjang: <strong>${ch.words} patah perkataan</strong></span>
+            <span class="meta-pill">Tahap Ketegangan: <strong>${ch.tension}%</strong></span>
+            <span class="badge ${badgeClass}">${ch.category}</span>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h4>👥 Barisan Watak yang Hadir</h4>
+          <div class="cast-tags">
+            ${ch.cast.map(c => `<span class="cast-tag">${c}</span>`).join('')}
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h4>📖 Sinopsis & Rentak Babak</h4>
+          <p style="font-size: 0.92rem; color: #cbd5e1; line-height: 1.65;">${ch.summary}</p>
+        </div>
+
+        <div class="detail-section" style="border-left: 3px solid var(--accent-purple);">
+          <h4>⭐ Titik Kunci & Nilai Penceritaan</h4>
+          <p style="font-size: 0.92rem; color: #f1f5f9; line-height: 1.65;">${ch.highlight}</p>
+        </div>
+      `;
+    }
+
+    function filterChapters() {
+      const q = document.getElementById('chapterSearch').value.toLowerCase();
+      const filtered = chaptersData.filter(c => 
+        c.title.toLowerCase().includes(q) || 
+        c.shortTitle.toLowerCase().includes(q) || 
+        String(c.num).includes(q) || 
+        c.category.toLowerCase().includes(q) ||
+        c.cast.some(n => n.toLowerCase().includes(q))
+      );
+      renderChapterList(filtered);
+    }
+
+    function renderCharacters() {
+      const grid = document.getElementById('charactersGrid');
+      grid.innerHTML = '';
+      charactersData.forEach(c => {
+        const card = document.createElement('div');
+        card.className = 'char-card';
+
+        const thumbHtml = c.image ? `
+          <div class="char-thumb-wrap" onclick="openImageModal('${c.image}', '${c.name} – ${c.role}')" title="Klik untuk besarkan Helaian Model">
+            <img src="${c.image}" alt="${c.name}" class="char-thumb-img" loading="lazy">
+            <div class="char-thumb-overlay">
+              <span class="view-pill">🔍 Helaian Model 16:9</span>
+            </div>
+          </div>
+        ` : `
+          <div class="char-thumb-wrap char-thumb-placeholder" style="background: linear-gradient(135deg, ${c.colors[0]}22, ${c.colors[1]}44);">
+            <div style="font-size: 2.2rem; opacity: 0.4;">👤</div>
+          </div>
+        `;
+
+        card.innerHTML = `
+          ${thumbHtml}
+          <div class="char-body">
+            <div class="char-avatar-bar">
+              <div class="char-avatar" style="--char-bg-1: ${c.colors[0]}; --char-bg-2: ${c.colors[1]};">
+                ${c.name.charAt(0)}
+              </div>
+              <div>
+                <div class="char-name">${c.name}</div>
+                <div class="char-role">${c.role}</div>
+              </div>
+            </div>
+            <div class="char-desc">${c.desc}</div>
+            <div class="char-chapters">
+              <span>Kemunculan</span>
+              <strong style="color: #fff;">${c.count}</strong>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function renderTensionChart() {
+      const canvas = document.getElementById('tensionCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const dpr = window.devicePixelRatio || 1;
+
+      const rect = canvas.parentElement.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+
+      const w = rect.width;
+      const h = rect.height;
+      const padX = 20;
+      const padY = 25;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Grid
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = padY + (h - padY * 2) * (i / 4);
+        ctx.beginPath();
+        ctx.moveTo(padX, y);
+        ctx.lineTo(w - padX, y);
+        ctx.stroke();
+      }
+
+      // Points
+      const pts = chaptersData.map((d, i) => {
+        const x = padX + (w - padX * 2) * (i / (chaptersData.length - 1));
+        const y = h - padY - (h - padY * 2) * (d.tension / 100);
+        return { x, y };
+      });
+
+      // Gradient Fill
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, 'rgba(139, 92, 246, 0.35)');
+      grad.addColorStop(1, 'rgba(139, 92, 246, 0.0)');
+
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, h - padY);
+      pts.forEach(p => ctx.lineTo(p.x, p.y));
+      ctx.lineTo(pts[pts.length - 1].x, h - padY);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Stroke Line
+      ctx.beginPath();
+      pts.forEach((p, i) => {
+        if (i === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      });
+      ctx.strokeStyle = '#8b5cf6';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      // Peak Dots
+      pts.forEach((p, i) => {
+        if (chaptersData[i].tension >= 85) {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 4.5, 0, Math.PI * 2);
+          ctx.fillStyle = '#f43f5e';
+          ctx.fill();
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      renderChapterList();
+      selectChapter(0);
+      renderCharacters();
+      setTimeout(renderTensionChart, 100);
+    });
+
+    window.addEventListener('resize', renderTensionChart);
+  
+    function openImageModal(src, title) {
+      const modal = document.getElementById('imageModal');
+      const img = document.getElementById('modalImg');
+      const titleElem = document.getElementById('modalTitle');
+      img.src = src;
+      titleElem.textContent = title;
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeImageModalDirect() {
+      const modal = document.getElementById('imageModal');
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    function closeImageModal(e) {
+      if (e.target.id === 'imageModal') {
+        closeImageModalDirect();
+      }
+    }
+
+  </script>
+
+  <!-- Modal Image Lightbox -->
+  <div id="imageModal" class="img-modal" onclick="closeImageModal(event)">
+    <div class="img-modal-content">
+      <div class="img-modal-header">
+        <h3 id="modalTitle" class="img-modal-title">Helaian Model Rasmi</h3>
+        <button class="img-modal-close" onclick="closeImageModalDirect()">&times;</button>
+      </div>
+      <div class="img-modal-body">
+        <img id="modalImg" src="" alt="Helaian Konsep Watak">
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memburu Jejak | Komik Webtoon - Episod 01</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Bangers&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090d16;
+      --bg-card: #111827;
+      --accent-purple: #8b5cf6;
+      --accent-cyan: #06b6d4;
+      --accent-amber: #f59e0b;
+      --accent-emerald: #10b981;
+      --accent-rose: #f43f5e;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --bubble-bg: #ffffff;
+      --bubble-text: #0f172a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    /* Sticky Navigation Header */
+    header {
+      position: sticky;
+      top: 0;
+      width: 100%;
+      background: rgba(17, 24, 39, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      z-index: 100;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header-title-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .badge-episode {
+      background: linear-gradient(135deg, var(--accent-purple), #6366f1);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .header-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-nav {
+      background: rgba(255, 255, 255, 0.08);
+      color: #e2e8f0;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-nav:hover {
+      background: rgba(255, 255, 255, 0.16);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Webtoon Canvas Container */
+    .webtoon-container {
+      width: 100%;
+      max-width: 820px;
+      padding: 24px 16px 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    /* Panel Card */
+    .panel-block {
+      background: var(--bg-card);
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      position: relative;
+      transition: transform 0.2s ease;
+    }
+
+    .panel-header-tag {
+      padding: 10px 18px;
+      background: rgba(0, 0, 0, 0.4);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .panel-header-tag strong {
+      color: var(--accent-cyan);
+    }
+
+    .panel-image-wrap {
+      width: 100%;
+      background: #000;
+      position: relative;
+      display: flex;
+      justify-content: center;
+    }
+
+    .panel-img {
+      width: 100%;
+      height: auto;
+      display: block;
+      object-fit: cover;
+    }
+
+    /* SFX Overlay Badge */
+    .sfx-pill {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(239, 68, 68, 0.88);
+      color: #fff;
+      font-family: 'Bangers', cursive;
+      font-size: 1.4rem;
+      letter-spacing: 0.08em;
+      padding: 4px 14px;
+      border-radius: 8px;
+      border: 2px solid #fff;
+      transform: rotate(4deg);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+      text-shadow: 2px 2px 0 #000;
+      z-index: 5;
+    }
+
+    /* Dialogues & Narration Area */
+    .panel-dialogues {
+      padding: 20px 24px;
+      background: linear-gradient(180deg, #111827 0%, #0d131f 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Narration Box */
+    .narration-box {
+      background: rgba(245, 158, 11, 0.12);
+      border-left: 4px solid var(--accent-amber);
+      color: #fde68a;
+      padding: 12px 18px;
+      border-radius: 0 10px 10px 0;
+      font-size: 0.92rem;
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    /* Dialogue Row */
+    .dialogue-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-top: 4px;
+    }
+
+    .avatar-mini {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      overflow: hidden;
+      flex-shrink: 0;
+      background: #1e293b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #fff;
+      font-size: 1.1rem;
+    }
+
+    .avatar-mini img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .bubble {
+      background: var(--bubble-bg);
+      color: var(--bubble-text);
+      padding: 12px 18px;
+      border-radius: 16px;
+      border-top-left-radius: 2px;
+      max-width: 90%;
+      font-size: 0.95rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      position: relative;
+    }
+
+    .bubble-speaker {
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 2px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .speaker-saiful { color: #0284c7; }
+    .speaker-haziq { color: #059669; }
+    .speaker-fahmi { color: #2563eb; }
+    .speaker-zubir { color: #d97706; }
+    .speaker-amri { color: #7c3aed; }
+    .speaker-siti { color: #db2777; }
+
+    .bubble-text {
+      font-weight: 600;
+      line-height: 1.45;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .bubble-tone {
+      font-size: 0.78rem;
+      color: #64748b;
+      font-style: italic;
+      margin-top: 3px;
+    }
+
+    /* Next Panels Teaser Box */
+    .next-step-card {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(6, 182, 212, 0.15));
+      border: 1px dashed rgba(255, 255, 255, 0.2);
+      border-radius: 18px;
+      padding: 32px 24px;
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    .next-step-card h3 {
+      font-size: 1.3rem;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .next-step-card p {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      margin-bottom: 18px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 9999px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 22.9%; /* 3 of 48 panels */
+      background: linear-gradient(90deg, var(--accent-purple), var(--accent-cyan));
+      border-radius: 9999px;
+      transition: width 0.3s ease;
+    }
+
+    /* Mode Switcher Bar */
+    .mode-bar {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 12px 20px;
+      background: rgba(15, 23, 42, 0.85);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      width: 100%;
+      position: sticky;
+      top: 57px;
+      z-index: 90;
+      backdrop-filter: blur(8px);
+    }
+
+    .mode-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #94a3b8;
+      padding: 8px 18px;
+      border-radius: 9999px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+
+    .mode-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+
+    .mode-btn.active {
+      background: linear-gradient(135deg, var(--accent-purple), #6366f1);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 4px 14px rgba(139, 92, 246, 0.4);
+    }
+
+    .btn-pdf {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: #fff;
+      border-color: transparent;
+    }
+    .btn-pdf:hover {
+      background: linear-gradient(135deg, #f87171, #ef4444);
+      color: #fff;
+    }
+
+    /* Comic Book View Container */
+    .comic-book-container {
+      width: 100%;
+      max-width: 1100px;
+      padding: 24px 16px 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .comic-meta-card {
+      background: var(--bg-card);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 14px 24px;
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .meta-title {
+      font-weight: 700;
+      color: #fff;
+      font-size: 1.05rem;
+    }
+
+    .meta-sub {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .comic-page-stage {
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      max-width: 900px;
+      width: 100%;
+      cursor: zoom-in;
+    }
+
+    .comic-page-stage img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .comic-nav-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-top: 4px;
+    }
+
+    .comic-page-btn {
+      background: var(--bg-card);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 10px 22px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .comic-page-btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: var(--accent-cyan);
+    }
+
+    .comic-page-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .page-indicator {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--accent-cyan);
+      min-width: 140px;
+      text-align: center;
+    }
+
+    .thumbnails-row {
+      display: flex;
+      gap: 16px;
+      overflow-x: auto;
+      padding: 12px 4px;
+      max-width: 100%;
+    }
+
+    .thumb-item {
+      width: 110px;
+      height: 155px;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      opacity: 0.6;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .thumb-item:hover {
+      opacity: 0.9;
+      transform: translateY(-3px);
+    }
+
+    .thumb-item.active {
+      border-color: var(--accent-purple);
+      box-shadow: 0 0 16px rgba(139, 92, 246, 0.6);
+      opacity: 1;
+      transform: scale(1.05);
+    }
+
+    .thumb-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .thumb-label {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: rgba(0, 0, 0, 0.75);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-align: center;
+      padding: 3px 0;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Sticky Header -->
+  <header>
+    <div class="header-title-box">
+      <span class="badge-episode">Episod 01</span>
+      <span class="header-title">Riuh 5 Alfa (Bab 1)</span>
+    </div>
+    <div class="header-actions" style="display: flex; gap: 8px; flex-wrap: wrap;">
+      <a href="index.html" class="btn-nav">📊 Dashboard</a>
+      <a href="reader.html" class="btn-nav">📖 Buka Reader</a>
+      <a href="/projects" class="btn-nav" style="border-color: rgba(255,255,255,0.3); background: rgba(255,255,255,0.08); color: #cbd5e1;">← KhaiSpace</a>
+    </div>
+  </header>
+
+  <!-- View Mode Switcher -->
+  <div class="mode-bar">
+    <button class="mode-btn active" id="btnModeComic" onclick="switchMode('comic')">
+      <span>📖</span> Format Komik Bercetak (4 Muka Surat)
+    </button>
+    <button class="mode-btn" id="btnModeWebtoon" onclick="switchMode('webtoon')">
+      <span>📱</span> Format Webtoon (Skrol Menegak)
+    </button>
+    <a href="Komik/Memburu_Jejak_Episod_01_Komik.pdf" download class="mode-btn btn-pdf">
+      <span>📥</span> Muat Turun PDF Komik
+    </a>
+  </div>
+
+  <!-- Comic Book (Graphic Novel) Viewer Container -->
+  <main class="comic-book-container" id="comicBookView">
+    <div class="comic-meta-card">
+      <div>
+        <div class="meta-title" id="pageTitleText">Muka Surat 1: Pembukaan Sekolah & Keriuhan Bola</div>
+        <div class="meta-sub" id="pageSubText">Menggabungkan Panel 01, Panel 02 & Panel 03</div>
+      </div>
+      <div class="badge-episode" style="background: #0ea5e9;">B5 Print Standard (1800 x 2550 px)</div>
+    </div>
+
+    <!-- Main Display Stage -->
+    <div class="comic-page-stage" onclick="toggleZoom()" title="Klik untuk zoom atau paparan penuh">
+      <img id="currentComicPage" src="Komik/halaman/Komik_Episod_01_Muka_01.jpg" alt="Halaman Komik">
+    </div>
+
+    <!-- Navigation Controls -->
+    <div class="comic-nav-controls">
+      <button class="comic-page-btn" id="btnPrevPage" onclick="changePage(-1)" disabled>
+        <span>◀</span> Halaman Sebelum
+      </button>
+      <div class="page-indicator" id="pageIndicatorText">Halaman 1 / 4</div>
+      <button class="comic-page-btn" id="btnNextPage" onclick="changePage(1)">
+        Halaman Seterusnya <span>▶</span>
+      </button>
+    </div>
+
+    <!-- Thumbnails Navigation -->
+    <div class="thumbnails-row">
+      <div class="thumb-item active" onclick="setPage(0)">
+        <img src="Komik/halaman/Komik_Episod_01_Muka_01.jpg" alt="Muka 1">
+        <div class="thumb-label">Muka 1</div>
+      </div>
+      <div class="thumb-item" onclick="setPage(1)">
+        <img src="Komik/halaman/Komik_Episod_01_Muka_02.jpg" alt="Muka 2">
+        <div class="thumb-label">Muka 2</div>
+      </div>
+      <div class="thumb-item" onclick="setPage(2)">
+        <img src="Komik/halaman/Komik_Episod_01_Muka_03.jpg" alt="Muka 3">
+        <div class="thumb-label">Muka 3</div>
+      </div>
+      <div class="thumb-item" onclick="setPage(3)">
+        <img src="Komik/halaman/Komik_Episod_01_Muka_04.jpg" alt="Muka 4">
+        <div class="thumb-label">Muka 4</div>
+      </div>
+    </div>
+  </main>
+
+
+  <!-- Webtoon Vertical Reader -->
+  <main class="webtoon-container" id="webtoonView" style="display: none;">
+
+    <!-- PANEL 01 -->
+    <article class="panel-block">
+      <div class="panel-header-tag">
+        <span><strong>PANEL 01</strong> • Extreme Wide Shot</span>
+        <span>SMK Sri Dian (Tengah Hari)</span>
+      </div>
+      <div class="panel-image-wrap">
+        <div class="sfx-pill">KRIIINGGG!</div>
+        <img src="Komik/halaman/Episod_01_Panel_01.jpg" alt="SMK Sri Dian Establishing Shot" class="panel-img">
+      </div>
+      <div class="panel-dialogues">
+        <div class="narration-box">
+          “Tingkatan Lima Alfa. Kelas anak emas SMK Sri Dian. Akademik cemerlang... tetapi ragamnya mengalahkan pasar malam.”
+        </div>
+      </div>
+    </article>
+
+    <!-- PANEL 02 -->
+    <article class="panel-block">
+      <div class="panel-header-tag">
+        <span><strong>PANEL 02</strong> • Medium Wide Shot</span>
+        <span>Kelas 5 Alfa (Riuh Rendah)</span>
+      </div>
+      <div class="panel-image-wrap">
+        <img src="Komik/halaman/Episod_01_Panel_02.jpg" alt="Suasana Kelas 5 Alfa & Saiful" class="panel-img">
+      </div>
+      <div class="panel-dialogues">
+        <div class="dialogue-row">
+          <div class="avatar-mini">
+            <img src="Komik/karakter/saiful_concept.jpg" alt="Saiful">
+          </div>
+          <div class="bubble">
+            <div class="bubble-speaker speaker-saiful">SAIFUL • KETUA KELAS</div>
+            <div class="bubble-text">“Korang tengok bola semalam? MU lawan MC?”</div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- PANEL 03 -->
+    <article class="panel-block">
+      <div class="panel-header-tag">
+        <span><strong>PANEL 03</strong> • Medium Close-up Interaction</span>
+        <span>Debat Bola: Haziq, Fahmi & Zubir</span>
+      </div>
+      <div class="panel-image-wrap">
+        <img src="Komik/halaman/Episod_01_Panel_03.jpg" alt="Debat Haziq, Fahmi dan Zubir" class="panel-img">
+      </div>
+      <div class="panel-dialogues">
+        <!-- Haziq -->
+        <div class="dialogue-row">
+          <div class="avatar-mini">
+            <img src="Komik/karakter/haziq_concept.jpg" alt="Haziq">
+          </div>
+          <div class="bubble">
+            <div class="bubble-speaker speaker-haziq">HAZIQ</div>
+            <div class="bubble-text">“Haha! MU kalah, tahu! Padan muka!”</div>
+            <div class="bubble-tone">Menyakat sambil tersenyum sinis memutar bola sepak di hujung jari</div>
+          </div>
+        </div>
+
+        <!-- Fahmi -->
+        <div class="dialogue-row">
+          <div class="avatar-mini">
+            <img src="Komik/karakter/fahmi_concept.jpg" alt="Fahmi">
+          </div>
+          <div class="bubble">
+            <div class="bubble-speaker speaker-fahmi">FAHMI • KETUA PENGAWAS</div>
+            <div class="bubble-text">“Pengadil tu berat sebelah betul! Tak adil langsung! Ini semua sebab Mourinho... zaman Sir Alex dulu MU gah, sekarang macam main parking bus saja!”</div>
+            <div class="bubble-tone">Kening berkerut serius, menyilangkan tangan mempertahankan pasukan kegemaran</div>
+          </div>
+        </div>
+
+        <!-- Zubir -->
+        <div class="dialogue-row">
+          <div class="avatar-mini">
+            <img src="Komik/karakter/zubir_concept.jpg" alt="Zubir">
+          </div>
+          <div class="bubble">
+            <div class="bubble-speaker speaker-zubir">ZUBIR</div>
+            <div class="bubble-text">“Tak dapat tengok, weh! Ayah aku nak tengok wrestling! TV rumah aku dia punya... huhu!”</div>
+            <div class="bubble-tone">Mengeluh panjang dengan mimik muka merajuk kelakar</div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+        <!-- PANEL 04 -->
+    <article class="panel-block">
+      <div class="panel-header-tag">
+        <span><strong>PANEL 04</strong> • Medium Interaction Shot</span>
+        <span>Geng Gajet: Amri & Jeffri</span>
+      </div>
+      <div class="panel-image-wrap">
+        <img src="Komik/halaman/Episod_01_Panel_04.jpg" alt="Amri Pamer Telefon Nexus Kepada Jeffri" class="panel-img">
+      </div>
+      <div class="panel-dialogues">
+        <!-- Amri -->
+        <div class="dialogue-row">
+          <div class="avatar-mini">
+            <img src="Komik/karakter/amri_jeffri_concept.jpg" alt="Amri">
+          </div>
+          <div class="bubble">
+            <div class="bubble-speaker speaker-amri">AMRI</div>
+            <div class="bubble-text">“Ayah aku baru belikan ni. Nexus model baru. Gila padu! Sekarang ni Nexus nombor satu dunia dari segi kualiti. Bapa aku kan kaya, apa aku nak dia belikan.”</div>
+            <div class="bubble-tone">Menayangkan telefon pintar hitam berkilat dengan senyuman berlagak</div>
+          </div>
+        </div>
+
+        <!-- Jeffri -->
+        <div class="dialogue-row">
+          <div class="avatar-mini">
+            <img src="Komik/karakter/amri_jeffri_concept.jpg" alt="Jeffri">
+          </div>
+          <div class="bubble">
+            <div class="bubble-speaker speaker-saiful">JEFFRI</div>
+            <div class="bubble-text">“Pergh... gila padu... barang dia ada kualiti. Untunglah kau, Amri...”</div>
+            <div class="bubble-tone">Mata membulat terpegun merenung skrin telefon sambil memasang impian dalam hati</div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- PANEL 05 -->
+    <article class="panel-block">
+      <div class="panel-header-tag">
+        <span><strong>PANEL 05</strong> • Atmospheric Character Spotlight</span>
+        <span>Munir Si 'Otai Kelas'</span>
+      </div>
+      <div class="panel-image-wrap">
+        <img src="Komik/halaman/Episod_01_Panel_05.jpg" alt="Munir Memerhati dari Tepi Tingkap" class="panel-img">
+      </div>
+      <div class="panel-dialogues">
+        <!-- Munir -->
+        <div class="dialogue-row">
+          <div class="avatar-mini">
+            <img src="Komik/karakter/munir_concept.jpg" alt="Munir">
+          </div>
+          <div class="bubble">
+            <div class="bubble-speaker speaker-zubir">MUNIR • 'OTAI KELAS'</div>
+            <div class="bubble-text">*(Bercakap dalam hati)* “Bongkak betul... beli phone guna duit bapa pun nak gebang satu kelas.”</div>
+            <div class="bubble-tone">Tersenyum sinis bersahaja sambil menyandar kerusi di tepi tingkap nako</div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+        <!-- PANEL 06 -->
+    <article class="panel-block">
+      <div class="panel-header-tag">
+        <span><strong>PANEL 06</strong> • Dynamic Action Entry</span>
+        <span>Pengumuman Gempar Trio Wartawan Kelas</span>
+      </div>
+      <div class="panel-image-wrap">
+        <img src="Komik/halaman/Episod_01_Panel_06.jpg" alt="Siti, Halijah dan Syikin Meluru Masuk" class="panel-img">
+      </div>
+      <div class="panel-dialogues">
+        <!-- Siti -->
+        <div class="dialogue-row">
+          <div class="avatar-mini">
+            <img src="Komik/karakter/siti_halijah_syikin_concept.jpg" alt="Siti">
+          </div>
+          <div class="bubble">
+            <div class="bubble-speaker speaker-siti">SITI • WARTAWAN SENSASI 5 ALFA</div>
+            <div class="bubble-text">“PERHATIAN SEMUA! PERHATIAN! Kita akan dapat kawan baru!!”</div>
+            <div class="bubble-tone">Menjerit teruja dengan tangan di mulut, tercungap-cungap membawa berita eksklusif</div>
+          </div>
+        </div>
+
+        <!-- Halijah & Syikin -->
+        <div class="dialogue-row">
+          <div class="avatar-mini">
+            <img src="Komik/karakter/siti_halijah_syikin_concept.jpg" alt="Halijah">
+          </div>
+          <div class="bubble">
+            <div class="bubble-speaker speaker-fahmi">HALIJAH & SYIKIN</div>
+            <div class="bubble-text">“Tadi kami nampak Cikgu Fauziah dengan budak lelaki dekat pejabat. Macam budak pandai, ada logo MRSM lagi!”</div>
+            <div class="bubble-tone">Mengangguk laju sambil menunjukkan isyarat ke arah koridor pejabat</div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- PANEL 07 -->
+    <article class="panel-block">
+      <div class="panel-header-tag">
+        <span><strong>PANEL 07</strong> • Medium Shot Geng Siswi</span>
+        <span>Reaksi Suria, Yana & Ketenangan Mariam</span>
+      </div>
+      <div class="panel-image-wrap">
+        <img src="Komik/halaman/Episod_01_Panel_07.jpg" alt="Suria, Yana dan Mariam di Meja Siswi" class="panel-img">
+      </div>
+      <div class="panel-dialogues">
+        <!-- Suria -->
+        <div class="dialogue-row">
+          <div class="avatar-mini">
+            <img src="Komik/karakter/suria_concept.jpg" alt="Suria">
+          </div>
+          <div class="bubble">
+            <div class="bubble-speaker speaker-siti">SURIA</div>
+            <div class="bubble-text">“Seriuslah Siti?! Lelaki ke perempuan?! Handsome tak budak tu?”</div>
+            <div class="bubble-tone">Menopang dagu di atas meja, tersenyum manja dengan mata berseri-seri teruja</div>
+          </div>
+        </div>
+
+        <!-- Yana -->
+        <div class="dialogue-row">
+          <div class="avatar-mini">
+            <img src="Komik/karakter/yana_concept.jpg" alt="Yana">
+          </div>
+          <div class="bubble">
+            <div class="bubble-speaker speaker-siti">YANA</div>
+            <div class="bubble-text">“Haha! Dah bosan tengok muka budak lelaki kelas ni agaknya!”</div>
+            <div class="bubble-tone">Ketawa riang menyakat Suria sambil menutup mulut</div>
+          </div>
+        </div>
+
+        <!-- Mariam -->
+        <div class="dialogue-row">
+          <div class="avatar-mini">
+            <img src="Komik/karakter/mariam_concept.jpg" alt="Mariam">
+          </div>
+          <div class="bubble">
+            <div class="bubble-speaker speaker-zubir">MARIAM • MINDA TAJAM</div>
+            <div class="bubble-text">*(Tekun menatap buku teks sains di sudut meja, langsung tidak menghiraukan keriuhan gosip kelas)*</div>
+            <div class="bubble-tone">Pemerhati senyap bertudung labuh yang tenang dan berwibawa</div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+        <!-- PANEL 08 -->
+    <article class="panel-block">
+      <div class="panel-header-tag">
+        <span><strong>PANEL 08</strong> • Medium Reaction Shot</span>
+        <span>Haziq Menyampuk Pasal Pasukan Bola Sepak</span>
+      </div>
+      <div class="panel-image-wrap">
+        <img src="Komik/halaman/Episod_01_Panel_08.jpg" alt="Haziq Menyampuk Sambil Memegang Bola Sepak" class="panel-img">
+      </div>
+      <div class="panel-dialogues">
+        <!-- Haziq -->
+        <div class="dialogue-row">
+          <div class="avatar-mini">
+            <img src="Komik/karakter/haziq_concept.jpg" alt="Haziq">
+          </div>
+          <div class="bubble">
+            <div class="bubble-speaker speaker-haziq">HAZIQ • TONGGAK BOLA SEPAK</div>
+            <div class="bubble-text">“Ha, baguslah! Kalau budak lelaki, cukup la 11 orang untuk team bola kita nanti!”</div>
+            <div class="bubble-tone">Menyampuk dengan senyuman nakal sambil mengangkat bola sepak di tangannya</div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- PANEL 09 -->
+    <article class="panel-block">
+      <div class="panel-header-tag">
+        <span><strong>PANEL 09</strong> • Sudden Panic Doorway Shot</span>
+        <span>Amaran Kecemasan di Pintu Kelas</span>
+      </div>
+      <div class="panel-image-wrap">
+        <div class="sfx-pill">CIKGU DAH SAMPAI!</div>
+        <img src="Komik/halaman/Episod_01_Panel_09.jpg" alt="Pelajar di Pintu Memberi Isyarat Panik" class="panel-img">
+      </div>
+      <div class="panel-dialogues">
+        <!-- Pelajar di Pintu -->
+        <div class="dialogue-row">
+          <div class="avatar-mini" style="background: #ef4444;">
+            ⚠️
+          </div>
+          <div class="bubble">
+            <div class="bubble-speaker speaker-zubir">PELAJAR DI PINTU KELAS</div>
+            <div class="bubble-text">“WEHHH! CIKGU FAUZIAH DAH SAMPAI!!”</div>
+            <div class="bubble-tone">Melambai-lambaikan tangan memberi isyarat panik saat cikgu menaiki tangga koridor</div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+        <!-- PANEL 10 -->
+    <article class="panel-block">
+      <div class="panel-header-tag">
+        <span><strong>PANEL 10</strong> • Grand Reveal Entry Shot</span>
+        <span>Kemunculan Pertama Cikgu Fauziah & Khalid</span>
+      </div>
+      <div class="panel-image-wrap">
+        <img src="Komik/halaman/Episod_01_Panel_10.jpg" alt="Cikgu Fauziah Membawa Masuk Khalid" class="panel-img">
+      </div>
+      <div class="panel-dialogues">
+        <div class="narration-box">
+          “Pintu kelas terbuka. Melangkah masuk Cikgu Fauziah bersama seorang remaja lelaki tinggi lampai berkemeja putih kemas dengan lencana MRSM. Suasana kelas yang tadi mengalahkan pasar malam serta-merta sepi terpaku.”
+        </div>
+
+        <!-- Cikgu Fauziah -->
+        <div class="dialogue-row">
+          <div class="avatar-mini">
+            <img src="Komik/karakter/cikgu_fauziah_concept.jpg" alt="Cikgu Fauziah">
+          </div>
+          <div class="bubble">
+            <div class="bubble-speaker speaker-amri">CIKGU FAUZIAH • GURU KELAS 5 ALFA</div>
+            <div class="bubble-text">“Assalamualaikum semua. Hari ini, kamu akan mendapat seorang pelajar baru yang akan bersama kamu di 5 Alfa.”</div>
+            <div class="bubble-tone">Melangkah anggun dengan senyuman ibu yang tenang sambil memegang buku jadual kedatangan</div>
+          </div>
+        </div>
+
+        <!-- Seisi Kelas -->
+        <div class="dialogue-row">
+          <div class="avatar-mini" style="background: #10b981;">
+            👥
+          </div>
+          <div class="bubble">
+            <div class="bubble-speaker speaker-haziq">SEISI KELAS 5 ALFA</div>
+            <div class="bubble-text">“Waalaikumussalam, cikgu!”</div>
+            <div class="bubble-tone">Menjawab serentak dengan penuh tertib di kerusi masing-masing</div>
+          </div>
+        </div>
+      </div>
+    </article>
+
+        <!-- PANEL 11 -->
+    <article class="panel-block">
+      <div class="panel-header-tag">
+        <span><strong>PANEL 11</strong> • Diagonal Wide Classroom Perspective</span>
+        <span>Khalid Memperkenalkan Diri di Hadapan 5 Alfa</span>
+      </div>
+      <div class="panel-image-wrap">
+        <img src="Komik/halaman/Episod_01_Panel_11.jpg" alt="Khalid Memperkenalkan Diri di Hadapan Kelas 5 Alfa" class="panel-img">
+      </div>
+      <div class="panel-dialogues">
+        <!-- Cikgu Fauziah -->
+        <div class="dialogue-row">
+          <div class="avatar-mini">
+            <img src="Komik/karakter/cikgu_fauziah_concept.jpg" alt="Cikgu Fauziah">
+          </div>
+          <div class="bubble">
+            <div class="bubble-speaker speaker-amri">CIKGU FAUZIAH</div>
+            <div class="bubble-text">“Silakan perkenalkan diri, Khalid.”</div>
+            <div class="bubble-tone">Tersenyum lembut dan mengangguk memberi ruang kepada Khalid di hadapan papan hitam</div>
+          </div>
+        </div>
+
+        <!-- Khalid -->
+        <div class="dialogue-row">
+          <div class="avatar-mini">
+            <img src="Komik/karakter/khalid_concept.jpg" alt="Khalid">
+          </div>
+          <div class="bubble">
+            <div class="bubble-speaker speaker-fahmi">KHALID • MOHD KHALID BIN TARMIZI</div>
+            <div class="bubble-text">“Assalamualaikum. Nama saya Mohd Khalid bin Tarmizi. Boleh panggil saya Khalid.”</div>
+            <div class="bubble-tone">Suara tenang, perlahan dan beradab, memecahkan kesunyian kelas sambil tersenyum nipis</div>
+          </div>
+        </div>
+
+        <div class="narration-box">
+          “Suasana sepi seketika. Beberapa pelajar perempuan berpandangan sesama sendiri — ada yang senyum, ada yang berbisik. Pelajar lelaki pula sekadar mengangkat kening, menilai wajah baharu yang kini akan menjadi sebahagian daripada dunia mereka.”
+        </div>
+      </div>
+    </article>
+
+    <!-- Next Panels Preview Box -->
+    <div class="next-step-card">
+      <h3>Panel 01 hingga 11 Berjaya Disepadukan! 🎉</h3>
+      <p>Kemajuan Bab 1: 11 / 48 Panel (22.9%). Panel seterusnya: <strong>Panel 12 (Reaksi Berantai: Bisikan Suria & Yana, Pandangan Munir, dan Senyuman Saiful)</strong>.</p>
+      <div class="progress-bar">
+        <div class="progress-fill"></div>
+      </div>
+      <a href="dashboard.html" class="btn-nav" style="padding: 10px 20px;">Kembali ke Dashboard Utama</a>
+    </div>
+
+  </main>
+
+
+  <script>
+    const pagesData = [
+      {
+        src: 'Komik/halaman/Komik_Episod_01_Muka_01.jpg',
+        title: 'Muka Surat 1: Pembukaan Sekolah & Keriuhan Bola',
+        sub: 'Menggabungkan Panel 01 (Panorama SMK Sri Dian), Panel 02 (Saiful) & Panel 03 (Haziq, Fahmi, Zubir)'
+      },
+      {
+        src: 'Komik/halaman/Komik_Episod_01_Muka_02.jpg',
+        title: 'Muka Surat 2: Geng Gajet & Munir Si Otai',
+        sub: 'Menggabungkan Panel 04 (Amri & Jeffri bergadget Nexus) & Panel 05 (Munir bersandar di tingkap)'
+      },
+      {
+        src: 'Komik/halaman/Komik_Episod_01_Muka_03.jpg',
+        title: 'Muka Surat 3: Gempar Trio Wartawan & Reaksi Siswi',
+        sub: 'Menggabungkan Panel 06 (Siti, Halijah & Syikin menerpa) & Panel 07 (Suria, Yana & Mariam)'
+      },
+      {
+        src: 'Komik/halaman/Komik_Episod_01_Muka_04.jpg',
+        title: 'Muka Surat 4: Amaran Panik & Kemunculan Khalid!',
+        sub: 'Menggabungkan Panel 08 (Haziq), Panel 09 (Pelajar Panik di Pintu) & Panel 10 (Cikgu Fauziah & Khalid)'
+      }
+    ];
+
+    let currentPageIdx = 0;
+
+    function setPage(idx) {
+      if (idx < 0 || idx >= pagesData.length) return;
+      currentPageIdx = idx;
+      const data = pagesData[idx];
+      document.getElementById('currentComicPage').src = data.src;
+      document.getElementById('pageTitleText').innerText = data.title;
+      document.getElementById('pageSubText').innerText = data.sub;
+      document.getElementById('pageIndicatorText').innerText = `Halaman ${idx + 1} / ${pagesData.length}`;
+
+      document.getElementById('btnPrevPage').disabled = (idx === 0);
+      document.getElementById('btnNextPage').disabled = (idx === pagesData.length - 1);
+
+      const thumbs = document.querySelectorAll('.thumb-item');
+      thumbs.forEach((t, i) => {
+        if (i === idx) t.classList.add('active');
+        else t.classList.remove('active');
+      });
+      window.scrollTo({ top: 120, behavior: 'smooth' });
+    }
+
+    function changePage(delta) {
+      setPage(currentPageIdx + delta);
+    }
+
+    function switchMode(mode) {
+      const comicView = document.getElementById('comicBookView');
+      const webtoonView = document.getElementById('webtoonView');
+      const btnComic = document.getElementById('btnModeComic');
+      const btnWebtoon = document.getElementById('btnModeWebtoon');
+
+      if (mode === 'comic') {
+        comicView.style.display = 'flex';
+        webtoonView.style.display = 'none';
+        btnComic.classList.add('active');
+        btnWebtoon.classList.remove('active');
+      } else {
+        comicView.style.display = 'none';
+        webtoonView.style.display = 'flex';
+        btnComic.classList.remove('active');
+        btnWebtoon.classList.add('active');
+      }
+    }
+
+    function toggleZoom() {
+      const img = document.getElementById('currentComicPage');
+      window.open(img.src, '_blank');
+    }
+  </script>
+
+</body>
+</html>
