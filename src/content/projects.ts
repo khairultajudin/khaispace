@@ -62,10 +62,10 @@ export const projects: readonly Project[] = [
     title: "Hab Hidroponik: Pak Choy, Salad Framoc & Direktori Tanaman",
     category: "Smart Agriculture / Hydroponics",
     summary:
-      "Panduan lengkap dan penjejak tumbesaran hidroponik pasif Kratky — meliputi Pak Choy (Hari 26), Salad Framoc sedia mula, serta hab penyelidikan tanaman dan herba dapur.",
+      "Panduan lengkap dan penjejak tumbesaran hidroponik pasif Kratky — meliputi Pak Choy (Hari 32), Salad Framoc (Hari 9), serta hab penyelidikan tanaman dan herba dapur.",
     status: "Ongoing Experiment",
     visual: "agri",
-    cover: "/projects/hidroponik/assets/hari-26-takung-biru.jpg",
+    cover: "/projects/hidroponik/assets/hari-32-takung-biru-penuh.jpg",
     href: "/projects/hidroponik/",
   },
   {
