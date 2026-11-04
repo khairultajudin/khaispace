@@ -972,16 +972,23 @@
     .dossier-modal {
       display: none;
       position: fixed;
-      inset: 0;
-      z-index: 99999;
-      background: rgba(4, 7, 13, 0.85);
-      backdrop-filter: blur(8px);
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 999999;
+      background: rgba(4, 7, 13, 0.88);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       overflow-y: auto;
-      padding: 2rem 1rem;
+      padding: 1.5rem 1rem;
+      box-sizing: border-box;
     }
     .dossier-modal.active {
-      display: flex;
-      align-items: center;
+      display: flex !important;
+      align-items: flex-start;
       justify-content: center;
     }
     .dossier-modal-container {
@@ -1905,24 +1912,7 @@
         </div>
       </div>
 
-      <!-- 8-SECTION DOSSIER MODAL -->
-      <div id="dossierModal" class="dossier-modal" onclick="closeDossierModalOnBackdrop(event)">
-        <div class="dossier-modal-container">
-          <div class="dossier-modal-header">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <span id="dossierModalBadge" class="dossier-section-num" style="font-size: 0.85rem; padding: 0.25rem 0.65rem;">#01</span>
-              <div>
-                <h3 id="dossierModalTitle" style="color: #fff; font-size: 1.25rem; font-family: 'Outfit', sans-serif; margin: 0;">Nama Watak</h3>
-                <span id="dossierModalSubtitle" style="color: #94a3b8; font-size: 0.82rem;">Peranan Rasmi & Kategori</span>
-              </div>
-            </div>
-            <button class="dossier-close-btn" onclick="closeDossierModal()" title="Tutup">✕</button>
-          </div>
-          <div class="dossier-modal-body" id="dossierModalContent">
-            <!-- Rendered by JS -->
-          </div>
-        </div>
-      </div>
+      
     </div>
 
 
@@ -7943,6 +7933,9 @@
       }
 
       modal.classList.add('active');
+      modal.scrollTop = 0;
+      const modalContainer = modal.querySelector('.dossier-modal-container');
+      if (modalContainer) modalContainer.scrollTop = 0;
       document.body.style.overflow = 'hidden';
     }
 
@@ -8148,6 +8141,25 @@
     }
 
   </script>
+
+  <!-- 8-SECTION DOSSIER MODAL -->
+      <div id="dossierModal" class="dossier-modal" onclick="closeDossierModalOnBackdrop(event)">
+        <div class="dossier-modal-container">
+          <div class="dossier-modal-header">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span id="dossierModalBadge" class="dossier-section-num" style="font-size: 0.85rem; padding: 0.25rem 0.65rem;">#01</span>
+              <div>
+                <h3 id="dossierModalTitle" style="color: #fff; font-size: 1.25rem; font-family: 'Outfit', sans-serif; margin: 0;">Nama Watak</h3>
+                <span id="dossierModalSubtitle" style="color: #94a3b8; font-size: 0.82rem;">Peranan Rasmi & Kategori</span>
+              </div>
+            </div>
+            <button class="dossier-close-btn" onclick="closeDossierModal()" title="Tutup">✕</button>
+          </div>
+          <div class="dossier-modal-body" id="dossierModalContent">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
 
   <!-- Modal Image Lightbox -->
   <div id="imageModal" class="img-modal" onclick="closeImageModal(event)">
