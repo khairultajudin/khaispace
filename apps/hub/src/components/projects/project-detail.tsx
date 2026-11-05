@@ -4,6 +4,7 @@ import {
   Layers,
   MapPin,
   CheckCircle2,
+  Info,
 } from "lucide-react";
 import { HubProject } from "../../types/dashboard";
 
@@ -13,6 +14,10 @@ interface ProjectDetailProps {
 }
 
 export function ProjectDetail({ project, onBack }: ProjectDetailProps) {
+  const isPlanned =
+    project.status === "Planning" ||
+    project.metadata?.verificationStatus === "Planned / Not Yet Implemented";
+
   const getStatusBadge = (status: HubProject["status"]) => {
     switch (status) {
       case "Production":
@@ -24,7 +29,7 @@ export function ProjectDetail({ project, onBack }: ProjectDetailProps) {
       case "Documented":
         return "bg-[#FAF8F4] text-[#536B85] border-[#DCD7CC]";
       case "Planning":
-        return "bg-[#FAF8F4] text-[#536B85] border-[#DCD7CC]";
+        return "bg-[#FAF8F4] text-[#8C5E1A] border-[#EAD0A0]";
       default:
         return "bg-[#FAF8F4] text-[#536B85] border-[#DCD7CC]";
     }
@@ -47,7 +52,7 @@ export function ProjectDetail({ project, onBack }: ProjectDetailProps) {
       <div className="p-6 sm:p-8 rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div className="space-y-2">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-bold uppercase tracking-wider text-[#536B85]">
                 {project.category}
               </span>
@@ -58,6 +63,16 @@ export function ProjectDetail({ project, onBack }: ProjectDetailProps) {
                 )}`}
               >
                 {project.status}
+              </span>
+              <span className="text-[#DCD7CC]">&bull;</span>
+              <span
+                className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                  isPlanned
+                    ? "bg-[#FAF8F4] text-[#8C5E1A] border-[#EAD0A0]"
+                    : "bg-[#EDF5F2] text-[#347A63] border-[#A8CFC2]"
+                }`}
+              >
+                {isPlanned ? "Planned Specification" : "Verified In-Tree Asset"}
               </span>
             </div>
 
@@ -91,18 +106,22 @@ export function ProjectDetail({ project, onBack }: ProjectDetailProps) {
 
       {/* Metadata & Architecture Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Left Column: Repository & Tree Location */}
+        {/* Left Column: Repository & Location */}
         <div className="p-6 rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-[#E9E5DC]">
             <MapPin className="w-4 h-4 text-[#347A63]" />
             <h2 className="text-sm font-bold uppercase tracking-wider text-[#0C2340]">
-              Repository & Tree Location
+              Repository &amp; Location Status
             </h2>
           </div>
 
           <div className="space-y-3 text-xs">
             <div>
-              <div className="text-[#536B85] font-medium mb-1">Filesystem Path:</div>
+              <div className="text-[#536B85] font-medium mb-1">
+                {isPlanned
+                  ? "Planned Location (Not on filesystem):"
+                  : "Verified Filesystem Path:"}
+              </div>
               <div className="p-2.5 rounded bg-[#FAF8F4] border border-[#DCD7CC] font-mono text-[#0C2340] break-all">
                 {project.location}
               </div>
@@ -110,7 +129,11 @@ export function ProjectDetail({ project, onBack }: ProjectDetailProps) {
 
             {project.metadata?.repositoryPath && (
               <div>
-                <div className="text-[#536B85] font-medium mb-1">Monorepo Integration:</div>
+                <div className="text-[#536B85] font-medium mb-1">
+                  {isPlanned
+                    ? "Planned Integration Target:"
+                    : "Monorepo Integration:"}
+                </div>
                 <div className="p-2.5 rounded bg-[#FAF8F4] border border-[#DCD7CC] font-mono text-[#536B85]">
                   {project.metadata.repositoryPath}
                 </div>
@@ -118,17 +141,27 @@ export function ProjectDetail({ project, onBack }: ProjectDetailProps) {
             )}
 
             <div className="pt-2 text-[11px] text-[#536B85] leading-relaxed">
-              * In-tree projects are maintained within the centralized <code>khairultajudin/khaispace</code> repository.
+              {isPlanned ? (
+                <span className="text-[#8C5E1A]">
+                  * This project is currently in the conceptual planning phase. No source code,
+                  directories, or assets exist on the filesystem yet.
+                </span>
+              ) : (
+                <span>
+                  * In-tree project maintained within the centralized{" "}
+                  <code>khairultajudin/khaispace</code> repository.
+                </span>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Right Column: Technical Architecture & Scope */}
+        {/* Right Column: Architecture & Scope */}
         <div className="p-6 rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-[#E9E5DC]">
             <Layers className="w-4 h-4 text-[#347A63]" />
             <h2 className="text-sm font-bold uppercase tracking-wider text-[#0C2340]">
-              Architecture & Scope
+              Architecture &amp; Scope
             </h2>
           </div>
 
@@ -141,7 +174,11 @@ export function ProjectDetail({ project, onBack }: ProjectDetailProps) {
             </div>
 
             <div>
-              <div className="text-[#536B85] font-medium mb-1">Technology Stack:</div>
+              <div className="text-[#536B85] font-medium mb-1">
+                {isPlanned
+                  ? "Proposed Technology Stack (Planned):"
+                  : "Active Technology Stack (Implemented):"}
+              </div>
               <div className="text-[#0C2340] font-mono text-[11px]">
                 {project.metadata?.techStack || project.tags.join(", ")}
               </div>
@@ -157,16 +194,22 @@ export function ProjectDetail({ project, onBack }: ProjectDetailProps) {
         </div>
       </div>
 
-      {/* Data Integrity Notice */}
-      <div className="p-4 rounded-lg border border-[#DCD7CC] bg-[#E9E5DC]/50 text-xs text-[#536B85] flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-[#347A63] shrink-0" />
+      {/* Differentiated Data Integrity Notice */}
+      <div className="p-4 rounded-lg border border-[#DCD7CC] bg-[#E9E5DC]/50 text-xs text-[#536B85] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-start sm:items-center gap-2.5">
+          {isPlanned ? (
+            <Info className="w-4 h-4 text-[#8C5E1A] shrink-0 mt-0.5 sm:mt-0" />
+          ) : (
+            <CheckCircle2 className="w-4 h-4 text-[#347A63] shrink-0 mt-0.5 sm:mt-0" />
+          )}
           <span>
-            Metadata reflects verified in-tree files. No external databases or unverified endpoints are referenced.
+            {isPlanned
+              ? "Conceptual Planning Entry: This project represents a proposed specification. Its suggested technology stack and repository placement are planning targets and not active filesystem entities."
+              : "Verified Repository Asset: Metadata, technology stack, and filesystem paths correspond to verified source files in the khairultajudin/khaispace repository."}
           </span>
         </div>
         <span className="font-mono text-[11px] text-[#536B85] shrink-0">
-          Source of Truth: CATALOGED_PROJECTS
+          {isPlanned ? "Status: Planning Target" : "Source of Truth: Verified In-Tree"}
         </span>
       </div>
     </div>

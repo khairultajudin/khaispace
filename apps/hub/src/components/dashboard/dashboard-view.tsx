@@ -43,6 +43,21 @@ export function DashboardView() {
     return false;
   });
 
+  React.useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.replace("#", "") as NavSection;
+      if (VALID_SECTIONS.includes(hash)) {
+        setCurrentSection(hash);
+      } else if (hash.startsWith("project-")) {
+        setCurrentSection("projects");
+      }
+    };
+
+    handleHash();
+    window.addEventListener("hashchange", handleHash);
+    return () => window.removeEventListener("hashchange", handleHash);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#FAF8F4] text-[#0C2340] flex antialiased">
       {/* Sidebar Navigation */}

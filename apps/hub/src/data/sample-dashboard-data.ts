@@ -51,6 +51,9 @@ export const CATALOGED_PROJECTS: HubProject[] = [
       techStack: "Next.js 16.3.8, React 19.2.8, Tailwind CSS v4, TypeScript 5",
       deliveryModel: "Static HTML Export (out/) deployed to Cloudflare Pages",
       repositoryPath: "Repository Root (src/app, public/, next.config.ts)",
+      verificationStatus: "Verified In-Tree",
+      pathStatus: "Verified Filesystem Path",
+      stackStatus: "Active Implementation",
     },
   },
   {
@@ -69,6 +72,9 @@ export const CATALOGED_PROJECTS: HubProject[] = [
       techStack: "Next.js 16.3.8, React 19.2.8, Tailwind CSS v4, Lucide React",
       deliveryModel: "Independent Static Export (apps/hub/out) targeting Cloudflare Pages",
       repositoryPath: "apps/hub/ (isolated package & tsconfig)",
+      verificationStatus: "Verified In-Tree",
+      pathStatus: "Verified Filesystem Path",
+      stackStatus: "Active Implementation",
     },
   },
   {
@@ -87,6 +93,9 @@ export const CATALOGED_PROJECTS: HubProject[] = [
       techStack: "HTML5, Vanilla JavaScript, CSS3 Assets",
       deliveryModel: "In-Tree Static Client Asset Bundle",
       repositoryPath: "public/projects/biztrack/ (index.html, assets/)",
+      verificationStatus: "Verified In-Tree",
+      pathStatus: "Verified Filesystem Path",
+      stackStatus: "Active Implementation",
     },
   },
   {
@@ -94,17 +103,20 @@ export const CATALOGED_PROJECTS: HubProject[] = [
     title: "OurDuit",
     category: "Finance & Budgeting",
     status: "Planning",
-    location: "Concept / Planned Module",
+    location: "None (Conceptual / Planned Module)",
     description:
       "Personal and household cash-flow tracking module scheduled for future integration in the Hub ecosystem.",
     tags: ["Budgeting", "Cash Flow", "Under Design"],
     fullDescription:
       "Personal and household cash-flow tracking system currently in conceptual architecture planning. Aimed at providing transparent expenditure modeling and subscription management.",
     metadata: {
-      scope: "Personal Financial Tracking Module",
-      techStack: "Planned: React / Next.js Component Library",
-      deliveryModel: "Future Hub Feature Integration",
-      repositoryPath: "Planned under apps/hub/ or standalone package",
+      scope: "Personal Financial Tracking Module (Planning)",
+      techStack: "Proposed: React / Next.js Component Library (Not yet implemented)",
+      deliveryModel: "Future Hub Feature Integration (Planned)",
+      repositoryPath: "None (Conceptual / Not yet implemented on filesystem)",
+      verificationStatus: "Planned / Not Yet Implemented",
+      pathStatus: "Planned Location (Not on filesystem)",
+      stackStatus: "Proposed / Not Implemented",
     },
   },
   {
@@ -123,6 +135,9 @@ export const CATALOGED_PROJECTS: HubProject[] = [
       techStack: "Static HTML, Photography Asset Library, Markdown Guides",
       deliveryModel: "Static Logbook Pages & High-Resolution Image Records",
       repositoryPath: "public/projects/hidroponik/ (index.html, salad.html, assets/)",
+      verificationStatus: "Verified In-Tree",
+      pathStatus: "Verified Filesystem Path",
+      stackStatus: "Active Implementation",
     },
   },
   {
@@ -141,6 +156,9 @@ export const CATALOGED_PROJECTS: HubProject[] = [
       techStack: "Custom HTML5 Reader Engine, Character Bible JSON, Panel Imagery",
       deliveryModel: "In-Tree Interactive Comic Reader & Dossier Browser",
       repositoryPath: "public/projects/memburu-jejak/ (reader.html, dashboard.html, Komik/)",
+      verificationStatus: "Verified In-Tree",
+      pathStatus: "Verified Filesystem Path",
+      stackStatus: "Active Implementation",
     },
   },
   {
@@ -159,6 +177,9 @@ export const CATALOGED_PROJECTS: HubProject[] = [
       techStack: "Static HTML5, High-Resolution CAD Renders",
       deliveryModel: "Interactive Product Showcase Page",
       repositoryPath: "public/projects/pixelpop/ (index.html, assets/)",
+      verificationStatus: "Verified In-Tree",
+      pathStatus: "Verified Filesystem Path",
+      stackStatus: "Active Implementation",
     },
   },
   {
@@ -177,6 +198,9 @@ export const CATALOGED_PROJECTS: HubProject[] = [
       techStack: "Microsoft PowerPoint Presentation (.pptx), Slicer Configurations",
       deliveryModel: "Downloadable Presentation & Documentation File",
       repositoryPath: "public/Bambu_Lab_A1_Combo_Workshop.pptx",
+      verificationStatus: "Verified In-Tree",
+      pathStatus: "Verified Filesystem Path",
+      stackStatus: "Active Implementation",
     },
   },
 ];

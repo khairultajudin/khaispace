@@ -36,6 +36,22 @@ export function ProjectsView() {
     return null;
   });
 
+  React.useEffect(() => {
+    const handleHash = () => {
+      const match = window.location.hash.match(/^#project-([a-z0-9-]+)$/);
+      if (match) {
+        setSelectedProjectId(match[1]);
+      } else if (window.location.hash === "#projects") {
+        setSelectedProjectId(null);
+      }
+    };
+
+    window.addEventListener("hashchange", handleHash);
+    return () => {
+      window.removeEventListener("hashchange", handleHash);
+    };
+  }, []);
+
   // Compute status counts dynamically from single source of truth
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {
@@ -45,6 +61,16 @@ export function ProjectsView() {
       counts[project.status] = (counts[project.status] || 0) + 1;
     }
     return counts;
+  }, []);
+
+  // Dynamically calculate Active / Dev count (Production, In Development, Active)
+  const activeOrDevCount = useMemo(() => {
+    return CATALOGED_PROJECTS.filter(
+      (p) =>
+        p.status === "Production" ||
+        p.status === "In Development" ||
+        p.status === "Active"
+    ).length;
   }, []);
 
   // Compute unique categories dynamically
@@ -120,7 +146,7 @@ export function ProjectsView() {
               <span>Repository Project Catalog</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0C2340]">
-              Projects & Workspaces
+              Projects &amp; Workspaces
             </h1>
             <p className="text-xs sm:text-sm text-[#536B85] max-w-2xl leading-relaxed">
               Consolidated registry of all verified applications, research documentation, and
@@ -134,7 +160,7 @@ export function ProjectsView() {
               Total: <strong className="font-semibold">{CATALOGED_PROJECTS.length}</strong>
             </div>
             <div className="px-3 py-1.5 rounded-md border border-[#A8CFC2] bg-[#EDF5F2] text-[#347A63]">
-              Active / Dev: <strong className="font-semibold">5</strong>
+              Active / Dev: <strong className="font-semibold">{activeOrDevCount}</strong>
             </div>
           </div>
         </div>
@@ -274,7 +300,7 @@ export function ProjectsView() {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-medium text-white bg-[#0C2340] hover:bg-[#0C2340]/90 transition-colors cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>Clear Filters & Reset</span>
+            <span>Clear Filters &amp; Reset</span>
           </button>
         </div>
       )}

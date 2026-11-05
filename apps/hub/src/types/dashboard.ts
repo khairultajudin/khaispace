@@ -28,6 +28,9 @@ export interface ProjectMetadata {
   techStack?: string;
   deliveryModel?: string;
   repositoryPath?: string;
+  verificationStatus?: "Verified In-Tree" | "Planned / Not Yet Implemented";
+  pathStatus?: "Verified Filesystem Path" | "Planned Location (Not on filesystem)";
+  stackStatus?: "Active Implementation" | "Proposed / Not Implemented";
 }
 
 export interface HubProject {
