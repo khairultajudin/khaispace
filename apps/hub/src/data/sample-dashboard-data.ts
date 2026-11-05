@@ -4,10 +4,10 @@ export const SAMPLE_SUMMARY_METRICS: SummaryMetric[] = [
   {
     id: "total-projects",
     label: "Total Projects",
-    value: "7",
+    value: "8",
     sublabel: "Cataloged in repository",
     badgeText: "Cataloged",
-    note: "All active & archived projects across Khai Space ecosystem",
+    note: "All active, in-development, documented & planned projects",
   },
   {
     id: "active-projects",
@@ -15,7 +15,7 @@ export const SAMPLE_SUMMARY_METRICS: SummaryMetric[] = [
     value: "5",
     sublabel: "Ongoing maintenance / dev",
     badgeText: "In Progress",
-    note: "Public web, Hub, Hidroponik, Memburu Jejak, BizTrack",
+    note: "Website (Prod), Hub (Dev), BizTrack (Active), Memburu Jejak (Active), PixelPop (Active)",
   },
   {
     id: "pending-tasks",
@@ -44,6 +44,15 @@ export const CATALOGED_PROJECTS: HubProject[] = [
     location: "Repository Root (src/)",
     description: "Public portfolio and services website built with Next.js 16 App Router and Tailwind CSS.",
     tags: ["Next.js 16", "Tailwind CSS", "Cloudflare Pages"],
+  },
+  {
+    id: "hub",
+    title: "Khai Space Hub",
+    category: "Internal Platform",
+    status: "In Development",
+    location: "apps/hub",
+    description: "Personal business and project command center providing centralized workspace navigation and telemetry.",
+    tags: ["Next.js 16", "Tailwind CSS", "Command Center"],
   },
   {
     id: "biztrack",
@@ -103,18 +112,18 @@ export const CATALOGED_PROJECTS: HubProject[] = [
 
 export const SAMPLE_ACTIVITY_FEED: ActivityEntry[] = [
   {
-    id: "act-1",
-    action: "Harvest guide and Pak Choy Day 36 documentation finalized",
-    project: "Hidroponics",
-    date: "November 4, 2026",
-    category: "Documentation",
-  },
-  {
     id: "act-2",
     action: "Hub Phase 1.1 light design and domain configuration approved",
     project: "Khai Space Hub",
     date: "November 5, 2026",
     category: "Scaffold",
+  },
+  {
+    id: "act-1",
+    action: "Harvest guide and Pak Choy Day 36 documentation finalized",
+    project: "Hidroponics",
+    date: "November 4, 2026",
+    category: "Documentation",
   },
   {
     id: "act-3",
