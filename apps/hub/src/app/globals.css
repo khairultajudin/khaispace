@@ -1,29 +1,39 @@
 @import "tailwindcss";
 
 :root {
-  --background: #090d16;
-  --foreground: #e6edf3;
-  --surface: #101623;
-  --surface-muted: #162032;
-  --surface-border: #1f2c42;
-  --accent-cyan: #00d2ff;
-  --accent-emerald: #10b981;
-  --accent-amber: #f59e0b;
-  --accent-indigo: #6366f1;
-  --text-muted: #8b9bb4;
+  --background: #faf8f4;
+  --foreground: #0c2340;
+  --surface: #ffffff;
+  --surface-neutral: #e9e5dc;
+  --surface-muted: #f4f0e8;
+  --text-muted: #536b85;
+  --border: #dcd7cc;
+  --border-subtle: #e9e5dc;
+  --accent-green: #347a63;
+  --accent-green-soft: #edf5f2;
+  --accent-green-border: #a8cfc2;
+  --accent-blue: #2c6db2;
+  --accent-blue-soft: #e8f1fa;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
+  --color-surface-neutral: var(--surface-neutral);
   --color-surface-muted: var(--surface-muted);
-  --color-surface-border: var(--surface-border);
-  --color-accent-cyan: var(--accent-cyan);
-  --color-accent-emerald: var(--accent-emerald);
-  --color-accent-amber: var(--accent-amber);
-  --color-accent-indigo: var(--accent-indigo);
   --color-text-muted: var(--text-muted);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-accent-green: var(--accent-green);
+  --color-accent-green-soft: var(--accent-green-soft);
+  --color-accent-green-border: var(--accent-green-border);
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-blue-soft: var(--accent-blue-soft);
+}
+
+html {
+  color-scheme: light;
 }
 
 body {

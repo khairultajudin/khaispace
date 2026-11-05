@@ -1,213 +1,216 @@
 export default function HubHome() {
-  const modules = [
+  const projects = [
     {
       title: "Public Website",
-      category: "Frontend Core",
-      path: "apps/website (src/)",
-      status: "Active",
-      statusColor: "emerald",
-      desc: "Main public portfolio and services site on Next.js 16 App Router.",
-      meta: "Static Export • Cloudflare Pages",
+      category: "Production Web",
+      location: "Repository Root (src/)",
+      status: "Production",
+      statusStyle: "production",
+      desc: "Official Khai Space public website built with Next.js 16 App Router and Tailwind CSS.",
+      notes: "Deployed to Cloudflare Pages from repository root. Preserved intact.",
     },
     {
       title: "BizTrack",
-      category: "Enterprise Module",
-      path: "public/projects/biztrack",
-      status: "Integrated",
-      statusColor: "cyan",
-      desc: "Business tracking dashboard and analytics tool suite.",
-      meta: "Client App • In-Tree",
+      category: "Standalone Project",
+      location: "public/projects/biztrack",
+      status: "Standalone Demo",
+      statusStyle: "neutral",
+      desc: "Business tracking dashboard and assets. Maintained as a separate static project showcase.",
+      notes: "Not integrated into Hub. Preserved as an independent asset bundle.",
     },
     {
-      title: "Hidroponik IoT & Log",
-      category: "Research & IoT",
-      path: "public/projects/hidroponik",
-      status: "Active",
-      statusColor: "emerald",
-      desc: "Harvest guides, visual logs, and sensor tracking telemetry.",
-      meta: "Static App • Plant Tracking",
+      title: "Hidroponik Logbook",
+      category: "Documentation & Research",
+      location: "public/projects/hidroponik",
+      status: "Active Records",
+      statusStyle: "active",
+      desc: "Comprehensive Pak Choy and Salad Framoc harvest logs, photography, and cultivation guides.",
+      notes: "Static HTML logs and photo records in repository public assets.",
     },
     {
       title: "Memburu Jejak",
       category: "Creative Media",
-      path: "public/projects/memburu-jejak",
-      status: "Active",
-      statusColor: "indigo",
-      desc: "Interactive comic reader, character bible, and narrative analytics.",
-      meta: "Interactive Reader • Engine",
+      location: "public/projects/memburu-jejak",
+      status: "Active Project",
+      statusStyle: "active",
+      desc: "Interactive comic reader, character dossier bible, and narrative analytics data.",
+      notes: "Comprises standalone reader HTML, character sheets, and novel analysis data.",
     },
     {
       title: "PixelPop",
       category: "Hardware Showcase",
-      path: "public/projects/pixelpop",
-      status: "Active",
-      statusColor: "amber",
-      desc: "Physical computing product renders and CAD assembly visualization.",
-      meta: "Product CAD • Interactive",
+      location: "public/projects/pixelpop",
+      status: "Active Showcase",
+      statusStyle: "neutral",
+      desc: "Physical computing product showcase featuring exploded CAD visuals and 3D enclosure renders.",
+      notes: "Static showcase page hosted within public assets.",
     },
     {
-      title: "Infrastructure & Ops",
-      category: "Systems & Security",
-      path: "infrastructure/",
-      status: "Phase 1 Ready",
-      statusColor: "cyan",
-      desc: "Multi-app Cloudflare deployment configs, security headers, and domain routing.",
-      meta: "Monorepo Routing • Cloudflare",
+      title: "Air Fryer Dashboard",
+      category: "Prototype",
+      location: "public/projects/air-fryer-dashboard",
+      status: "Static Demo",
+      statusStyle: "neutral",
+      desc: "Single-page static dashboard prototype and control interface demonstration.",
+      notes: "Self-contained HTML prototype in public assets.",
     },
   ];
 
   return (
-    <div className="min-h-screen bg-[#090d16] text-[#e6edf3] flex flex-col">
-      {/* Top Navigation */}
-      <header className="border-b border-[#1f2c42] bg-[#101623]/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center font-bold text-white shadow-lg shadow-cyan-500/20">
+    <div className="min-h-screen bg-[#FAF8F4] text-[#0C2340] flex flex-col antialiased">
+      {/* Top Header */}
+      <header className="border-b border-[#DCD7CC] bg-[#FAF8F4]/90 backdrop-blur-sm sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
+          <div className="flex items-center gap-3.5">
+            <div className="w-9 h-9 rounded-md bg-[#0C2340] flex items-center justify-center font-bold text-white text-sm shadow-sm">
               K
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-semibold tracking-wide text-white">KHAI SPACE HUB</span>
-                <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">
-                  Command Center
+              <div className="flex items-center gap-2.5">
+                <span className="font-semibold text-base tracking-tight text-[#0C2340]">
+                  Khai Space Hub
+                </span>
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded border border-[#DCD7CC] bg-[#E9E5DC] text-[#0C2340]">
+                  Internal Directory
                 </span>
               </div>
-              <p className="text-xs text-[#8b9bb4]">Internal Monorepo Control Platform</p>
+              <p className="text-xs text-[#536B85]">
+                Centralized project catalog & workspace navigator
+              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 text-xs font-mono">
-            <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-[#162032] border border-[#1f2c42]">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span className="text-emerald-400 font-medium">Build Isolated</span>
-            </div>
-            <div className="hidden sm:block text-[#8b9bb4]">
-              Branch: <span className="text-white">feature/khai-space-hub</span>
-            </div>
+          <div className="flex items-center gap-3 text-xs">
+            <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#DCD7CC] bg-[#E9E5DC] text-[#0C2340] font-mono text-[11px]">
+              Branch: feature/khai-space-hub
+            </span>
+            <span className="inline-flex items-center px-2.5 py-1 rounded border border-[#A8CFC2] bg-[#EDF5F2] text-[#347A63] font-medium text-[11px]">
+              Isolated Build
+            </span>
           </div>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-        {/* System Status Banner */}
-        <div className="mb-8 p-5 rounded-xl border border-[#1f2c42] bg-gradient-to-r from-[#101623] via-[#162032] to-[#101623] shadow-xl">
+      <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full space-y-8">
+        {/* Workspace Notice Banner */}
+        <div className="p-6 rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-sm">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-xl font-bold text-white flex items-center gap-2">
-                Mission Control & Telemetry
-                <span className="text-xs font-normal font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                  Phase 1 Initialized
-                </span>
+            <div className="space-y-1">
+              <h1 className="text-xl font-bold tracking-tight text-[#0C2340]">
+                Workspace Overview & Project Index
               </h1>
-              <p className="text-sm text-[#8b9bb4] mt-1 max-w-2xl">
-                Independent execution environment running under <code className="text-cyan-400 font-mono text-xs">apps/hub/</code>.
-                Production website files, dependencies, and main branch deployments are strictly isolated.
+              <p className="text-sm text-[#536B85] max-w-2xl leading-relaxed">
+                This internal hub operates as an independent application located under{" "}
+                <code className="text-xs font-mono bg-[#E9E5DC] px-1.5 py-0.5 rounded text-[#0C2340]">
+                  apps/hub/
+                </code>
+                . The public website remains stationed at the repository root, ensuring zero disruption
+                to existing production deployments.
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="px-4 py-2 rounded-lg bg-[#090d16] border border-[#1f2c42] text-xs font-mono">
-                <span className="text-[#8b9bb4]">Host Target:</span> <span className="text-cyan-400">Cloudflare Pages</span>
+            <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+              <div className="px-3 py-1.5 rounded border border-[#DCD7CC] bg-[#FAF8F4] text-[#536B85]">
+                Target: <span className="text-[#0C2340] font-semibold">hub.khaispace.com</span>
               </div>
-              <div className="px-4 py-2 rounded-lg bg-[#090d16] border border-[#1f2c42] text-xs font-mono">
-                <span className="text-[#8b9bb4]">Target Output:</span> <span className="text-emerald-400">apps/hub/out</span>
+              <div className="px-3 py-1.5 rounded border border-[#DCD7CC] bg-[#FAF8F4] text-[#536B85]">
+                Output: <span className="text-[#0C2340] font-semibold">apps/hub/out</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Modules Grid */}
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-[#8b9bb4]">
-            Monorepo Project Matrix
-          </h2>
-          <span className="text-xs font-mono text-[#8b9bb4]">
-            Total Registered: {modules.length}
+        {/* Section Header */}
+        <div className="flex items-center justify-between pt-2">
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-[#536B85]">
+              Cataloged Repository Projects
+            </h2>
+            <p className="text-xs text-[#536B85] mt-0.5">
+              Verified modules and assets currently residing in the repository tree.
+            </p>
+          </div>
+          <span className="text-xs font-mono px-2 py-1 rounded border border-[#DCD7CC] bg-[#E9E5DC] text-[#0C2340]">
+            {projects.length} Cataloged
           </span>
         </div>
 
+        {/* Project Matrix Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {modules.map((m) => (
+          {projects.map((p) => (
             <div
-              key={m.title}
-              className="group p-5 rounded-xl border border-[#1f2c42] bg-[#101623] hover:border-cyan-500/50 transition-all duration-200 hover:shadow-lg hover:shadow-cyan-950/20 flex flex-col justify-between"
+              key={p.title}
+              className="p-5 rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-sm flex flex-col justify-between hover:border-[#347A63] transition-colors duration-150"
             >
               <div>
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <span className="text-xs font-mono text-[#8b9bb4]">{m.category}</span>
+                <div className="flex items-start justify-between gap-2 mb-2.5">
+                  <span className="text-[11px] font-medium uppercase tracking-wider text-[#536B85]">
+                    {p.category}
+                  </span>
                   <span
-                    className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
-                      m.statusColor === "emerald"
-                        ? "bg-emerald-950/60 text-emerald-300 border-emerald-800"
-                        : m.statusColor === "cyan"
-                        ? "bg-cyan-950/60 text-cyan-300 border-cyan-800"
-                        : m.statusColor === "indigo"
-                        ? "bg-indigo-950/60 text-indigo-300 border-indigo-800"
-                        : "bg-amber-950/60 text-amber-300 border-amber-800"
+                    className={`text-[11px] font-medium px-2 py-0.5 rounded border ${
+                      p.statusStyle === "production"
+                        ? "bg-[#EDF5F2] text-[#347A63] border-[#A8CFC2]"
+                        : p.statusStyle === "active"
+                        ? "bg-[#EDF5F2] text-[#347A63] border-[#A8CFC2]"
+                        : "bg-[#FAF8F4] text-[#536B85] border-[#DCD7CC]"
                     }`}
                   >
-                    {m.status}
+                    {p.status}
                   </span>
                 </div>
-                <h3 className="text-base font-semibold text-white group-hover:text-cyan-300 transition-colors">
-                  {m.title}
+
+                <h3 className="text-base font-semibold text-[#0C2340] tracking-tight">
+                  {p.title}
                 </h3>
-                <p className="text-xs text-[#8b9bb4] mt-1.5 leading-relaxed">
-                  {m.desc}
+
+                <p className="text-xs text-[#536B85] mt-2 leading-relaxed">
+                  {p.desc}
                 </p>
               </div>
 
-              <div className="mt-4 pt-3 border-t border-[#1f2c42]/60 flex items-center justify-between text-[11px] font-mono">
-                <span className="text-cyan-400/80 truncate max-w-[170px]">{m.path}</span>
-                <span className="text-[#8b9bb4]">{m.meta.split("•")[0]}</span>
+              <div className="mt-5 pt-3.5 border-t border-[#E9E5DC] space-y-1.5 text-[11px]">
+                <div className="flex items-center justify-between text-[#536B85] font-mono">
+                  <span>Location:</span>
+                  <span className="text-[#0C2340] truncate max-w-[170px]">{p.location}</span>
+                </div>
+                <div className="text-[11px] text-[#536B85] leading-normal">
+                  {p.notes}
+                </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Isolation & Architectural Safeguards */}
-        <div className="mt-10 p-6 rounded-xl border border-[#1f2c42] bg-[#101623]">
-          <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-            <svg
-              className="w-5 h-5 text-emerald-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-              />
-            </svg>
-            Monorepo Isolation Safeguards Verified
+        {/* Architectural Principles Card */}
+        <div className="p-6 rounded-lg border border-[#DCD7CC] bg-[#E9E5DC]/50">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-[#0C2340] mb-3">
+            Monorepo Governance & Separation of Concerns
           </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-            <div className="p-3 rounded-lg bg-[#090d16] border border-[#1f2c42]">
-              <div className="text-emerald-400 font-semibold mb-1">✓ Production Website Untouched</div>
-              <p className="text-[#8b9bb4]">
-                Root files under <code>src/</code>, <code>public/</code>, and root build configs continue operating independently.
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-[#536B85]">
+            <div className="p-3.5 rounded bg-[#FFFFFF] border border-[#DCD7CC]">
+              <div className="font-semibold text-[#0C2340] mb-1">Root Website Preserved</div>
+              <p>
+                Website files live in repository root. No directory moving or restructuring performed.
               </p>
             </div>
-            <div className="p-3 rounded-lg bg-[#090d16] border border-[#1f2c42]">
-              <div className="text-emerald-400 font-semibold mb-1">✓ TypeScript & Lint Segregation</div>
-              <p className="text-[#8b9bb4]">
-                Root TypeScript excludes <code>apps/</code>, and root ESLint config isolates the Hub app from root type checks.
+            <div className="p-3.5 rounded bg-[#FFFFFF] border border-[#DCD7CC]">
+              <div className="font-semibold text-[#0C2340] mb-1">Isolated Hub Build</div>
+              <p>
+                Hub maintains its own <code className="font-mono text-[10px]">package.json</code> and tsconfig under <code className="font-mono text-[10px]">apps/hub/</code>.
               </p>
             </div>
-            <div className="p-3 rounded-lg bg-[#090d16] border border-[#1f2c42]">
-              <div className="text-emerald-400 font-semibold mb-1">✓ Git Branch Confinement</div>
-              <p className="text-[#8b9bb4]">
-                All work confined to <code>feature/khai-space-hub</code>. Zero direct commits to <code>main</code>.
+            <div className="p-3.5 rounded bg-[#FFFFFF] border border-[#DCD7CC]">
+              <div className="font-semibold text-[#0C2340] mb-1">Separate Deployments</div>
+              <p>
+                Website and Hub deploy as independent Cloudflare Pages targets from their respective roots.
               </p>
             </div>
-            <div className="p-3 rounded-lg bg-[#090d16] border border-[#1f2c42]">
-              <div className="text-emerald-400 font-semibold mb-1">✓ Cloudflare Pages Isolation</div>
-              <p className="text-[#8b9bb4]">
-                Hub builds via <code>apps/hub</code> root directory, producing independent output without colliding with main site.
+            <div className="p-3.5 rounded bg-[#FFFFFF] border border-[#DCD7CC]">
+              <div className="font-semibold text-[#0C2340] mb-1">Branch Discipline</div>
+              <p>
+                All development occurs on <code className="font-mono text-[10px]">feature/khai-space-hub</code>. Direct commits to main are blocked.
               </p>
             </div>
           </div>
@@ -215,8 +218,11 @@ export default function HubHome() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[#1f2c42] bg-[#101623] py-4 text-center text-xs text-[#8b9bb4] font-mono">
-        Khai Space Hub • Phase 1 Scaffold Verified • khairultajudin/khaispace
+      <footer className="border-t border-[#DCD7CC] bg-[#FAF8F4] py-5 text-center text-xs text-[#536B85]">
+        <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span>Khai Space Hub &bull; Phase 1.1 Scaffold Verified</span>
+          <span className="font-mono text-[11px] text-[#536B85]">khairultajudin/khaispace</span>
+        </div>
       </footer>
     </div>
   );
