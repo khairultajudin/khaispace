@@ -44,6 +44,14 @@ export const CATALOGED_PROJECTS: HubProject[] = [
     location: "Repository Root (src/)",
     description: "Public portfolio and services website built with Next.js 16 App Router and Tailwind CSS.",
     tags: ["Next.js 16", "Tailwind CSS", "Cloudflare Pages"],
+    fullDescription:
+      "Public-facing website presenting Khai Space capabilities, creative works, and consulting services. Built using the Next.js 16 App Router with static HTML export for fast, resilient global delivery.",
+    metadata: {
+      scope: "Public Portfolio & Client Services",
+      techStack: "Next.js 16.3.8, React 19.2.8, Tailwind CSS v4, TypeScript 5",
+      deliveryModel: "Static HTML Export (out/) deployed to Cloudflare Pages",
+      repositoryPath: "Repository Root (src/app, public/, next.config.ts)",
+    },
   },
   {
     id: "hub",
@@ -51,8 +59,17 @@ export const CATALOGED_PROJECTS: HubProject[] = [
     category: "Internal Platform",
     status: "In Development",
     location: "apps/hub",
-    description: "Personal business and project command center providing centralized workspace navigation and telemetry.",
+    description:
+      "Personal business and project command center for centralized workspace navigation, project visibility, and operational planning.",
     tags: ["Next.js 16", "Tailwind CSS", "Command Center"],
+    fullDescription:
+      "Internal operational command center designed to provide consolidated visibility over all projects, assets, and future initiatives in the Khai Space ecosystem without interfering with production website builds.",
+    metadata: {
+      scope: "Internal Workspace & Project Catalog",
+      techStack: "Next.js 16.3.8, React 19.2.8, Tailwind CSS v4, Lucide React",
+      deliveryModel: "Independent Static Export (apps/hub/out) targeting Cloudflare Pages",
+      repositoryPath: "apps/hub/ (isolated package & tsconfig)",
+    },
   },
   {
     id: "biztrack",
@@ -60,8 +77,17 @@ export const CATALOGED_PROJECTS: HubProject[] = [
     category: "Standalone Client",
     status: "Active",
     location: "public/projects/biztrack",
-    description: "Standalone business and analytics dashboard client. Maintained as an independent asset in the repository.",
+    description:
+      "Standalone business and analytics dashboard client. Maintained as an independent asset in the repository.",
     tags: ["Analytics", "Dashboard", "Standalone Asset"],
+    fullDescription:
+      "Client-side business analytics dashboard prototype featuring revenue summaries, client tracking charts, and visual performance indicators. Maintained as a self-contained static web application.",
+    metadata: {
+      scope: "Business Analytics & Tracking Prototype",
+      techStack: "HTML5, Vanilla JavaScript, CSS3 Assets",
+      deliveryModel: "In-Tree Static Client Asset Bundle",
+      repositoryPath: "public/projects/biztrack/ (index.html, assets/)",
+    },
   },
   {
     id: "ourduit",
@@ -69,8 +95,17 @@ export const CATALOGED_PROJECTS: HubProject[] = [
     category: "Finance & Budgeting",
     status: "Planning",
     location: "Concept / Planned Module",
-    description: "Personal and household cash-flow tracking module scheduled for future integration in the Hub ecosystem.",
+    description:
+      "Personal and household cash-flow tracking module scheduled for future integration in the Hub ecosystem.",
     tags: ["Budgeting", "Cash Flow", "Under Design"],
+    fullDescription:
+      "Personal and household cash-flow tracking system currently in conceptual architecture planning. Aimed at providing transparent expenditure modeling and subscription management.",
+    metadata: {
+      scope: "Personal Financial Tracking Module",
+      techStack: "Planned: React / Next.js Component Library",
+      deliveryModel: "Future Hub Feature Integration",
+      repositoryPath: "Planned under apps/hub/ or standalone package",
+    },
   },
   {
     id: "hidroponik",
@@ -78,8 +113,17 @@ export const CATALOGED_PROJECTS: HubProject[] = [
     category: "IoT & Research",
     status: "Documented",
     location: "public/projects/hidroponik",
-    description: "Urban farming logbooks, photo documentation, and harvest guides for Pak Choy and Salad Framoc.",
+    description:
+      "Urban farming logbooks, photo documentation, and harvest guides for Pak Choy and Salad Framoc.",
     tags: ["Plant Logs", "Harvest Guides", "Static Media"],
+    fullDescription:
+      "Empirical cultivation logbook and urban hydroponic farming documentation spanning day-by-day germination records, EC/pH monitoring, photo timelines, and harvest cooking guides for Pak Choy and Salad Framoc.",
+    metadata: {
+      scope: "Urban Agriculture & IoT Plant Tracking",
+      techStack: "Static HTML, Photography Asset Library, Markdown Guides",
+      deliveryModel: "Static Logbook Pages & High-Resolution Image Records",
+      repositoryPath: "public/projects/hidroponik/ (index.html, salad.html, assets/)",
+    },
   },
   {
     id: "memburu-jejak",
@@ -87,8 +131,17 @@ export const CATALOGED_PROJECTS: HubProject[] = [
     category: "Creative Media",
     status: "Active",
     location: "public/projects/memburu-jejak",
-    description: "Interactive digital comic reader, character dossier bible, and narrative timeline data.",
+    description:
+      "Interactive digital comic reader, character dossier bible, and narrative timeline data.",
     tags: ["Web Comic", "Character Bible", "Reader Engine"],
+    fullDescription:
+      "Digital narrative and transmedia comic adaptation suite. Contains a responsive web reader, episodic panel archives, master character bible dossiers, and structured novel analysis data in JSON format.",
+    metadata: {
+      scope: "Digital Web Comic & Narrative Engine",
+      techStack: "Custom HTML5 Reader Engine, Character Bible JSON, Panel Imagery",
+      deliveryModel: "In-Tree Interactive Comic Reader & Dossier Browser",
+      repositoryPath: "public/projects/memburu-jejak/ (reader.html, dashboard.html, Komik/)",
+    },
   },
   {
     id: "pixelpop",
@@ -96,8 +149,17 @@ export const CATALOGED_PROJECTS: HubProject[] = [
     category: "Hardware Showcase",
     status: "Active",
     location: "public/projects/pixelpop",
-    description: "Physical computing product showcase with interactive exploded CAD diagrams and 3D enclosure renders.",
+    description:
+      "Physical computing product showcase with interactive exploded CAD diagrams and 3D enclosure renders.",
     tags: ["Hardware CAD", "3D Renders", "Interactive Showcase"],
+    fullDescription:
+      "Product showcase website demonstrating physical computing hardware designs. Features detailed 3D enclosure CAD exploded diagrams, technical assembly breakdowns, and rendered aesthetic visuals.",
+    metadata: {
+      scope: "Industrial Design & Hardware Visualization",
+      techStack: "Static HTML5, High-Resolution CAD Renders",
+      deliveryModel: "Interactive Product Showcase Page",
+      repositoryPath: "public/projects/pixelpop/ (index.html, assets/)",
+    },
   },
   {
     id: "clicker",
@@ -105,15 +167,24 @@ export const CATALOGED_PROJECTS: HubProject[] = [
     category: "Hardware & Workshop",
     status: "Documented",
     location: "public/Bambu_Lab_A1_Combo_Workshop.pptx",
-    description: "3D printer workshop documentation, slicing presets, and physical clicker mechanism designs.",
+    description:
+      "3D printer workshop documentation, slicing presets, and physical clicker mechanism designs.",
     tags: ["3D Printing", "Workshop Slide deck", "Physical Tool"],
+    fullDescription:
+      "Physical computing and 3D fabrication documentation prepared for the Bambu Lab A1 Combo Workshop. Encompasses slicer profiles, mechanical clicker mechanism specifications, and workshop curriculum slides.",
+    metadata: {
+      scope: "Digital Fabrication & Maker Workshop Curriculum",
+      techStack: "Microsoft PowerPoint Presentation (.pptx), Slicer Configurations",
+      deliveryModel: "Downloadable Presentation & Documentation File",
+      repositoryPath: "public/Bambu_Lab_A1_Combo_Workshop.pptx",
+    },
   },
 ];
 
 export const SAMPLE_ACTIVITY_FEED: ActivityEntry[] = [
   {
     id: "act-2",
-    action: "Hub Phase 1.1 light design and domain configuration approved",
+    action: "Hub Phase 1.1 light-theme design finalized and target domain documented",
     project: "Khai Space Hub",
     date: "November 5, 2026",
     category: "Scaffold",

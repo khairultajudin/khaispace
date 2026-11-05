@@ -10,6 +10,7 @@ import { ProjectCatalog } from "./project-catalog";
 import { RecentActivity } from "./recent-activity";
 import { UpcomingTasks } from "./upcoming-tasks";
 import { ComingSoonView } from "./coming-soon-view";
+import { ProjectsView } from "../projects/projects-view";
 
 const VALID_SECTIONS: NavSection[] = [
   "overview",
@@ -27,6 +28,9 @@ export function DashboardView() {
       const hash = window.location.hash.replace("#", "") as NavSection;
       if (VALID_SECTIONS.includes(hash)) {
         return hash;
+      }
+      if (hash.startsWith("project-")) {
+        return "projects";
       }
     }
     return "overview";
@@ -76,6 +80,8 @@ export function DashboardView() {
                 <UpcomingTasks />
               </div>
             </>
+          ) : currentSection === "projects" ? (
+            <ProjectsView />
           ) : (
             <ComingSoonView
               section={currentSection}
@@ -87,7 +93,7 @@ export function DashboardView() {
         {/* Footer */}
         <footer className="border-t border-[#DCD7CC] bg-[#FAF8F4] py-4 px-6 text-xs text-[#536B85] mt-auto">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-            <span>Khai Space Hub &bull; Phase 2A Dashboard Foundation</span>
+            <span>Khai Space Hub &bull; Personal Business &amp; Project Command Center</span>
             <span className="font-mono text-[11px] text-[#536B85]">
               apps/hub &bull; khairultajudin/khaispace
             </span>

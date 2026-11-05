@@ -16,14 +16,30 @@ export interface SummaryMetric {
   note: string;
 }
 
+export type ProjectStatus =
+  | "Active"
+  | "Production"
+  | "In Development"
+  | "Planning"
+  | "Documented";
+
+export interface ProjectMetadata {
+  scope?: string;
+  techStack?: string;
+  deliveryModel?: string;
+  repositoryPath?: string;
+}
+
 export interface HubProject {
   id: string;
   title: string;
   category: string;
-  status: "Active" | "Production" | "In Development" | "Planning" | "Documented";
+  status: ProjectStatus;
   location: string;
   description: string;
   tags: string[];
+  fullDescription?: string;
+  metadata?: ProjectMetadata;
 }
 
 export interface ActivityEntry {

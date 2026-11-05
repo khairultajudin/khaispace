@@ -40,8 +40,7 @@ const NAV_ITEMS: NavItemConfig[] = [
     id: "projects",
     label: "Projects",
     icon: FolderKanban,
-    badge: "Coming Soon",
-    isReady: false,
+    isReady: true,
   },
   {
     id: "tasks",
@@ -133,7 +132,7 @@ export function Sidebar({
                 onSelectSection(item.id);
                 if (mobileOpen) onCloseMobile();
               }}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-medium transition-all duration-150 text-left ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-medium transition-all duration-150 text-left cursor-pointer ${
                 isActive
                   ? "bg-[#EDF5F2] text-[#347A63] font-semibold border border-[#A8CFC2]"
                   : "text-[#0C2340] hover:bg-[#E9E5DC] hover:text-[#0C2340] border border-transparent"
