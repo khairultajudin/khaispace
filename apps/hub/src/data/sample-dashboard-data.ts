@@ -1,0 +1,168 @@
+import { HubProject, SummaryMetric, ActivityEntry, TaskEntry } from "../types/dashboard";
+
+export const SAMPLE_SUMMARY_METRICS: SummaryMetric[] = [
+  {
+    id: "total-projects",
+    label: "Total Projects",
+    value: "7",
+    sublabel: "Cataloged in repository",
+    badgeText: "Cataloged",
+    note: "All active & archived projects across Khai Space ecosystem",
+  },
+  {
+    id: "active-projects",
+    label: "Active Projects",
+    value: "5",
+    sublabel: "Ongoing maintenance / dev",
+    badgeText: "In Progress",
+    note: "Public web, Hub, Hidroponik, Memburu Jejak, BizTrack",
+  },
+  {
+    id: "pending-tasks",
+    label: "Pending Tasks",
+    value: "8",
+    sublabel: "Sample milestone items",
+    badgeText: "Sample Data",
+    note: "Illustrative task queue — not connected to external tracker",
+  },
+  {
+    id: "monthly-expenses",
+    label: "Monthly Subscriptions",
+    value: "RM 380",
+    sublabel: "Sample estimates",
+    badgeText: "Sample Data",
+    note: "Illustrative budget figure only — no live financial integration",
+  },
+];
+
+export const CATALOGED_PROJECTS: HubProject[] = [
+  {
+    id: "website",
+    title: "Khai Space Website",
+    category: "Production Web",
+    status: "Production",
+    location: "Repository Root (src/)",
+    description: "Public portfolio and services website built with Next.js 16 App Router and Tailwind CSS.",
+    tags: ["Next.js 16", "Tailwind CSS", "Cloudflare Pages"],
+  },
+  {
+    id: "biztrack",
+    title: "BizTrack",
+    category: "Standalone Client",
+    status: "Active",
+    location: "public/projects/biztrack",
+    description: "Standalone business and analytics dashboard client. Maintained as an independent asset in the repository.",
+    tags: ["Analytics", "Dashboard", "Standalone Asset"],
+  },
+  {
+    id: "ourduit",
+    title: "OurDuit",
+    category: "Finance & Budgeting",
+    status: "Planning",
+    location: "Concept / Planned Module",
+    description: "Personal and household cash-flow tracking module scheduled for future integration in the Hub ecosystem.",
+    tags: ["Budgeting", "Cash Flow", "Under Design"],
+  },
+  {
+    id: "hidroponik",
+    title: "Hidroponics",
+    category: "IoT & Research",
+    status: "Documented",
+    location: "public/projects/hidroponik",
+    description: "Urban farming logbooks, photo documentation, and harvest guides for Pak Choy and Salad Framoc.",
+    tags: ["Plant Logs", "Harvest Guides", "Static Media"],
+  },
+  {
+    id: "memburu-jejak",
+    title: "Memburu Jejak",
+    category: "Creative Media",
+    status: "Active",
+    location: "public/projects/memburu-jejak",
+    description: "Interactive digital comic reader, character dossier bible, and narrative timeline data.",
+    tags: ["Web Comic", "Character Bible", "Reader Engine"],
+  },
+  {
+    id: "pixelpop",
+    title: "PixelPop",
+    category: "Hardware Showcase",
+    status: "Active",
+    location: "public/projects/pixelpop",
+    description: "Physical computing product showcase with interactive exploded CAD diagrams and 3D enclosure renders.",
+    tags: ["Hardware CAD", "3D Renders", "Interactive Showcase"],
+  },
+  {
+    id: "clicker",
+    title: "3D Printing Clicker",
+    category: "Hardware & Workshop",
+    status: "Documented",
+    location: "public/Bambu_Lab_A1_Combo_Workshop.pptx",
+    description: "3D printer workshop documentation, slicing presets, and physical clicker mechanism designs.",
+    tags: ["3D Printing", "Workshop Slide deck", "Physical Tool"],
+  },
+];
+
+export const SAMPLE_ACTIVITY_FEED: ActivityEntry[] = [
+  {
+    id: "act-1",
+    action: "Harvest guide and Pak Choy Day 36 documentation finalized",
+    project: "Hidroponics",
+    date: "November 4, 2026",
+    category: "Documentation",
+  },
+  {
+    id: "act-2",
+    action: "Hub Phase 1.1 light design and domain configuration approved",
+    project: "Khai Space Hub",
+    date: "November 5, 2026",
+    category: "Scaffold",
+  },
+  {
+    id: "act-3",
+    action: "Batch 4 character dossier attribution updated in character bible",
+    project: "Memburu Jejak",
+    date: "November 3, 2026",
+    category: "Design",
+  },
+  {
+    id: "act-4",
+    action: "Initial module structure and schema drafted for cash-flow tracking",
+    project: "OurDuit",
+    date: "November 1, 2026",
+    category: "Planning",
+  },
+];
+
+export const SAMPLE_UPCOMING_TASKS: TaskEntry[] = [
+  {
+    id: "task-1",
+    title: "Verify responsive mobile layout on Hub dashboard",
+    project: "Khai Space Hub",
+    dueDate: "November 7, 2026",
+    priority: "High",
+    status: "In Progress",
+  },
+  {
+    id: "task-2",
+    title: "Review schema requirements for OurDuit database",
+    project: "OurDuit",
+    dueDate: "November 12, 2026",
+    priority: "Medium",
+    status: "Pending",
+  },
+  {
+    id: "task-3",
+    title: "Prepare next batch harvest photos for Salad Framoc",
+    project: "Hidroponics",
+    dueDate: "November 15, 2026",
+    priority: "Normal",
+    status: "Pending",
+  },
+  {
+    id: "task-4",
+    title: "Audit Bambu Lab A1 Combo slide deck formatting",
+    project: "3D Printing Clicker",
+    dueDate: "November 20, 2026",
+    priority: "Normal",
+    status: "Pending",
+  },
+];
