@@ -15,13 +15,16 @@ import {
 } from "lucide-react";
 import { TaskItem, TaskStatus } from "../../types/dashboard";
 import { SAMPLE_TASKS, CATALOGED_PROJECTS } from "../../data/sample-dashboard-data";
+import { getLocalTodayIso, isTaskOverdue } from "../../utils/date-utils";
 import { TaskCard } from "./task-card";
 import { TaskDetail } from "./task-detail";
 import { MilestonesView } from "./milestones-view";
 
-const REFERENCE_DATE = "2026-11-05";
+interface TasksViewProps {
+  simulatedTodayIso?: string;
+}
 
-export function TasksView() {
+export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
   // Local session state for tasks (supports interactive status changes without backend persistence)
   const [tasks, setTasks] = useState<TaskItem[]>(SAMPLE_TASKS);
   const [activeTab, setActiveTab] = useState<"tasks" | "milestones">("tasks");
@@ -31,6 +34,19 @@ export function TasksView() {
   const [selectedPriority, setSelectedPriority] = useState<string>("ALL");
   const [sortOrder, setSortOrder] = useState<"due-asc" | "due-desc">("due-asc");
   const [hasSessionModifications, setHasSessionModifications] = useState<boolean>(false);
+
+  // Dynamic local calendar date (updates automatically if page remains open across midnight)
+  const [currentDateIso, setCurrentDateIso] = useState<string>(() => getLocalTodayIso());
+  const todayIso = simulatedTodayIso || currentDateIso;
+
+  useEffect(() => {
+    if (simulatedTodayIso) return;
+    const timer = setInterval(() => {
+      const current = getLocalTodayIso();
+      setCurrentDateIso((prev) => (prev !== current ? current : prev));
+    }, 60000);
+    return () => clearInterval(timer);
+  }, [simulatedTodayIso]);
 
   // Synchronous hash reader for direct task links (#task-<id>)
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(() => {
@@ -91,12 +107,10 @@ export function TasksView() {
     const inProgress = tasks.filter((t) => t.status === "In Progress").length;
     const pending = tasks.filter((t) => t.status === "Pending").length;
     const completed = tasks.filter((t) => t.status === "Completed").length;
-    const overdue = tasks.filter(
-      (t) => t.status !== "Completed" && t.dueDateIso < REFERENCE_DATE
-    ).length;
+    const overdue = tasks.filter((t) => isTaskOverdue(t, todayIso)).length;
 
     return { total, inProgress, pending, completed, overdue };
-  }, [tasks]);
+  }, [tasks, todayIso]);
 
   // Unique project options from CATALOGED_PROJECTS
   const projectOptions = useMemo(() => {
@@ -168,8 +182,7 @@ export function TasksView() {
   if (selectedTaskId) {
     const activeTask = tasks.find((t) => t.id === selectedTaskId);
     if (activeTask) {
-      const isOverdue =
-        activeTask.status !== "Completed" && activeTask.dueDateIso < REFERENCE_DATE;
+      const isOverdue = isTaskOverdue(activeTask, todayIso);
       return (
         <TaskDetail
           task={activeTask}
@@ -468,8 +481,7 @@ export function TasksView() {
           {filteredTasks.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filteredTasks.map((task) => {
-                const isOverdue =
-                  task.status !== "Completed" && task.dueDateIso < REFERENCE_DATE;
+                const isOverdue = isTaskOverdue(task, todayIso);
                 return (
                   <TaskCard
                     key={task.id}

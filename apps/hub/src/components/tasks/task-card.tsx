@@ -31,19 +31,12 @@ export function TaskCard({
 
   return (
     <div className="rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs hover:border-[#347A63]/60 transition-all flex flex-col justify-between overflow-hidden group">
-      {/* Top Clickable Region */}
-      <div
-        role="button"
-        tabIndex={0}
+      {/* Primary Semantic Action Button */}
+      <button
+        type="button"
         onClick={() => onSelectTask(task.id)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            onSelectTask(task.id);
-          }
-        }}
         aria-label={`Open task details: ${task.title}`}
-        className="p-5 text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#347A63] focus-visible:ring-inset space-y-3"
+        className="w-full p-5 text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#347A63] focus-visible:ring-inset space-y-3 block"
       >
         {/* Header row: Project badge & Priority */}
         <div className="flex items-center justify-between gap-2 text-xs">
@@ -75,9 +68,9 @@ export function TaskCard({
             <span className="truncate">{task.milestoneTitle}</span>
           </div>
         )}
-      </div>
+      </button>
 
-      {/* Bottom Action Footer */}
+      {/* Sibling Bottom Action Footer (Independent from Card Button) */}
       <div className="px-5 py-3 border-t border-[#E9E5DC] bg-[#FAF8F4]/60 flex items-center justify-between gap-3 text-xs">
         {/* Due Date & Overdue status */}
         <div className="flex items-center gap-1.5 text-[11px] font-mono text-[#536B85]">
