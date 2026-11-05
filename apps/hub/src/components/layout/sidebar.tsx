@@ -46,8 +46,7 @@ const NAV_ITEMS: NavItemConfig[] = [
     id: "tasks",
     label: "Tasks & Milestones",
     icon: CheckSquare,
-    badge: "Coming Soon",
-    isReady: false,
+    isReady: true,
   },
   {
     id: "finance",

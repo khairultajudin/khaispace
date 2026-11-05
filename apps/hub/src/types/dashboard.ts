@@ -53,11 +53,35 @@ export interface ActivityEntry {
   category: "Documentation" | "Scaffold" | "Design" | "Planning";
 }
 
-export interface TaskEntry {
+export type TaskPriority = "High" | "Medium" | "Normal";
+export type TaskStatus = "In Progress" | "Pending" | "Completed";
+export type MilestoneStatus = "Planned" | "In Progress" | "Completed";
+
+export interface TaskItem {
   id: string;
   title: string;
-  project: string;
+  projectId: string;
+  projectTitle: string;
+  project?: string;
   dueDate: string;
-  priority: "High" | "Medium" | "Normal";
-  status: "In Progress" | "Pending";
+  dueDateIso: string;
+  priority: TaskPriority;
+  status: TaskStatus;
+  description: string;
+  milestoneId?: string;
+  milestoneTitle?: string;
 }
+
+export interface MilestoneItem {
+  id: string;
+  title: string;
+  projectId: string;
+  projectTitle: string;
+  targetDate: string;
+  targetDateIso: string;
+  status: MilestoneStatus;
+  description: string;
+  relatedTaskIds: string[];
+}
+
+export type TaskEntry = TaskItem;

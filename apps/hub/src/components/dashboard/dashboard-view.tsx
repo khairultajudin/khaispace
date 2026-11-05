@@ -11,6 +11,7 @@ import { RecentActivity } from "./recent-activity";
 import { UpcomingTasks } from "./upcoming-tasks";
 import { ComingSoonView } from "./coming-soon-view";
 import { ProjectsView } from "../projects/projects-view";
+import { TasksView } from "../tasks/tasks-view";
 
 const VALID_SECTIONS: NavSection[] = [
   "overview",
@@ -25,12 +26,15 @@ const VALID_SECTIONS: NavSection[] = [
 export function DashboardView() {
   const [currentSection, setCurrentSection] = useState<NavSection>(() => {
     if (typeof window !== "undefined") {
-      const hash = window.location.hash.replace("#", "") as NavSection;
-      if (VALID_SECTIONS.includes(hash)) {
-        return hash;
+      const rawHash = window.location.hash.replace("#", "");
+      if (VALID_SECTIONS.includes(rawHash as NavSection)) {
+        return rawHash as NavSection;
       }
-      if (hash.startsWith("project-")) {
+      if (rawHash.startsWith("project-")) {
         return "projects";
+      }
+      if (rawHash.startsWith("task-") || rawHash === "milestones") {
+        return "tasks";
       }
     }
     return "overview";
@@ -45,11 +49,13 @@ export function DashboardView() {
 
   React.useEffect(() => {
     const handleHash = () => {
-      const hash = window.location.hash.replace("#", "") as NavSection;
-      if (VALID_SECTIONS.includes(hash)) {
-        setCurrentSection(hash);
-      } else if (hash.startsWith("project-")) {
+      const rawHash = window.location.hash.replace("#", "");
+      if (VALID_SECTIONS.includes(rawHash as NavSection)) {
+        setCurrentSection(rawHash as NavSection);
+      } else if (rawHash.startsWith("project-")) {
         setCurrentSection("projects");
+      } else if (rawHash.startsWith("task-") || rawHash === "milestones") {
+        setCurrentSection("tasks");
       }
     };
 
@@ -92,11 +98,13 @@ export function DashboardView() {
               {/* Section 4 & 5: Activity Feed & Upcoming Tasks */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <RecentActivity />
-                <UpcomingTasks />
+                <UpcomingTasks onNavigateToTasks={() => setCurrentSection("tasks")} />
               </div>
             </>
           ) : currentSection === "projects" ? (
             <ProjectsView />
+          ) : currentSection === "tasks" ? (
+            <TasksView />
           ) : (
             <ComingSoonView
               section={currentSection}

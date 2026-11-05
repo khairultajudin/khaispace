@@ -2,7 +2,11 @@ import React from "react";
 import { CheckSquare, Calendar } from "lucide-react";
 import { SAMPLE_UPCOMING_TASKS } from "../../data/sample-dashboard-data";
 
-export function UpcomingTasks() {
+interface UpcomingTasksProps {
+  onNavigateToTasks?: () => void;
+}
+
+export function UpcomingTasks({ onNavigateToTasks }: UpcomingTasksProps = {}) {
   return (
     <div className="p-6 rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs flex flex-col justify-between">
       <div>
@@ -13,9 +17,19 @@ export function UpcomingTasks() {
               Upcoming Tasks
             </h2>
           </div>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-[#DCD7CC] bg-[#FAF8F4] text-[#536B85]">
-            Sample Queue
-          </span>
+          {onNavigateToTasks ? (
+            <button
+              type="button"
+              onClick={onNavigateToTasks}
+              className="text-xs text-[#347A63] hover:underline font-medium inline-flex items-center gap-1 cursor-pointer"
+            >
+              <span>View All Tasks &rarr;</span>
+            </button>
+          ) : (
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded border border-[#DCD7CC] bg-[#FAF8F4] text-[#536B85]">
+              Sample Queue
+            </span>
+          )}
         </div>
         <p className="text-xs text-[#536B85] mb-4">
           Sample operational tasks prioritized across active workspaces.
@@ -74,7 +88,7 @@ export function UpcomingTasks() {
       </div>
 
       <div className="mt-4 pt-3 border-t border-[#E9E5DC] text-[10px] text-[#536B85] italic">
-        * Tasks are stored in local sample structures and will be connected to dedicated task management in Phase 2B.
+        * Preview of operational task queue. Full interactive management and milestone alignment available in Tasks &amp; Milestones.
       </div>
     </div>
   );
