@@ -12,6 +12,7 @@ import { UpcomingTasks } from "./upcoming-tasks";
 import { ComingSoonView } from "./coming-soon-view";
 import { ProjectsView } from "../projects/projects-view";
 import { TasksView } from "../tasks/tasks-view";
+import { FinanceView } from "../finance/finance-view";
 
 const VALID_SECTIONS: NavSection[] = [
   "overview",
@@ -36,6 +37,15 @@ export function DashboardView() {
       if (rawHash.startsWith("task-") || rawHash === "milestones") {
         return "tasks";
       }
+      if (
+        rawHash === "finance" ||
+        rawHash.startsWith("tx-") ||
+        rawHash === "transactions" ||
+        rawHash === "projects-finance" ||
+        rawHash === "trends"
+      ) {
+        return "finance";
+      }
     }
     return "overview";
   });
@@ -56,6 +66,14 @@ export function DashboardView() {
         setCurrentSection("projects");
       } else if (rawHash.startsWith("task-") || rawHash === "milestones") {
         setCurrentSection("tasks");
+      } else if (
+        rawHash === "finance" ||
+        rawHash.startsWith("tx-") ||
+        rawHash === "transactions" ||
+        rawHash === "projects-finance" ||
+        rawHash === "trends"
+      ) {
+        setCurrentSection("finance");
       }
     };
 
@@ -105,6 +123,8 @@ export function DashboardView() {
             <ProjectsView />
           ) : currentSection === "tasks" ? (
             <TasksView />
+          ) : currentSection === "finance" ? (
+            <FinanceView />
           ) : (
             <ComingSoonView
               section={currentSection}

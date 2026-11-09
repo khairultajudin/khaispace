@@ -52,8 +52,7 @@ const NAV_ITEMS: NavItemConfig[] = [
     id: "finance",
     label: "Finance & ROI",
     icon: TrendingUp,
-    badge: "Coming Soon",
-    isReady: false,
+    isReady: true,
   },
   {
     id: "subscriptions",

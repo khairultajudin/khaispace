@@ -85,3 +85,40 @@ export interface MilestoneItem {
 }
 
 export type TaskEntry = TaskItem;
+
+export type TransactionType = "Income" | "Expense" | "Investment";
+
+export interface TransactionItem {
+  id: string;
+  description: string;
+  date: string;
+  dateIso: string;
+  type: TransactionType;
+  category: string;
+  amount: number;
+  projectId?: string;
+  projectTitle?: string;
+  notes?: string;
+  isInvestmentReturn?: boolean;
+}
+
+export interface ProjectFinanceSummary {
+  projectId: string;
+  projectTitle: string;
+  category: string;
+  income: number;
+  expenses: number;
+  investment: number;
+  netCashflow: number;
+  roiPercent: number | null;
+  roiNote: string;
+}
+
+export interface MonthlyFinancialSummary {
+  month: string;
+  monthLabel: string;
+  income: number;
+  expenses: number;
+  investment: number;
+  netCashflow: number;
+}
