@@ -78,7 +78,8 @@ export function calculateNetOperatingCashflow(income: number, expenses: number):
 /**
  * Transparent ROI Calculation:
  * ROI (%) = ((Realized Return - Investment Cost) / Investment Cost) * 100
- * Only calculated when meaningful capital outlay and tracked returns exist.
+ * Only calculated when meaningful capital outlay and explicitly tagged returns exist.
+ * Unrelated operating income, pilot sales, and service retainers do not count as investment return.
  */
 export function calculateOverallROI(transactions: TransactionItem[]): {
   roiPercent: number | null;
@@ -102,10 +103,10 @@ export function calculateOverallROI(transactions: TransactionItem[]): {
 
   if (realizedReturn <= 0) {
     return {
-      roiPercent: -100,
+      roiPercent: null,
       totalInvestment,
       realizedReturn: 0,
-      basisNote: "Capital deployed; initial return realizations pending",
+      basisNote: "N/A — Insufficient Return Data",
     };
   }
 
@@ -120,6 +121,8 @@ export function calculateOverallROI(transactions: TransactionItem[]): {
 
 /**
  * Aggregate financial breakdown per project based on active transaction state.
+ * ROI is computed strictly from transactions explicitly marked isInvestmentReturn === true.
+ * Operating income, pilot sales, and service retainers do not count as investment return.
  */
 export function calculateProjectFinance(
   transactions: TransactionItem[],
@@ -150,32 +153,25 @@ export function calculateProjectFinance(
       .reduce((sum, t) => sum + t.amount, 0);
     const netCashflow = income - expenses;
 
-    // Tracked investment return for this project
+    // Tracked investment return for this project (strictly explicit isInvestmentReturn === true)
     const trackedReturn = txs
       .filter((t) => t.type === "Income" && t.isInvestmentReturn === true)
       .reduce((sum, t) => sum + t.amount, 0);
 
     let roiPercent: number | null = null;
-    let roiNote = "N/A — Insufficient Data";
+    let roiNote = "N/A";
 
     if (investment > 0) {
       if (trackedReturn > 0) {
         roiPercent = ((trackedReturn - investment) / investment) * 100;
         roiNote = `Return ${formatMYR(trackedReturn)} on ${formatMYR(investment)} outlay`;
-      } else if (income > 0) {
-        // Early harvest or pilot sales
-        roiPercent = ((income - investment) / investment) * 100;
-        roiNote = `Pilot revenue ${formatMYR(income)} on ${formatMYR(investment)} initial outlay`;
       } else {
-        roiPercent = -100;
-        roiNote = `Capital deployed (${formatMYR(investment)}); returns pending`;
+        roiPercent = null;
+        roiNote = "N/A — Insufficient Return Data";
       }
-    } else if (income > 0) {
-      roiNote = "N/A — Service / Retainer (No capital outlay)";
-    } else if (expenses > 0) {
-      roiNote = "N/A — Operational development expense only";
     } else {
-      roiNote = "N/A — No financial records";
+      roiPercent = null;
+      roiNote = "N/A";
     }
 
     summaries.push({
@@ -213,7 +209,7 @@ export function calculateProjectFinance(
       investment,
       netCashflow: income - expenses,
       roiPercent: null,
-      roiNote: "Shared workspace operating subscriptions",
+      roiNote: "N/A",
     });
   }
 
