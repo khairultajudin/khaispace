@@ -122,3 +122,34 @@ export interface MonthlyFinancialSummary {
   investment: number;
   netCashflow: number;
 }
+
+export type SubscriptionStatus = "Active" | "Paused" | "Cancelled" | "Trial";
+export type SubscriptionBillingCycle = "Monthly" | "Annual";
+
+export interface AISubscriptionItem {
+  id: string;
+  provider: string;
+  productName: string;
+  planName: string;
+  category: string;
+  billingCycle: SubscriptionBillingCycle;
+  amount: number;
+  currency: "MYR";
+  status: SubscriptionStatus;
+  startDate: string;
+  startDateIso: string;
+  nextBillingDate: string;
+  nextBillingDateIso: string;
+  assignedProjectId?: string;
+  assignedProjectTitle?: string;
+  purpose: string;
+  notes?: string;
+}
+
+export interface SubscriptionCostGroup {
+  name: string;
+  monthlyEquivalent: number;
+  annualEquivalent: number;
+  activeCount: number;
+  percentage: number;
+}

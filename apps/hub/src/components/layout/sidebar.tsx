@@ -58,8 +58,7 @@ const NAV_ITEMS: NavItemConfig[] = [
     id: "subscriptions",
     label: "AI Subscriptions",
     icon: Bot,
-    badge: "Coming Soon",
-    isReady: false,
+    isReady: true,
   },
   {
     id: "notes",

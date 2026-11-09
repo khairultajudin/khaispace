@@ -13,6 +13,7 @@ import { ComingSoonView } from "./coming-soon-view";
 import { ProjectsView } from "../projects/projects-view";
 import { TasksView } from "../tasks/tasks-view";
 import { FinanceView } from "../finance/finance-view";
+import { SubscriptionsView } from "../subscriptions/subscriptions-view";
 
 const VALID_SECTIONS: NavSection[] = [
   "overview",
@@ -46,6 +47,15 @@ export function DashboardView() {
       ) {
         return "finance";
       }
+      if (
+        rawHash === "subscriptions" ||
+        rawHash.startsWith("subscription-") ||
+        rawHash.startsWith("sub-") ||
+        rawHash === "renewals" ||
+        rawHash === "cost-analysis"
+      ) {
+        return "subscriptions";
+      }
     }
     return "overview";
   });
@@ -74,6 +84,14 @@ export function DashboardView() {
         rawHash === "trends"
       ) {
         setCurrentSection("finance");
+      } else if (
+        rawHash === "subscriptions" ||
+        rawHash.startsWith("subscription-") ||
+        rawHash.startsWith("sub-") ||
+        rawHash === "renewals" ||
+        rawHash === "cost-analysis"
+      ) {
+        setCurrentSection("subscriptions");
       }
     };
 
@@ -125,6 +143,8 @@ export function DashboardView() {
             <TasksView />
           ) : currentSection === "finance" ? (
             <FinanceView />
+          ) : currentSection === "subscriptions" ? (
+            <SubscriptionsView />
           ) : (
             <ComingSoonView
               section={currentSection}
