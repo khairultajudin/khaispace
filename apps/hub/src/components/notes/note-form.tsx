@@ -19,6 +19,17 @@ interface NoteFormProps {
   onClose: () => void;
 }
 
+function generateUniqueRecordId(prefix: "note" | "dec"): string {
+  const timestamp = Date.now().toString(36);
+  const randomPart =
+    typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function"
+      ? Array.from(crypto.getRandomValues(new Uint8Array(4)), (b) =>
+          b.toString(16).padStart(2, "0")
+        ).join("")
+      : Math.random().toString(36).substring(2, 10);
+  return `${prefix}-${timestamp}-${randomPart}`;
+}
+
 export function NoteForm({
   isOpen,
   mode,
@@ -98,7 +109,7 @@ export function NoteForm({
       .filter((t) => t.length > 0);
 
     const prefix = type === "Decision" ? "dec" : "note";
-    const id = initialData?.id || `${prefix}-${Date.now()}`;
+    const id = initialData?.id || generateUniqueRecordId(prefix);
 
     const savedRecord: WorkspaceNoteItem = {
       id,
@@ -156,8 +167,26 @@ export function NoteForm({
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs">
-          {/* Record Type Selector (if adding new) */}
-          {mode === "add" && (
+          {/* Record Type Selector (Add) or Immutable Display (Edit) */}
+          {mode === "edit" ? (
+            <div className="flex items-center gap-2 px-3 py-2 bg-[#FAF8F4] rounded-md border border-[#DCD7CC] text-[#536B85]">
+              {type === "Decision" ? (
+                <>
+                  <Scale className="w-3.5 h-3.5 text-[#0C2340]" />
+                  <span>
+                    Record Type: <strong className="text-[#0C2340]">Architectural Decision</strong> (Immutable)
+                  </span>
+                </>
+              ) : (
+                <>
+                  <FileText className="w-3.5 h-3.5 text-[#347A63]" />
+                  <span>
+                    Record Type: <strong className="text-[#347A63]">Workspace Note</strong> (Immutable)
+                  </span>
+                </>
+              )}
+            </div>
+          ) : (
             <div className="grid grid-cols-2 gap-2 p-1 bg-[#FAF8F4] rounded-md border border-[#DCD7CC]">
               <button
                 type="button"

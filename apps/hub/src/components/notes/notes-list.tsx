@@ -226,10 +226,9 @@ export function NotesList({
       {filteredNotes.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredNotes.map((note) => (
-            <div
+            <article
               key={note.id}
-              onClick={() => onSelect(note)}
-              className="rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs p-5 space-y-3.5 hover:border-[#347A63] transition-all cursor-pointer group flex flex-col justify-between"
+              className="rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs p-5 space-y-3.5 hover:border-[#347A63] transition-all group flex flex-col justify-between"
             >
               <div className="space-y-2">
                 <div className="flex items-start justify-between gap-2">
@@ -248,8 +247,14 @@ export function NotesList({
                   )}
                 </div>
 
-                <h3 className="text-base font-bold text-[#0C2340] group-hover:text-[#347A63] transition-colors leading-snug">
-                  {note.title}
+                <h3 className="text-base font-bold leading-snug">
+                  <button
+                    type="button"
+                    onClick={() => onSelect(note)}
+                    className="text-left text-[#0C2340] group-hover:text-[#347A63] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#347A63] rounded-xs cursor-pointer transition-colors"
+                  >
+                    {note.title}
+                  </button>
                 </h3>
 
                 <p className="text-xs text-[#536B85] line-clamp-3 leading-relaxed">
@@ -280,41 +285,38 @@ export function NotesList({
                     Updated: {note.updatedAt}
                   </span>
 
-                  <div
-                    className="flex items-center gap-1"
-                    onClick={(e) => e.stopPropagation()}
-                  >
+                  <div className="flex items-center gap-1">
                     <button
                       type="button"
                       onClick={() => onSelect(note)}
-                      className="p-1 rounded text-[#536B85] hover:text-[#0C2340] hover:bg-[#FAF8F4]"
-                      title="View details"
-                      aria-label="View note"
+                      className="p-1 rounded text-[#536B85] hover:text-[#0C2340] hover:bg-[#FAF8F4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#347A63] cursor-pointer"
+                      title={`View details for ${note.title}`}
+                      aria-label={`View details for ${note.title}`}
                     >
                       <Eye className="w-3.5 h-3.5" />
                     </button>
                     <button
                       type="button"
                       onClick={() => onEdit(note)}
-                      className="p-1 rounded text-[#536B85] hover:text-[#0C2340] hover:bg-[#FAF8F4]"
-                      title="Edit note"
-                      aria-label="Edit note"
+                      className="p-1 rounded text-[#536B85] hover:text-[#0C2340] hover:bg-[#FAF8F4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#347A63] cursor-pointer"
+                      title={`Edit note: ${note.title}`}
+                      aria-label={`Edit note: ${note.title}`}
                     >
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
                     <button
                       type="button"
                       onClick={() => onDelete(note)}
-                      className="p-1 rounded text-[#536B85] hover:text-[#8C3B2B] hover:bg-[#FAF8F4]"
-                      title="Delete note"
-                      aria-label="Delete note"
+                      className="p-1 rounded text-[#536B85] hover:text-[#8C3B2B] hover:bg-[#FAF8F4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C3B2B] cursor-pointer"
+                      title={`Delete note: ${note.title}`}
+                      aria-label={`Delete note: ${note.title}`}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
+            </article>
           ))}
         </div>
       )}

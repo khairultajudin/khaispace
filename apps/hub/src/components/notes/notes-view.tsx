@@ -20,7 +20,19 @@ type NotesTab = "notes" | "decisions";
 
 export function NotesView() {
   const [records, setRecords] = useState<WorkspaceNoteItem[]>(SAMPLE_NOTES_AND_DECISIONS);
-  const [activeTab, setActiveTab] = useState<NotesTab>("notes");
+  const [activeTab, setActiveTab] = useState<NotesTab>(() => {
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash.replace("#", "");
+      if (
+        hash === "decisions" ||
+        hash.startsWith("decision-") ||
+        hash.startsWith("dec-")
+      ) {
+        return "decisions";
+      }
+    }
+    return "notes";
+  });
   const [isModified, setIsModified] = useState(false);
 
   // Form modal state
@@ -36,10 +48,32 @@ export function NotesView() {
   });
 
   // Selected record for detail modal / deep linking
-  const [selectedRecord, setSelectedRecord] = useState<WorkspaceNoteItem | null>(null);
+  const [selectedRecord, setSelectedRecord] = useState<WorkspaceNoteItem | null>(() => {
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash.replace("#", "");
+      if (hash.startsWith("note-")) {
+        const id = hash.replace("note-", "");
+        return (
+          SAMPLE_NOTES_AND_DECISIONS.find((r) => r.id === hash || r.id === id) || null
+        );
+      }
+      if (hash.startsWith("decision-") || hash.startsWith("dec-")) {
+        const id = hash.startsWith("decision-")
+          ? hash.replace("decision-", "")
+          : hash;
+        return (
+          SAMPLE_NOTES_AND_DECISIONS.find((r) => r.id === id || r.id === hash) || null
+        );
+      }
+    }
+    return null;
+  });
 
   // Delete confirmation modal state
   const [deleteCandidate, setDeleteCandidate] = useState<WorkspaceNoteItem | null>(null);
+
+  // Reset baseline confirmation dialog state
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // Synchronize URL hash with active tabs and deep links
   useEffect(() => {
@@ -57,28 +91,29 @@ export function NotesView() {
         setActiveTab("notes");
         const id = hash.replace("note-", "");
         const matched = records.find((r) => r.id === hash || r.id === id);
-        if (matched) {
-          setSelectedRecord(matched);
-        }
+        setSelectedRecord(matched || null);
       } else if (hash.startsWith("decision-") || hash.startsWith("dec-")) {
         setActiveTab("decisions");
         const id = hash.startsWith("decision-")
           ? hash.replace("decision-", "")
           : hash;
         const matched = records.find((r) => r.id === id || r.id === hash);
-        if (matched) {
-          setSelectedRecord(matched);
-        }
+        setSelectedRecord(matched || null);
       }
     };
 
     handleHash();
     window.addEventListener("hashchange", handleHash);
-    return () => window.removeEventListener("hashchange", handleHash);
+    window.addEventListener("popstate", handleHash);
+    return () => {
+      window.removeEventListener("hashchange", handleHash);
+      window.removeEventListener("popstate", handleHash);
+    };
   }, [records]);
 
   const setTabAndHash = (tab: NotesTab) => {
     setActiveTab(tab);
+    setSelectedRecord(null);
     if (typeof window !== "undefined") {
       window.history.pushState(null, "", `#${tab}`);
     }
@@ -184,7 +219,7 @@ export function NotesView() {
             {isModified && (
               <button
                 type="button"
-                onClick={handleResetToBaseline}
+                onClick={() => setShowResetConfirm(true)}
                 className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] hover:bg-[#E9E5DC] text-xs font-medium text-[#536B85] hover:text-[#0C2340] transition-colors cursor-pointer"
                 title="Restore default sample records"
               >
@@ -329,6 +364,47 @@ export function NotesView() {
                 className="px-4 py-2 rounded-md bg-[#8C3B2B] hover:bg-[#8C3B2B]/90 text-white text-xs font-medium transition-colors cursor-pointer"
               >
                 Delete Record
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Baseline Confirmation Modal */}
+      {showResetConfirm && (
+        <div
+          className="fixed inset-0 z-50 bg-[#0C2340]/40 backdrop-blur-2xs flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reset-modal-title"
+        >
+          <div className="w-full max-w-md bg-[#FFFFFF] rounded-lg border border-[#DCD7CC] shadow-xl p-6 space-y-4">
+            <div className="flex items-center gap-3 text-[#8C6D2B]">
+              <RotateCcw className="w-6 h-6 shrink-0" />
+              <h3 id="reset-modal-title" className="font-bold text-base text-[#0C2340]">
+                Reset Baseline Data?
+              </h3>
+            </div>
+            <p className="text-xs text-[#536B85] leading-relaxed">
+              Are you sure you want to restore the default sample notes and decisions? All additions, edits, and deletions made during this session will be permanently discarded.
+            </p>
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(false)}
+                className="px-3.5 py-2 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] text-xs font-medium text-[#536B85] hover:text-[#0C2340] hover:bg-[#E9E5DC] transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleResetToBaseline();
+                  setShowResetConfirm(false);
+                }}
+                className="px-4 py-2 rounded-md bg-[#8C6D2B] hover:bg-[#8C6D2B]/90 text-white text-xs font-medium transition-colors cursor-pointer"
+              >
+                Confirm Reset
               </button>
             </div>
           </div>

@@ -270,10 +270,9 @@ export function DecisionsList({
             const StatusIcon = badge.icon;
 
             return (
-              <div
+              <article
                 key={dec.id}
-                onClick={() => onSelect(dec)}
-                className="rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs p-5 space-y-4 hover:border-[#347A63] transition-all cursor-pointer group"
+                className="rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs p-5 space-y-4 hover:border-[#347A63] transition-all group"
               >
                 {/* Header row: Status badge, Category & Project */}
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E9E5DC] pb-3">
@@ -303,8 +302,14 @@ export function DecisionsList({
 
                 {/* Title & Core Decision Statement */}
                 <div className="space-y-1.5">
-                  <h3 className="text-base font-bold text-[#0C2340] group-hover:text-[#347A63] transition-colors">
-                    {dec.title}
+                  <h3 className="text-base font-bold leading-snug">
+                    <button
+                      type="button"
+                      onClick={() => onSelect(dec)}
+                      className="text-left text-[#0C2340] group-hover:text-[#347A63] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#347A63] rounded-xs cursor-pointer transition-colors"
+                    >
+                      {dec.title}
+                    </button>
                   </h3>
                   <p className="text-xs text-[#0C2340] leading-relaxed">
                     {dec.content}
@@ -359,41 +364,38 @@ export function DecisionsList({
                       Recorded: {dec.createdAt}
                     </span>
 
-                    <div
-                      className="flex items-center gap-1"
-                      onClick={(e) => e.stopPropagation()}
-                    >
+                    <div className="flex items-center gap-1">
                       <button
                         type="button"
                         onClick={() => onSelect(dec)}
-                        className="p-1 rounded text-[#536B85] hover:text-[#0C2340] hover:bg-[#FAF8F4]"
-                        title="View decision"
-                        aria-label="View decision"
+                        className="p-1 rounded text-[#536B85] hover:text-[#0C2340] hover:bg-[#FAF8F4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#347A63] cursor-pointer"
+                        title={`View decision: ${dec.title}`}
+                        aria-label={`View decision: ${dec.title}`}
                       >
                         <Eye className="w-3.5 h-3.5" />
                       </button>
                       <button
                         type="button"
                         onClick={() => onEdit(dec)}
-                        className="p-1 rounded text-[#536B85] hover:text-[#0C2340] hover:bg-[#FAF8F4]"
-                        title="Edit decision"
-                        aria-label="Edit decision"
+                        className="p-1 rounded text-[#536B85] hover:text-[#0C2340] hover:bg-[#FAF8F4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#347A63] cursor-pointer"
+                        title={`Edit decision: ${dec.title}`}
+                        aria-label={`Edit decision: ${dec.title}`}
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
                       <button
                         type="button"
                         onClick={() => onDelete(dec)}
-                        className="p-1 rounded text-[#536B85] hover:text-[#8C3B2B] hover:bg-[#FAF8F4]"
-                        title="Delete decision"
-                        aria-label="Delete decision"
+                        className="p-1 rounded text-[#536B85] hover:text-[#8C3B2B] hover:bg-[#FAF8F4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8C3B2B] cursor-pointer"
+                        title={`Delete decision: ${dec.title}`}
+                        aria-label={`Delete decision: ${dec.title}`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>
