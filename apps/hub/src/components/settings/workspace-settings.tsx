@@ -112,7 +112,7 @@ export function WorkspaceSettingsView({
               Workspace Configuration
             </h2>
             <p className="text-xs text-[#536B85] max-w-xl leading-relaxed">
-              Global environment parameters, locale defaults, content density, and simulated event notifications.
+              Global environment parameters, locale defaults, density preference preview, and simulated event notifications.
             </p>
           </div>
 
@@ -227,7 +227,7 @@ export function WorkspaceSettingsView({
                   </span>
                 </div>
                 <div className="px-3 py-2 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] text-xs text-[#0C2340] font-mono flex items-center justify-between font-semibold">
-                  <span>Malaysian Ringgit ({defaultCurrency})</span>
+                  <span>Malaysian Ringgit (MYR)</span>
                   <span className="text-[#347A63] font-bold">RM</span>
                 </div>
                 <p className="text-[11px] text-[#536B85] leading-relaxed">
@@ -292,7 +292,7 @@ export function WorkspaceSettingsView({
                   </span>
                 </div>
                 <p className="text-xs text-[#536B85] leading-relaxed">
-                  Controls layout spacing preferences for data tables and card rosters across Hub modules.
+                  Interactive layout preference preview. Selecting an option updates only the preview below to demonstrate spacing density and does not affect global spacing across other Hub modules.
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   <button
@@ -332,8 +332,8 @@ export function WorkspaceSettingsView({
                   </div>
                   <p className="text-[11px] text-[#536B85]">
                     {contentDensity === "compact"
-                      ? "High-density view optimizes screen real estate for dense logs and tabular datasets."
-                      : "Comfortable view preserves editorial whitespace and generous touch targets."}
+                      ? "Compact mode illustrates reduced cell padding and tighter vertical rhythm for dense tabular views."
+                      : "Comfortable mode illustrates standard editorial whitespace and relaxed touch targets."}
                   </p>
                 </div>
               </div>
