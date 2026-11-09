@@ -6,6 +6,7 @@ import {
   MilestoneItem,
   TransactionItem,
   AISubscriptionItem,
+  WorkspaceNoteItem,
 } from "../types/dashboard";
 
 export const SAMPLE_SUMMARY_METRICS: SummaryMetric[] = [
@@ -871,5 +872,186 @@ export const SAMPLE_SUBSCRIPTIONS: AISubscriptionItem[] = [
     assignedProjectTitle: "Memburu Jejak",
     purpose: "Experimental motion teaser generation for chapter 2 digital launch.",
     notes: "14-day free trial. Decision required on renewal conversion before November 16.",
+  },
+];
+
+export const SAMPLE_NOTES_AND_DECISIONS: WorkspaceNoteItem[] = [
+  {
+    id: "note-1",
+    type: "Note",
+    title: "Monorepo Independent Build Isolation Guidelines",
+    category: "Architecture",
+    tags: ["monorepo", "nextjs", "build-pipeline", "typescript"],
+    projectId: "hub",
+    projectTitle: "Khai Space Hub",
+    createdAt: "October 20, 2026",
+    createdAtIso: "2026-10-20",
+    updatedAt: "November 4, 2026",
+    updatedAtIso: "2026-11-04",
+    content:
+      "Core rules for maintaining strict build boundary separation between the public portfolio at the repository root and apps/hub: root must not import from apps/hub, and apps/hub must not import root source files. Dependencies are declared independently in respective package.json files to guarantee that either app can build without coupling.",
+  },
+  {
+    id: "note-2",
+    type: "Note",
+    title: "Pak Choy NFT Nutrient Threshold & EC Staging Reference",
+    category: "Agronomy",
+    tags: ["hydroponics", "pak-choy", "ec-calibration", "nutrients"],
+    projectId: "hidroponik",
+    projectTitle: "Hidroponics",
+    createdAt: "September 15, 2026",
+    createdAtIso: "2026-09-15",
+    updatedAt: "November 2, 2026",
+    updatedAtIso: "2026-11-02",
+    content:
+      "Operational EC thresholds for Pak Choy cultivation cycles: Seedling Stage 1: 0.8–1.0 mS/cm, Vegetative Growth Stage 2: 1.4–1.8 mS/cm, Pre-harvest Stage 3: 1.6–2.0 mS/cm. Keep solution pH consistently between 5.8 and 6.4 to prevent iron and manganese lockouts in high ambient temperatures.",
+  },
+  {
+    id: "note-3",
+    type: "Note",
+    title: "Local Agent Pairing & Workspace Sandbox Safety Principles",
+    category: "Operations",
+    tags: ["agent-guidelines", "safety", "git-isolation", "command-center"],
+    createdAt: "October 28, 2026",
+    createdAtIso: "2026-10-28",
+    updatedAt: "November 7, 2026",
+    updatedAtIso: "2026-11-07",
+    content:
+      "Standard operating checklist for agentic pairing runs: always run git status before mutations, verify active branch is feature/khai-space-hub, confine file edits strictly to apps/hub/, run full build checks across both root and apps/hub before pushing, and never merge directly into main.",
+  },
+  {
+    id: "note-4",
+    type: "Note",
+    title: "PETG vs PLA Printing Parameters for Tactile Switch Housings",
+    category: "Manufacturing",
+    tags: ["3d-printing", "bambu-a1", "materials", "tactile-clicker"],
+    projectId: "clicker",
+    projectTitle: "3D Printing Clicker",
+    createdAt: "September 25, 2026",
+    createdAtIso: "2026-09-25",
+    updatedAt: "October 30, 2026",
+    updatedAtIso: "2026-10-30",
+    content:
+      "Physical prototyping benchmarks on Bambu Lab A1 for clicker switch frames: PLA delivers superior acoustic resonance and precise snap tolerances (+/-0.08mm). PETG yields superior thermal stability and impact durability for daily pocket carry but requires a 245°C nozzle temperature and 35% reduced part cooling.",
+  },
+  {
+    id: "dec-1",
+    type: "Decision",
+    title: "Adopt Next.js Static Export for Hub Command Center",
+    category: "Architecture",
+    tags: ["nextjs", "static-export", "cloudflare", "zero-backend"],
+    projectId: "hub",
+    projectTitle: "Khai Space Hub",
+    status: "Approved",
+    createdAt: "October 22, 2026",
+    createdAtIso: "2026-10-22",
+    updatedAt: "November 1, 2026",
+    updatedAtIso: "2026-11-01",
+    content:
+      "Standardize apps/hub on static HTML export (output: 'export') with client-side React state, maintaining architectural parity with the root portfolio website.",
+    rationale:
+      "Eliminates server maintenance overhead, removes dependency on a live Node runtime container, and allows instantaneous sub-second page delivery directly on edge CDN storage without recurring compute hosting fees.",
+    impact:
+      "All server-side dynamic SSR capabilities are replaced with static rendering, client hash routing, and local state coordinators.",
+  },
+  {
+    id: "dec-2",
+    type: "Decision",
+    title: "Separate Operating Cashflow from Capital Asset Investments",
+    category: "Finance",
+    tags: ["accounting", "cashflow", "roi", "finance"],
+    projectId: "hub",
+    projectTitle: "Khai Space Hub",
+    status: "Approved",
+    createdAt: "October 25, 2026",
+    createdAtIso: "2026-10-25",
+    updatedAt: "November 5, 2026",
+    updatedAtIso: "2026-11-05",
+    content:
+      "Categorize physical capital equipment outlays (e.g., 3D printers, NFT hydroponic racks) as Investments separate from operational expenses, and calculate ROI strictly on capital assets with explicitly attributed realized returns.",
+    rationale:
+      "Treating capital equipment purchases as operational expenses creates misleading operating losses and skews monthly operating margins. Realized ROI is only financially meaningful when tied to verified capital yield.",
+    impact:
+      "Ledger distinguishes Operating Expenses from Capital Outlays. Net cashflow reflects day-to-day operating health, while equipment payback is tracked in a dedicated ROI view.",
+  },
+  {
+    id: "dec-3",
+    type: "Decision",
+    title: "Transition Memburu Jejak Web Reader to Horizontal Canvas Paging",
+    category: "Design & UX",
+    tags: ["webcomic", "reader-engine", "touch-interaction", "canvas"],
+    projectId: "memburu-jejak",
+    projectTitle: "Memburu Jejak",
+    status: "Proposed",
+    createdAt: "November 3, 2026",
+    createdAtIso: "2026-11-03",
+    updatedAt: "November 6, 2026",
+    updatedAtIso: "2026-11-06",
+    content:
+      "Proposed transition from infinite vertical scrolling to horizontal panel-by-panel paging with keyboard arrow keys and mobile touch swipe gestures.",
+    rationale:
+      "Allows controlled narrative pacing, dramatic panel reveals, and visual pauses tailored for tension compared to passive continuous vertical scrolling.",
+    impact:
+      "Requires rebuilding the reader viewport container and adding preload triggers for adjacent panel image bundles.",
+  },
+  {
+    id: "dec-4",
+    type: "Decision",
+    title: "Use Pure Local SQLite vs Browser IndexedDB for OurDuit Prototype",
+    category: "Data Architecture",
+    tags: ["database", "sqlite", "privacy", "ourduit"],
+    projectId: "ourduit",
+    projectTitle: "OurDuit",
+    status: "Proposed",
+    createdAt: "November 5, 2026",
+    createdAtIso: "2026-11-05",
+    updatedAt: "November 8, 2026",
+    updatedAtIso: "2026-11-08",
+    content:
+      "Evaluate local OPFS SQLite WebAssembly vs pure IndexedDB for client-side encrypted personal cashflow persistence.",
+    rationale:
+      "SQLite WASM provides full relational schema integrity, SQL querying, and single-file portable database export, guaranteeing zero-cloud user privacy.",
+    impact:
+      "Adds a WASM build pipeline and web worker thread isolation to the project specification roadmap.",
+  },
+  {
+    id: "dec-5",
+    type: "Decision",
+    title: "Full Dark Theme Default Across All Dashboard Surfaces",
+    category: "Design System",
+    tags: ["theme", "color-system", "design"],
+    projectId: "hub",
+    projectTitle: "Khai Space Hub",
+    status: "Rejected",
+    createdAt: "October 18, 2026",
+    createdAtIso: "2026-10-18",
+    updatedAt: "October 24, 2026",
+    updatedAtIso: "2026-10-24",
+    content:
+      "Considered adopting an all-black/dark OLED theme palette for the primary command center interface.",
+    rationale:
+      "Rejected to maintain strict brand consistency with the khaispace.com editorial aesthetic (#FAF8F4 background, #0C2340 navy typography, #E9E5DC neutral surface, and #347A63 green accent).",
+    impact:
+      "All command center modules follow the approved editorial light aesthetic.",
+  },
+  {
+    id: "dec-6",
+    type: "Decision",
+    title: "Single-File HTML Export for Standalone BizTrack Reports",
+    category: "Deployment",
+    tags: ["biztrack", "client-deliverables", "html-export"],
+    projectId: "biztrack",
+    projectTitle: "BizTrack",
+    status: "Superseded",
+    createdAt: "October 10, 2026",
+    createdAtIso: "2026-10-10",
+    updatedAt: "November 2, 2026",
+    updatedAtIso: "2026-11-02",
+    content:
+      "Initially proposed inlining all JavaScript and CSS assets into a monolithic single HTML file for client delivery.",
+    rationale:
+      "Superseded by standalone zip asset bundles containing separate HTML, CSS, and SVG files, which avoid massive base64 payload bloat and allow reliable client caching.",
+    impact:
+      "Build workflow outputs clean zip package release artifacts instead of single monolithic HTML files.",
   },
 ];

@@ -153,3 +153,34 @@ export interface SubscriptionCostGroup {
   activeCount: number;
   percentage: number;
 }
+
+export type NoteRecordType = "Note" | "Decision";
+export type DecisionStatus = "Proposed" | "Approved" | "Rejected" | "Superseded";
+
+export interface WorkspaceNoteItem {
+  id: string;
+  type: NoteRecordType;
+  title: string;
+  content: string;
+  category: string;
+  tags: string[];
+  projectId?: string;
+  projectTitle?: string;
+  createdAt: string;
+  createdAtIso: string;
+  updatedAt: string;
+  updatedAtIso: string;
+  // Decision-specific fields
+  status?: DecisionStatus;
+  rationale?: string;
+  impact?: string;
+}
+
+export interface NoteMetricsSummary {
+  totalNotes: number;
+  totalDecisions: number;
+  approvedDecisions: number;
+  proposedDecisions: number;
+  rejectedDecisions: number;
+  supersededDecisions: number;
+}

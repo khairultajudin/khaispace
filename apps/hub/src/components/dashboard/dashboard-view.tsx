@@ -14,6 +14,7 @@ import { ProjectsView } from "../projects/projects-view";
 import { TasksView } from "../tasks/tasks-view";
 import { FinanceView } from "../finance/finance-view";
 import { SubscriptionsView } from "../subscriptions/subscriptions-view";
+import { NotesView } from "../notes/notes-view";
 
 const VALID_SECTIONS: NavSection[] = [
   "overview",
@@ -57,6 +58,15 @@ export function DashboardView() {
       ) {
         return "subscriptions";
       }
+      if (
+        rawHash === "notes" ||
+        rawHash === "decisions" ||
+        rawHash.startsWith("note-") ||
+        rawHash.startsWith("decision-") ||
+        rawHash.startsWith("dec-")
+      ) {
+        return "notes";
+      }
     }
     return "overview";
   });
@@ -94,6 +104,14 @@ export function DashboardView() {
         rawHash === "cost-analysis"
       ) {
         setCurrentSection("subscriptions");
+      } else if (
+        rawHash === "notes" ||
+        rawHash === "decisions" ||
+        rawHash.startsWith("note-") ||
+        rawHash.startsWith("decision-") ||
+        rawHash.startsWith("dec-")
+      ) {
+        setCurrentSection("notes");
       }
     };
 
@@ -147,6 +165,8 @@ export function DashboardView() {
             <FinanceView />
           ) : currentSection === "subscriptions" ? (
             <SubscriptionsView />
+          ) : currentSection === "notes" ? (
+            <NotesView />
           ) : (
             <ComingSoonView
               section={currentSection}

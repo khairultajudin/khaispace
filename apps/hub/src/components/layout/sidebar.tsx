@@ -64,8 +64,7 @@ const NAV_ITEMS: NavItemConfig[] = [
     id: "notes",
     label: "Notes & Decisions",
     icon: FileText,
-    badge: "Coming Soon",
-    isReady: false,
+    isReady: true,
   },
   {
     id: "settings",
