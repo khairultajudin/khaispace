@@ -1,6 +1,6 @@
 # Khai Space Hub — Architecture Decision Records (ADR)
-**Document Version:** 1.1.0 (Phase 3.1 Security Hardened)  
-**Phase:** Phase 3.1 Security & Architecture Correction Pass  
+**Document Version:** 1.2.0 (Phase 3.2 Integrity & Provisioning Safeguards)  
+**Phase:** Phase 3.2 Final Database Integrity & Security Correction  
 **Application Target:** `apps/hub/`  
 **Working Branch:** `feature/khai-space-hub`  
 **Repository:** `khairultajudin/khaispace`
@@ -22,7 +22,10 @@
 - [ADR-011: Enforcing Single Owner & Prohibiting Admin Privilege Escalation](#adr-011-enforcing-single-owner--prohibiting-admin-privilege-escalation)
 - [ADR-012: Database-Level Cross-Workspace Relational Integrity & Safe Cleanup](#adr-012-database-level-cross-workspace-relational-integrity--safe-cleanup)
 - [ADR-013: SQL Views Security Hardening via Security Invoker Mode](#adr-013-sql-views-security-hardening-via-security-invoker-mode)
-- [ADR-014: Standardized UUID Primary Keys Across All Core Entities](#adr-014-standardized-uuid-primary-keys-across-all-core-entities)
+- [ADR-014: Standardized UUID Primary Keys Across Core Entities](#adr-014-standardized-uuid-primary-keys-across-core-entities)
+- [ADR-015: Composite Foreign Key Delete Nullification & Milestone Cleanup](#adr-015-composite-foreign-key-delete-nullification--milestone-cleanup)
+- [ADR-016: Workspace Deletion Authorization & Owner Protection Lifecycle Coordination](#adr-016-workspace-deletion-authorization--owner-protection-lifecycle-coordination)
+- [ADR-017: Cryptographic Invitation Acceptance & Complete Membership Immutability](#adr-017-cryptographic-invitation-acceptance--complete-membership-immutability)
 
 ---
 
@@ -171,8 +174,8 @@
 - **Context:** Foreign keys on `project_id` alone allowed records in Workspace A to point to projects in Workspace B. Furthermore, composite foreign keys with `ON DELETE SET NULL` can fail in PostgreSQL if they attempt to nullify `workspace_id`.
 - **Decision:**
   1. Add composite unique constraints on parent entities: `projects(workspace_id, id)` and `milestones(workspace_id, id)`.
-  2. Use composite foreign keys for tight child entities (`milestones -> projects`, `tasks -> projects`, `tasks -> milestones`) with `ON DELETE CASCADE`.
-  3. For optional associations (`financial_transactions`, `ai_subscriptions`, `workspace_notes`), implement an explicit validation trigger `validate_project_workspace_integrity()` and an atomic cleanup trigger `handle_project_deletion_cleanup()`.
+  2. Use composite foreign keys for tight child entities (`milestones -> projects`, `tasks -> projects`).
+  3. For optional associations (`financial_transactions`, `ai_subscriptions`, `workspace_notes`), implement validation triggers (`validate_project_workspace_integrity()`, `validate_subscription_project_workspace_integrity()`) and an atomic cleanup trigger `handle_project_deletion_cleanup()`.
 - **Consequences:**
   - *Positive:* Prevents cross-workspace data leakage at the database engine level; preserves financial history when projects are deleted without violating `NOT NULL` constraints.
   - *Negative:* Slight additional trigger overhead on project deletion.
@@ -190,11 +193,52 @@
 
 ---
 
-## ADR-014: Standardized UUID Primary Keys Across All Core Entities
+## ADR-014: Standardized UUID Primary Keys Across Core Entities
 - **Status:** **ACCEPTED**
 - **Date:** 2026-11-09 (Phase 3.1)
 - **Context:** Phase 3 documentation claimed UUID primary keys, but the SQL draft utilized client-prefixed varchar IDs (`task-1`, `tx-01`, `biztrack`).
-- **Decision:** Standardize all table primary keys to `uuid DEFAULT gen_random_uuid()`. For projects, introduce a separate workspace-scoped `slug varchar(50) NOT NULL` for clean human URLs and deep linking.
+- **Decision:** Standardize 10 core entity tables on `uuid PRIMARY KEY DEFAULT gen_random_uuid()`, while `profiles` binds 1:1 with `auth.users(id)` and `workspace_settings` binds 1:1 with `workspaces(id)`. For projects, introduce a separate workspace-scoped `slug varchar(50) NOT NULL` for clean human URLs and deep linking.
 - **Consequences:**
-  - *Positive:* 100% internal consistency between schema DDL and architecture documentation; eliminates cross-workspace ID collisions; follows PostgreSQL and Supabase best practices.
+  - *Positive:* Internal consistency between schema DDL and architecture documentation; eliminates cross-workspace ID collisions; follows PostgreSQL and Supabase best practices.
   - *Negative:* Seed data and frontend services must map client slugs to UUIDs.
+
+---
+
+## ADR-015: Composite Foreign Key Delete Nullification & Milestone Cleanup
+- **Status:** **ACCEPTED**
+- **Date:** 2026-11-09 (Phase 3.2)
+- **Context:** A composite foreign key `tasks(workspace_id, milestone_id) REFERENCES milestones(workspace_id, id) ON DELETE SET NULL` attempts in standard SQL to nullify both columns, which fails because `workspace_id` is defined as `NOT NULL`.
+- **Decision:** Specify column-targeted nullification `ON DELETE SET NULL (milestone_id)` supported in PostgreSQL 15+, and pair it with a database trigger `handle_milestone_deletion_cleanup()` on `milestones` BEFORE DELETE to ensure `tasks.milestone_id = NULL` cleanly without touching `workspace_id`.
+- **Consequences:**
+  - *Positive:* Eliminates constraint check errors when deleting milestones; maintains composite workspace integrity; ensures tasks remain associated with their workspace.
+  - *Negative:* None.
+
+---
+
+## ADR-016: Workspace Deletion Authorization & Owner Protection Lifecycle Coordination
+- **Status:** **ACCEPTED**
+- **Date:** 2026-11-09 (Phase 3.2)
+- **Context:** Cascading workspace deletion (`DELETE FROM workspaces`) failed because the child trigger `protect_workspace_owner()` on `workspace_members` prohibited deleting the Owner record.
+- **Decision:** Implement `handle_workspace_deletion_authorization()` trigger on `workspaces` BEFORE DELETE:
+  1. Verifies caller is active `Owner` of that workspace.
+  2. Sets a transaction-scoped configuration flag `app.deleting_workspace_id = OLD.id`.
+  3. Updates `protect_workspace_owner()` on `workspace_members` to allow deletion when `current_setting('app.deleting_workspace_id', true) = OLD.workspace_id::text`.
+  4. Provide an Owner-only security-definer procedure `delete_workspace_by_owner(p_workspace_id)`.
+- **Consequences:**
+  - *Positive:* Completely resolves the trigger conflict; permits legitimate workspace teardown exclusively by the Owner; prohibits accidental or unauthorized Owner deletion during standard roster mutations.
+  - *Negative:* None.
+
+---
+
+## ADR-017: Cryptographic Invitation Acceptance & Complete Membership Immutability
+- **Status:** **ACCEPTED**
+- **Date:** 2026-11-09 (Phase 3.2)
+- **Context:** Direct client `INSERT` on `workspace_members` allowed Administrators to bypass the invitation process and inject arbitrary users into a workspace. Additionally, `user_id` and `workspace_id` lacked immutability protection on updates.
+- **Decision:**
+  1. Permanently disable direct client `INSERT` on `workspace_members`.
+  2. Implement `workspace_invitations` table with SHA-256 hashed tokens and a 7-day expiration.
+  3. Require invitation acceptance via `accept_workspace_invitation(token)` which cryptographically validates the token and matches caller's email with `auth.jwt()`.
+  4. Implement `protect_workspace_members_immutability()` trigger preventing mutation of `user_id`, `workspace_id`, or self-role promotion.
+- **Consequences:**
+  - *Positive:* Eliminates rogue membership injection; enforces user consent and verified email identity; secures roster immutability.
+  - *Negative:* Adding a team member requires sending an invitation rather than instant addition.

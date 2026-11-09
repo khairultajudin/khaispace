@@ -1,6 +1,6 @@
 # Khai Space Hub — Operations, Backup & Maintenance Architecture
-**Document Version:** 1.0.0  
-**Phase:** Phase 3 Architecture & Persistence Planning  
+**Document Version:** 1.2.0 (Phase 3.2 Integrity & Provisioning Safeguards)  
+**Phase:** Phase 3.2 Final Database Integrity & Security Correction  
 **Application Target:** `apps/hub/`  
 **Working Branch:** `feature/khai-space-hub`  
 **Repository:** `khairultajudin/khaispace`
@@ -77,7 +77,8 @@ apps/hub/supabase/
 │   ├── 20261110000001_initial_hub_schema.sql
 │   ├── 20261110000002_rls_security_policies.sql
 │   ├── 20261110000003_accounting_kpi_views.sql
-│   └── 20261110000004_owner_protection_trigger.sql
+│   ├── 20261110000004_owner_protection_trigger.sql
+│   └── 20261110000005_cross_workspace_integrity.sql
 └── seed.sql
 ```
 
@@ -88,7 +89,7 @@ apps/hub/supabase/
 
 ---
 
-## 4. Immutable Audit Trail & Activity Logging
+## 4. Trust-Secured Audit Trail & Activity Logging
 
 Significant workspace actions automatically generate records in `public.activity_logs`:
 
@@ -98,10 +99,18 @@ Significant workspace actions automatically generate records in `public.activity
 - **Financial Ledger:** Creation of transactions > RM 1,000, any transaction deletion (restricted to Admins/Owners).
 - **Workspace Settings:** Configuration adjustments (timezone, name, notification toggles).
 
-### 4.2 Security Constraints on `activity_logs`
-- **Write Policy & Anti-Forgery:** Authenticated members can append (`INSERT`) audit records scoped to their `workspace_id`. The database trigger `protect_activity_log_integrity()` automatically overrides `user_id` with `auth.uid()` and `created_at` with server `now()`, preventing client impersonation or timestamp manipulation.
-- **Read Policy:** Active workspace members can read (`SELECT`) logs scoped to their `workspace_id`.
-- **Tamper Resistance:** `UPDATE` and `DELETE` operations are **permanently disabled via RLS**, guaranteeing an immutable historical ledger.
+### 4.2 Security & Retention Constraints on `activity_logs`
+- **Foreign Key & Deletion Retention:**
+  - `user_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL`
+  - In addition, immutable snapshot columns (`actor_email`, `actor_role`) are captured at creation time.
+  - If a user profile is deleted, `user_id` becomes `NULL` while historical accountability is retained.
+- **Ingestion Protection & Anti-Forgery:**
+  - Direct client `INSERT` on `activity_logs` is **permanently disabled via RLS**.
+  - System-level events (membership changes, project deletions, workspace settings updates) are recorded directly by PostgreSQL database triggers.
+  - Permitted client-side UI events are recorded via the security-definer procedure `public.log_workspace_activity(...)`, which validates workspace membership and enforces action type rules.
+- **Tamper Resistance Boundaries:**
+  - `UPDATE` and `DELETE` operations have no policies and are completely prohibited for application roles.
+  - This design provides strong defense-in-depth against malicious clients and ordinary authenticated users. However, it does not claim cryptographic WORM (Write Once Read Many) immutability against database superusers.
 
 ---
 

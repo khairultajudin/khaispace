@@ -40,7 +40,7 @@ flowchart LR
   2. Retrieve the Project URL and Public Anon Key.
   3. Set up local development environment secrets in `.env.local` (untracked in git).
 - **Code Changes in `apps/hub/`:**
-  - Install dependencies: `@supabase/supabase-js`, `@supabase/ssr`.
+  - Install dependency: `@supabase/supabase-js` (pure client library; `@supabase/ssr` is omitted to match Next.js static export `output: "export"`).
   - Create `apps/hub/src/lib/supabase/client.ts`.
   - Create TypeScript database types file `apps/hub/src/types/database.types.ts`.
   - Verify static export compatibility (`next build` succeeds).
@@ -65,17 +65,19 @@ flowchart LR
 ---
 
 ### Phase 6 — Database Schema & Row Level Security Deployment
-- **Objective:** Apply reviewed PostgreSQL schema (v1.1.0 hardened), composite integrity triggers, anti-escalation policies, security-invoker views, and updated-at triggers to the dedicated Supabase project.
+- **Objective:** Apply reviewed PostgreSQL schema (v1.2.0 finalized), composite integrity triggers, anti-escalation policies, security-invoker views, invitation functions, and updated-at triggers to the dedicated Supabase project.
 - **Dependencies:** Phase 5.
 - **Manual Stakeholder / Supabase Dashboard Actions:**
   1. Open Supabase Dashboard -> SQL Editor (or link Supabase CLI).
   2. Execute the finalized `schema-draft.sql`.
   3. Confirm that:
-     - All 12 tables and custom enums are created.
+     - All 12 tables, custom enums, and indexes are created.
      - Single-owner partial index `idx_workspace_single_owner` is active.
-     - Composite integrity triggers and foreign keys are verified.
-     - Anti-recursion helper functions are granted only to `authenticated`.
-     - `protect_workspace_owner()` and `protect_activity_log_integrity()` triggers are installed.
+     - Tasks milestone foreign key uses `ON DELETE SET NULL (milestone_id)` with `handle_milestone_deletion_cleanup()`.
+     - Optional project references across transactions, subscriptions, and notes are protected by integrity triggers.
+     - Workspace deletion authorization trigger (`handle_workspace_deletion_authorization()`) and Owner protection trigger (`protect_workspace_owner()`) are verified.
+     - Membership immutability trigger (`protect_workspace_members_immutability()`) is active.
+     - Direct client `INSERT` on `workspaces`, `workspace_members`, and `activity_logs` is disabled; trusted procedures are installed.
      - All 10 `handle_updated_at()` triggers are active.
      - The 3 financial views have `security_invoker = true`.
 - **Code Changes in `apps/hub/`:**

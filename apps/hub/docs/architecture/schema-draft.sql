@@ -1,14 +1,14 @@
 -- ==============================================================================
 -- KHAI SPACE HUB — PROPOSED RELATIONAL DATABASE SCHEMA (DRAFT ONLY)
 -- ==============================================================================
--- Document Version: 1.1.0 (Phase 3.1 Security Hardened)
--- Phase: Phase 3.1 Security & Architecture Correction Pass
+-- Document Version: 1.2.0 (Phase 3.2 Integrity & Provisioning Safeguards)
+-- Phase: Phase 3.2 Final Database Integrity & Security Correction
 -- Application Target: apps/hub/
 -- Working Branch: feature/khai-space-hub
 --
 -- CAUTION / SAFETY WARNING:
 -- THIS IS AN ARCHITECTURAL DRAFT SCRIPT FOR PLANNING AND STATIC VALIDATION ONLY.
--- DO NOT EXECUTE THIS SCRIPT AGAINST A LIVE DATABASE OR REMOTE INSTANCE IN PHASE 3.1.
+-- DO NOT EXECUTE THIS SCRIPT AGAINST A LIVE DATABASE OR REMOTE INSTANCE IN PHASE 3.2.
 -- ==============================================================================
 
 -- ------------------------------------------------------------------------------
@@ -111,8 +111,12 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- ------------------------------------------------------------------------------
--- 3. CORE RELATIONAL TABLES (STANDARDIZED UUID PRIMARY KEYS)
+-- 3. CORE RELATIONAL TABLES
 -- ------------------------------------------------------------------------------
+-- Note on Primary Keys:
+-- Entity & event tables use `id uuid PRIMARY KEY DEFAULT gen_random_uuid()`.
+-- `profiles` uses `id uuid PRIMARY KEY REFERENCES auth.users(id)` (1:1 with Auth).
+-- `workspace_settings` uses `workspace_id uuid PRIMARY KEY REFERENCES workspaces(id)` (1:1 with Workspace).
 
 -- 3.1 Workspaces (Tenant Root)
 CREATE TABLE IF NOT EXISTS public.workspaces (
@@ -157,7 +161,7 @@ CREATE TABLE IF NOT EXISTS public.workspace_members (
   CONSTRAINT uq_workspace_member UNIQUE (workspace_id, user_id)
 );
 
--- STRICT RULE: Exactly ONE Owner per workspace
+-- STRICT RULE: At most ONE Owner per workspace
 CREATE UNIQUE INDEX IF NOT EXISTS idx_workspace_single_owner 
   ON public.workspace_members (workspace_id) 
   WHERE (role = 'Owner');
@@ -178,7 +182,7 @@ CREATE TABLE IF NOT EXISTS public.workspace_invitations (
   CONSTRAINT chk_invitation_role CHECK (role != 'Owner') -- Cannot invite as Owner
 );
 
--- 3.5 Workspace Settings (Notification Channels)
+-- 3.5 Workspace Settings (1:1 with Workspace)
 CREATE TABLE IF NOT EXISTS public.workspace_settings (
   workspace_id uuid PRIMARY KEY REFERENCES public.workspaces(id) ON DELETE CASCADE,
   notification_task_reminders boolean NOT NULL DEFAULT true,
@@ -250,17 +254,18 @@ CREATE TABLE IF NOT EXISTS public.tasks (
     FOREIGN KEY (workspace_id, project_id) 
     REFERENCES public.projects(workspace_id, id) 
     ON DELETE CASCADE,
+  -- PostgreSQL 15+ column-specific SET NULL preserves NOT NULL workspace_id
   CONSTRAINT fk_task_milestone_ws 
     FOREIGN KEY (workspace_id, milestone_id) 
     REFERENCES public.milestones(workspace_id, id) 
-    ON DELETE SET NULL
+    ON DELETE SET NULL (milestone_id)
 );
 
 -- 3.9 Financial Ledger Transactions
 CREATE TABLE IF NOT EXISTS public.financial_transactions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id uuid NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
-  project_id uuid, -- NULL indicates Unassigned / General Operations (Shared)
+  project_id uuid REFERENCES public.projects(id) ON DELETE SET NULL, -- NULL indicates General Operations
   transaction_date date NOT NULL,
   type public.transaction_type NOT NULL,
   category varchar(100) NOT NULL,
@@ -280,7 +285,7 @@ CREATE TABLE IF NOT EXISTS public.financial_transactions (
 CREATE TABLE IF NOT EXISTS public.ai_subscriptions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id uuid NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
-  assigned_project_id uuid,
+  assigned_project_id uuid REFERENCES public.projects(id) ON DELETE SET NULL,
   provider varchar(100) NOT NULL,
   product_name varchar(100) NOT NULL,
   plan_name varchar(100) NOT NULL,
@@ -304,7 +309,7 @@ CREATE TABLE IF NOT EXISTS public.ai_subscriptions (
 CREATE TABLE IF NOT EXISTS public.workspace_notes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id uuid NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
-  project_id uuid,
+  project_id uuid REFERENCES public.projects(id) ON DELETE SET NULL,
   type public.note_record_type NOT NULL DEFAULT 'Note',
   title varchar(200) NOT NULL,
   content text NOT NULL,
@@ -322,11 +327,14 @@ CREATE TABLE IF NOT EXISTS public.workspace_notes (
   )
 );
 
--- 3.12 Immutable Activity Audit Logs
+-- 3.12 Activity Audit Logs (Trust-Secured Ledger)
+-- user_id is nullable with ON DELETE SET NULL; actor snapshot preserved in actor_email & actor_role
 CREATE TABLE IF NOT EXISTS public.activity_logs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   workspace_id uuid NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
-  user_id uuid NOT NULL DEFAULT auth.uid() REFERENCES public.profiles(id) ON DELETE SET NULL,
+  user_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
+  actor_email varchar(255),
+  actor_role varchar(20),
   action varchar(255) NOT NULL,
   entity_type varchar(50) NOT NULL,
   entity_id uuid NOT NULL,
@@ -358,7 +366,7 @@ CREATE INDEX IF NOT EXISTS idx_activity_ws ON public.activity_logs(workspace_id,
 -- 5. CROSS-WORKSPACE REFERENTIAL INTEGRITY TRIGGERS
 -- ------------------------------------------------------------------------------
 
--- Ensure optional project references (transactions, subscriptions, notes) belong to the exact same workspace
+-- 5.1 Project workspace validation for transactions and notes
 CREATE OR REPLACE FUNCTION public.validate_project_workspace_integrity()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -391,7 +399,34 @@ CREATE TRIGGER trg_notes_project_ws_integrity
   FOR EACH ROW
   EXECUTE FUNCTION public.validate_project_workspace_integrity();
 
--- Handle project deletion: unassign project references cleanly without deleting financial history
+-- 5.2 Subscription assigned project validation
+CREATE OR REPLACE FUNCTION public.validate_subscription_project_workspace_integrity()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth, pg_temp
+AS $$
+BEGIN
+  IF NEW.assigned_project_id IS NOT NULL THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM public.projects
+      WHERE id = NEW.assigned_project_id AND workspace_id = NEW.workspace_id
+    ) THEN
+      RAISE EXCEPTION 'Cross-Workspace Integrity Violation: assigned_project_id % does not exist in workspace %', 
+        NEW.assigned_project_id, NEW.workspace_id;
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_subs_project_ws_integrity ON public.ai_subscriptions;
+CREATE TRIGGER trg_subs_project_ws_integrity
+  BEFORE INSERT OR UPDATE ON public.ai_subscriptions
+  FOR EACH ROW
+  EXECUTE FUNCTION public.validate_subscription_project_workspace_integrity();
+
+-- 5.3 Safe Project Deletion: unassign project references without deleting historical records
 CREATE OR REPLACE FUNCTION public.handle_project_deletion_cleanup()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -409,7 +444,7 @@ BEGIN
   SET assigned_project_id = NULL
   WHERE workspace_id = OLD.workspace_id AND assigned_project_id = OLD.id;
 
-  -- Unassign notes
+  -- Unassign notes and decisions
   UPDATE public.workspace_notes
   SET project_id = NULL
   WHERE workspace_id = OLD.workspace_id AND project_id = OLD.id;
@@ -423,6 +458,27 @@ CREATE TRIGGER trg_project_deletion_cleanup
   BEFORE DELETE ON public.projects
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_project_deletion_cleanup();
+
+-- 5.4 Milestone Deletion Fallback: ensure tasks milestone_id is cleared without touching workspace_id
+CREATE OR REPLACE FUNCTION public.handle_milestone_deletion_cleanup()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth, pg_temp
+AS $$
+BEGIN
+  UPDATE public.tasks
+  SET milestone_id = NULL
+  WHERE workspace_id = OLD.workspace_id AND milestone_id = OLD.id;
+  RETURN OLD;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_milestone_deletion_cleanup ON public.milestones;
+CREATE TRIGGER trg_milestone_deletion_cleanup
+  BEFORE DELETE ON public.milestones
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_milestone_deletion_cleanup();
 
 -- ------------------------------------------------------------------------------
 -- 6. SECURITY DEFINER HELPER FUNCTIONS (Anti-Recursion RLS Engine)
@@ -485,8 +541,45 @@ REVOKE EXECUTE ON FUNCTION public.is_workspace_admin_or_owner(uuid) FROM public,
 GRANT EXECUTE ON FUNCTION public.is_workspace_admin_or_owner(uuid) TO authenticated;
 
 -- ------------------------------------------------------------------------------
--- 7. ATOMIC WORKSPACE & OWNER PROVISIONING FUNCTION
+-- 7. USER ONBOARDING & ATOMIC PROVISIONING FUNCTIONS
 -- ------------------------------------------------------------------------------
+
+-- 7.1 Automatic Profile Creation Trigger on auth.users (Supabase Auth Hook)
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth, pg_temp
+AS $$
+DECLARE
+  user_full_name varchar(100);
+  user_display_name varchar(50);
+  initials varchar(4);
+BEGIN
+  user_full_name := COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1));
+  user_display_name := COALESCE(NEW.raw_user_meta_data->>'display_name', split_part(NEW.email, '@', 1));
+  initials := UPPER(SUBSTRING(user_full_name FROM 1 FOR 2));
+
+  INSERT INTO public.profiles (
+    id,
+    full_name,
+    display_name,
+    email,
+    avatar_initials
+  ) VALUES (
+    NEW.id,
+    user_full_name,
+    user_display_name,
+    NEW.email,
+    initials
+  )
+  ON CONFLICT (id) DO NOTHING;
+
+  RETURN NEW;
+END;
+$$;
+
+-- 7.2 Atomic Workspace & Owner Provisioning Function (Strictly 1 Owner Created)
 CREATE OR REPLACE FUNCTION public.create_workspace_with_owner(
   ws_name varchar(100),
   ws_description text DEFAULT '',
@@ -500,17 +593,43 @@ AS $$
 DECLARE
   new_ws_id uuid;
   caller_id uuid := auth.uid();
+  auth_user_record record;
 BEGIN
   IF caller_id IS NULL THEN
     RAISE EXCEPTION 'Authentication required: caller must be authenticated.';
   END IF;
 
-  -- 1. Create Workspace
+  -- Ensure caller profile exists (Self-healing defense-in-depth)
+  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = caller_id) THEN
+    SELECT email, raw_user_meta_data INTO auth_user_record
+    FROM auth.users WHERE id = caller_id;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Authentication record not found for caller in auth.users.';
+    END IF;
+
+    INSERT INTO public.profiles (
+      id,
+      full_name,
+      display_name,
+      email,
+      avatar_initials
+    ) VALUES (
+      caller_id,
+      COALESCE(auth_user_record.raw_user_meta_data->>'full_name', split_part(auth_user_record.email, '@', 1)),
+      COALESCE(auth_user_record.raw_user_meta_data->>'display_name', split_part(auth_user_record.email, '@', 1)),
+      auth_user_record.email,
+      UPPER(SUBSTRING(COALESCE(auth_user_record.raw_user_meta_data->>'full_name', split_part(auth_user_record.email, '@', 1)) FROM 1 FOR 2))
+    )
+    ON CONFLICT (id) DO NOTHING;
+  END IF;
+
+  -- 1. Create Workspace (direct client INSERT is blocked; this runs via SECURITY DEFINER)
   INSERT INTO public.workspaces (name, description, timezone, created_by)
   VALUES (ws_name, ws_description, ws_timezone, caller_id)
   RETURNING id INTO new_ws_id;
 
-  -- 2. Create Initial Owner Membership
+  -- 2. Create Initial Owner Membership (Exactly One Owner)
   INSERT INTO public.workspace_members (workspace_id, user_id, role, status)
   VALUES (new_ws_id, caller_id, 'Owner', 'Active');
 
@@ -524,6 +643,118 @@ $$;
 
 REVOKE EXECUTE ON FUNCTION public.create_workspace_with_owner(varchar, text, varchar) FROM public, anon;
 GRANT EXECUTE ON FUNCTION public.create_workspace_with_owner(varchar, text, varchar) TO authenticated;
+
+-- 7.3 Secure Invitation Acceptance Function
+CREATE OR REPLACE FUNCTION public.accept_workspace_invitation(p_token text)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth, pg_temp
+AS $$
+DECLARE
+  caller_id uuid := auth.uid();
+  caller_email text;
+  inv_record record;
+  hashed_input text;
+  new_member_id uuid;
+BEGIN
+  IF caller_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required: caller must be authenticated.';
+  END IF;
+
+  -- Retrieve verified caller email
+  caller_email := LOWER(auth.jwt()->>'email');
+  IF caller_email IS NULL THEN
+    SELECT LOWER(email) INTO caller_email FROM auth.users WHERE id = caller_id;
+  END IF;
+
+  -- Hash incoming token using sha256
+  hashed_input := encode(digest(p_token, 'sha256'), 'hex');
+
+  -- Locate active invitation
+  SELECT * INTO inv_record
+  FROM public.workspace_invitations
+  WHERE token_hash = hashed_input
+    AND status = 'pending'
+    AND expires_at > now();
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Invalid, expired, or already used invitation token.';
+  END IF;
+
+  -- Verify recipient email matches authenticated caller
+  IF LOWER(inv_record.email) != caller_email THEN
+    RAISE EXCEPTION 'Identity mismatch: invitation was sent to % but authenticated user is %.',
+      inv_record.email, caller_email;
+  END IF;
+
+  -- Ensure profile exists
+  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = caller_id) THEN
+    INSERT INTO public.profiles (id, full_name, display_name, email, avatar_initials)
+    VALUES (
+      caller_id,
+      split_part(caller_email, '@', 1),
+      split_part(caller_email, '@', 1),
+      caller_email,
+      UPPER(SUBSTRING(split_part(caller_email, '@', 1) FROM 1 FOR 2))
+    ) ON CONFLICT (id) DO NOTHING;
+  END IF;
+
+  -- Check if already a member
+  IF EXISTS (
+    SELECT 1 FROM public.workspace_members 
+    WHERE workspace_id = inv_record.workspace_id AND user_id = caller_id
+  ) THEN
+    UPDATE public.workspace_invitations SET status = 'accepted' WHERE id = inv_record.id;
+    RAISE EXCEPTION 'User is already a member of this workspace.';
+  END IF;
+
+  -- Insert membership atomically (Direct client INSERT is disabled)
+  INSERT INTO public.workspace_members (workspace_id, user_id, role, status, invited_by)
+  VALUES (inv_record.workspace_id, caller_id, inv_record.role, 'Active', inv_record.invited_by)
+  RETURNING id INTO new_member_id;
+
+  -- Mark invitation as accepted
+  UPDATE public.workspace_invitations
+  SET status = 'accepted'
+  WHERE id = inv_record.id;
+
+  RETURN new_member_id;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.accept_workspace_invitation(text) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.accept_workspace_invitation(text) TO authenticated;
+
+-- 7.4 Secure Workspace Deletion Procedure (Owner Only)
+CREATE OR REPLACE FUNCTION public.delete_workspace_by_owner(p_workspace_id uuid)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth, pg_temp
+AS $$
+BEGIN
+  -- Verify caller is the active Owner of this workspace
+  IF NOT EXISTS (
+    SELECT 1 FROM public.workspace_members
+    WHERE workspace_id = p_workspace_id
+      AND user_id = auth.uid()
+      AND role = 'Owner'
+      AND status = 'Active'
+  ) THEN
+    RAISE EXCEPTION 'Unauthorized: Only the verified workspace Owner can delete a workspace.';
+  END IF;
+
+  -- Set session configuration flag so protect_workspace_owner() allows cascade deletion
+  PERFORM set_config('app.deleting_workspace_id', p_workspace_id::text, true);
+
+  -- Perform deletion (cascades to all workspace child tables)
+  DELETE FROM public.workspaces WHERE id = p_workspace_id;
+END;
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.delete_workspace_by_owner(uuid) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.delete_workspace_by_owner(uuid) TO authenticated;
 
 -- ------------------------------------------------------------------------------
 -- 8. BUSINESS AND LIFECYCLE TRIGGERS
@@ -540,7 +771,6 @@ BEGIN
 END;
 $$;
 
--- Install updated_at trigger across all 10 mutable tables
 DROP TRIGGER IF EXISTS trg_workspaces_updated_at ON public.workspaces;
 CREATE TRIGGER trg_workspaces_updated_at BEFORE UPDATE ON public.workspaces FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
@@ -571,49 +801,107 @@ CREATE TRIGGER trg_subs_updated_at BEFORE UPDATE ON public.ai_subscriptions FOR 
 DROP TRIGGER IF EXISTS trg_notes_updated_at ON public.workspace_notes;
 CREATE TRIGGER trg_notes_updated_at BEFORE UPDATE ON public.workspace_notes FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
--- 8.2 Owner Protection Trigger (Anti-Escalation & Immutability)
-CREATE OR REPLACE FUNCTION public.protect_workspace_owner()
+-- 8.2 Workspace Deletion Authorization Trigger
+CREATE OR REPLACE FUNCTION public.handle_workspace_deletion_authorization()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth, pg_temp
+AS $$
+BEGIN
+  -- Verify that the caller is the Owner of this workspace
+  IF NOT EXISTS (
+    SELECT 1 FROM public.workspace_members
+    WHERE workspace_id = OLD.id
+      AND user_id = auth.uid()
+      AND role = 'Owner'
+      AND status = 'Active'
+  ) THEN
+    RAISE EXCEPTION 'Unauthorized: Only the verified workspace Owner can delete a workspace.';
+  END IF;
+
+  -- Set session-scoped flag so protect_workspace_owner() allows cascade deletion
+  PERFORM set_config('app.deleting_workspace_id', OLD.id::text, true);
+  RETURN OLD;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_workspace_deletion_auth ON public.workspaces;
+CREATE TRIGGER trg_workspace_deletion_auth
+  BEFORE DELETE ON public.workspaces
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_workspace_deletion_authorization();
+
+-- 8.3 Membership Immutability Trigger (Protects user_id, workspace_id, role)
+CREATE OR REPLACE FUNCTION public.protect_workspace_members_immutability()
 RETURNS TRIGGER
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  -- Prevent deletion of the Owner
-  IF TG_OP = 'DELETE' AND OLD.role = 'Owner' THEN
-    RAISE EXCEPTION 'Security Policy Violation: The workspace Owner cannot be removed.';
+  -- 1. user_id and workspace_id are globally immutable
+  IF NEW.user_id != OLD.user_id THEN
+    RAISE EXCEPTION 'Membership Identity Violation: user_id cannot be changed after creation.';
   END IF;
 
-  -- Protect existing Owner from mutation
-  IF TG_OP = 'UPDATE' AND OLD.role = 'Owner' THEN
-    IF NEW.role != 'Owner' THEN
-      RAISE EXCEPTION 'Security Policy Violation: The workspace Owner cannot be demoted.';
-    END IF;
-    IF NEW.status != 'Active' THEN
-      RAISE EXCEPTION 'Security Policy Violation: The workspace Owner cannot be suspended.';
-    END IF;
-    IF NEW.user_id != OLD.user_id THEN
-      RAISE EXCEPTION 'Security Policy Violation: Workspace ownership cannot be transferred by mutating user_id.';
-    END IF;
-    IF NEW.workspace_id != OLD.workspace_id THEN
-      RAISE EXCEPTION 'Security Policy Violation: Owner record workspace_id cannot be altered.';
-    END IF;
+  IF NEW.workspace_id != OLD.workspace_id THEN
+    RAISE EXCEPTION 'Membership Identity Violation: workspace_id cannot be changed after creation.';
   END IF;
 
-  -- Prevent non-owners from being updated to Owner directly (ownership transfer prohibited)
-  IF TG_OP = 'UPDATE' AND OLD.role != 'Owner' AND NEW.role = 'Owner' THEN
+  -- 2. Prevent any user from altering their own role (self-promotion / self-escalation)
+  IF OLD.user_id = auth.uid() AND NEW.role != OLD.role THEN
+    RAISE EXCEPTION 'Security Policy Violation: Members cannot alter their own role or self-promote.';
+  END IF;
+
+  -- 3. Prevent assigning Owner role (ownership transfer is disabled)
+  IF OLD.role != 'Owner' AND NEW.role = 'Owner' THEN
     RAISE EXCEPTION 'Security Policy Violation: Promoting a member to Owner is prohibited in this version.';
+  END IF;
+
+  -- 4. Prevent demoting the Owner
+  IF OLD.role = 'Owner' AND NEW.role != 'Owner' THEN
+    RAISE EXCEPTION 'Security Policy Violation: The workspace Owner cannot be demoted.';
+  END IF;
+
+  -- 5. Prevent suspending or deactivating the Owner
+  IF OLD.role = 'Owner' AND NEW.status != 'Active' THEN
+    RAISE EXCEPTION 'Security Policy Violation: The workspace Owner cannot be suspended or deactivated.';
   END IF;
 
   RETURN NEW;
 END;
 $$;
 
+DROP TRIGGER IF EXISTS trg_protect_members_immutability ON public.workspace_members;
+CREATE TRIGGER trg_protect_members_immutability
+  BEFORE UPDATE ON public.workspace_members
+  FOR EACH ROW
+  EXECUTE FUNCTION public.protect_workspace_members_immutability();
+
+-- 8.4 Owner Deletion Protection Trigger
+CREATE OR REPLACE FUNCTION public.protect_workspace_owner()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  -- Allow Owner deletion ONLY during authorized parent workspace deletion
+  IF TG_OP = 'DELETE' AND OLD.role = 'Owner' THEN
+    IF current_setting('app.deleting_workspace_id', true) = OLD.workspace_id::text THEN
+      RETURN OLD;
+    END IF;
+    RAISE EXCEPTION 'Security Policy Violation: The workspace Owner cannot be removed.';
+  END IF;
+
+  RETURN OLD;
+END;
+$$;
+
 DROP TRIGGER IF EXISTS trg_protect_owner ON public.workspace_members;
 CREATE TRIGGER trg_protect_owner
-  BEFORE UPDATE OR DELETE ON public.workspace_members
+  BEFORE DELETE ON public.workspace_members
   FOR EACH ROW
   EXECUTE FUNCTION public.protect_workspace_owner();
 
--- 8.3 Note Record Type Immutability
+-- 8.5 Note Record Type Immutability
 CREATE OR REPLACE FUNCTION public.prevent_note_type_change()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -632,26 +920,78 @@ CREATE TRIGGER trg_note_type_immutability
   FOR EACH ROW
   EXECUTE FUNCTION public.prevent_note_type_change();
 
--- 8.4 Audit Log Trust & Integrity Trigger
-CREATE OR REPLACE FUNCTION public.protect_activity_log_integrity()
-RETURNS TRIGGER
+-- 8.6 Trusted Activity Logging Procedure
+CREATE OR REPLACE FUNCTION public.log_workspace_activity(
+  p_workspace_id uuid,
+  p_action varchar(255),
+  p_entity_type varchar(50),
+  p_entity_id uuid,
+  p_category varchar(50),
+  p_metadata jsonb DEFAULT '{}'::jsonb
+)
+RETURNS uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, auth, pg_temp
 AS $$
+DECLARE
+  new_log_id uuid;
+  caller_id uuid := auth.uid();
+  caller_email text;
+  caller_role public.member_role;
 BEGIN
-  -- Force trusted server authentication context
-  NEW.user_id := auth.uid();
-  NEW.created_at := now();
-  RETURN NEW;
+  IF caller_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required to log activity.';
+  END IF;
+
+  -- Verify caller is an active member of this workspace
+  SELECT role INTO caller_role
+  FROM public.workspace_members
+  WHERE workspace_id = p_workspace_id AND user_id = caller_id AND status = 'Active';
+
+  IF caller_role IS NULL THEN
+    RAISE EXCEPTION 'Unauthorized: Caller is not an active member of workspace %.', p_workspace_id;
+  END IF;
+
+  -- Prohibit unprivileged callers from logging restricted administrative events
+  IF caller_role NOT IN ('Owner', 'Administrator') AND p_action LIKE 'admin.%' THEN
+    RAISE EXCEPTION 'Unauthorized: Non-administrators cannot log administrative events.';
+  END IF;
+
+  -- Fetch caller email snapshot
+  SELECT email INTO caller_email FROM public.profiles WHERE id = caller_id;
+
+  INSERT INTO public.activity_logs (
+    workspace_id,
+    user_id,
+    actor_email,
+    actor_role,
+    action,
+    entity_type,
+    entity_id,
+    category,
+    metadata,
+    created_at
+  ) VALUES (
+    p_workspace_id,
+    caller_id,
+    caller_email,
+    caller_role::text,
+    p_action,
+    p_entity_type,
+    p_entity_id,
+    p_category,
+    p_metadata,
+    now()
+  )
+  RETURNING id INTO new_log_id;
+
+  RETURN new_log_id;
 END;
 $$;
 
-DROP TRIGGER IF EXISTS trg_activity_log_integrity ON public.activity_logs;
-CREATE TRIGGER trg_activity_log_integrity
-  BEFORE INSERT ON public.activity_logs
-  FOR EACH ROW
-  EXECUTE FUNCTION public.protect_activity_log_integrity();
+REVOKE EXECUTE ON FUNCTION public.log_workspace_activity(uuid, varchar, varchar, uuid, varchar, jsonb) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.log_workspace_activity(uuid, varchar, varchar, uuid, varchar, jsonb) TO authenticated;
 
 -- ------------------------------------------------------------------------------
 -- 9. ROW LEVEL SECURITY (RLS) POLICIES
@@ -672,10 +1012,14 @@ ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
 -- 9.1 Workspaces
 CREATE POLICY "Members view workspaces" ON public.workspaces
   FOR SELECT USING (public.is_workspace_member(id));
+
 CREATE POLICY "Admins update workspaces" ON public.workspaces
   FOR UPDATE USING (public.is_workspace_admin_or_owner(id));
+
 CREATE POLICY "Owners delete workspaces" ON public.workspaces
   FOR DELETE USING (public.get_user_workspace_role(id) = 'Owner');
+-- NOTE: Direct INSERT on workspaces is intentionally omitted.
+-- All workspace creation MUST go through create_workspace_with_owner().
 
 -- 9.2 Profiles
 CREATE POLICY "Users read shared profiles" ON public.profiles
@@ -687,28 +1031,26 @@ CREATE POLICY "Users read shared profiles" ON public.profiles
       WHERE wm1.user_id = auth.uid() AND wm2.user_id = profiles.id AND wm1.status = 'Active'
     )
   );
+
 CREATE POLICY "Users insert own profile" ON public.profiles
   FOR INSERT WITH CHECK (id = auth.uid());
+
 CREATE POLICY "Users update own profile" ON public.profiles
   FOR UPDATE USING (id = auth.uid()) WITH CHECK (id = auth.uid());
 
--- 9.3 Workspace Members (Strict Anti-Escalation Model)
+-- 9.3 Workspace Members
 CREATE POLICY "Members view roster" ON public.workspace_members
   FOR SELECT USING (public.is_workspace_member(workspace_id));
 
--- INSERT: Admins and Owners can add members, but CANNOT insert Owner role
-CREATE POLICY "Admins invite roster" ON public.workspace_members
-  FOR INSERT WITH CHECK (
-    public.is_workspace_admin_or_owner(workspace_id) AND 
-    role != 'Owner'
-  );
+-- NOTE: Direct INSERT on workspace_members is intentionally omitted.
+-- Memberships are created ONLY via create_workspace_with_owner() or accept_workspace_invitation().
 
 -- UPDATE: Admins cannot change their own role, cannot set role to Owner, cannot touch Owner
 CREATE POLICY "Admins update roster" ON public.workspace_members
   FOR UPDATE USING (
     public.is_workspace_admin_or_owner(workspace_id) AND 
     role != 'Owner' AND
-    user_id != auth.uid() -- Prevents self-promotion
+    user_id != auth.uid()
   ) WITH CHECK (
     public.is_workspace_admin_or_owner(workspace_id) AND 
     role != 'Owner' AND
@@ -726,85 +1068,106 @@ CREATE POLICY "Admins remove roster" ON public.workspace_members
 -- 9.4 Workspace Invitations
 CREATE POLICY "Admins read invitations" ON public.workspace_invitations
   FOR SELECT USING (public.is_workspace_admin_or_owner(workspace_id));
+
 CREATE POLICY "Admins create invitations" ON public.workspace_invitations
   FOR INSERT WITH CHECK (public.is_workspace_admin_or_owner(workspace_id) AND role != 'Owner');
+
 CREATE POLICY "Admins update invitations" ON public.workspace_invitations
   FOR UPDATE USING (public.is_workspace_admin_or_owner(workspace_id));
+
 CREATE POLICY "Admins delete invitations" ON public.workspace_invitations
   FOR DELETE USING (public.is_workspace_admin_or_owner(workspace_id));
 
 -- 9.5 Workspace Settings
 CREATE POLICY "Members read settings" ON public.workspace_settings
   FOR SELECT USING (public.is_workspace_member(workspace_id));
+
 CREATE POLICY "Admins update settings" ON public.workspace_settings
   FOR UPDATE USING (public.is_workspace_admin_or_owner(workspace_id));
 
 -- 9.6 Projects
 CREATE POLICY "Members read projects" ON public.projects 
   FOR SELECT USING (public.is_workspace_member(workspace_id));
+
 CREATE POLICY "Members insert projects" ON public.projects 
   FOR INSERT WITH CHECK (public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer');
+
 CREATE POLICY "Members update projects" ON public.projects 
   FOR UPDATE USING (public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer');
+
 CREATE POLICY "Admins delete projects" ON public.projects 
   FOR DELETE USING (public.is_workspace_admin_or_owner(workspace_id));
 
 -- 9.7 Milestones
 CREATE POLICY "Members read milestones" ON public.milestones 
   FOR SELECT USING (public.is_workspace_member(workspace_id));
+
 CREATE POLICY "Members insert milestones" ON public.milestones 
   FOR INSERT WITH CHECK (public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer');
+
 CREATE POLICY "Members update milestones" ON public.milestones 
   FOR UPDATE USING (public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer');
+
 CREATE POLICY "Members delete milestones" ON public.milestones 
   FOR DELETE USING (public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer');
 
 -- 9.8 Tasks
 CREATE POLICY "Members read tasks" ON public.tasks 
   FOR SELECT USING (public.is_workspace_member(workspace_id));
+
 CREATE POLICY "Members insert tasks" ON public.tasks 
   FOR INSERT WITH CHECK (public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer');
+
 CREATE POLICY "Members update tasks" ON public.tasks 
   FOR UPDATE USING (public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer');
+
 CREATE POLICY "Members delete tasks" ON public.tasks 
   FOR DELETE USING (public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer');
 
 -- 9.9 Financial Transactions
 CREATE POLICY "Members read transactions" ON public.financial_transactions 
   FOR SELECT USING (public.is_workspace_member(workspace_id));
+
 CREATE POLICY "Members insert transactions" ON public.financial_transactions 
   FOR INSERT WITH CHECK (public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer');
+
 CREATE POLICY "Members update transactions" ON public.financial_transactions 
   FOR UPDATE USING (public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer');
+
 CREATE POLICY "Admins delete transactions" ON public.financial_transactions 
   FOR DELETE USING (public.is_workspace_admin_or_owner(workspace_id));
 
 -- 9.10 AI Subscriptions
 CREATE POLICY "Members read subscriptions" ON public.ai_subscriptions 
   FOR SELECT USING (public.is_workspace_member(workspace_id));
+
 CREATE POLICY "Members insert subscriptions" ON public.ai_subscriptions 
   FOR INSERT WITH CHECK (public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer');
+
 CREATE POLICY "Members update subscriptions" ON public.ai_subscriptions 
   FOR UPDATE USING (public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer');
+
 CREATE POLICY "Admins delete subscriptions" ON public.ai_subscriptions 
   FOR DELETE USING (public.is_workspace_admin_or_owner(workspace_id));
 
 -- 9.11 Workspace Notes
 CREATE POLICY "Members read notes" ON public.workspace_notes 
   FOR SELECT USING (public.is_workspace_member(workspace_id));
+
 CREATE POLICY "Members insert notes" ON public.workspace_notes 
   FOR INSERT WITH CHECK (public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer');
+
 CREATE POLICY "Members update notes" ON public.workspace_notes 
   FOR UPDATE USING (public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer');
+
 CREATE POLICY "Members delete notes" ON public.workspace_notes 
   FOR DELETE USING (public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer');
 
--- 9.12 Activity Logs (Immutable Append-Only)
+-- 9.12 Activity Logs (Trust Model: Read-Only via RLS, Ingestion via Triggers/Functions)
 CREATE POLICY "Members read activity logs" ON public.activity_logs 
   FOR SELECT USING (public.is_workspace_member(workspace_id));
-CREATE POLICY "Members insert activity logs" ON public.activity_logs 
-  FOR INSERT WITH CHECK (public.is_workspace_member(workspace_id) AND user_id = auth.uid());
--- UPDATE and DELETE intentionally have NO policies (permanently prohibited)
+-- Direct client INSERT, UPDATE, and DELETE are strictly disallowed.
+-- Activity logs are written exclusively via log_workspace_activity() or database triggers.
 
 -- ------------------------------------------------------------------------------
 -- 10. HIGH-PERFORMANCE ACCOUNTING VIEWS (SECURITY INVOKER ENABLED)

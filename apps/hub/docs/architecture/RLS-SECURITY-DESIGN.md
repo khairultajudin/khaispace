@@ -1,6 +1,6 @@
 # Khai Space Hub — Row Level Security (RLS) & Multi-Tenant Security Design
-**Document Version:** 1.1.0 (Phase 3.1 Security Hardened)  
-**Phase:** Phase 3.1 Security & Architecture Correction Pass  
+**Document Version:** 1.2.0 (Phase 3.2 Integrity & Provisioning Safeguards)  
+**Phase:** Phase 3.2 Final Database Integrity & Security Correction  
 **Application Target:** `apps/hub/`  
 **Working Branch:** `feature/khai-space-hub`  
 **Repository:** `khairultajudin/khaispace`
@@ -17,50 +17,67 @@ Khai Space Hub adopts a strict **Zero-Trust Client** security architecture. Beca
 3. **Suspended Means Inactive:** Collaborators whose status is `'Suspended'` or `'Pending'` are blocked from reading or writing any workspace data.
 4. **Viewer Role is Strictly Read-Only:** Users with the `'Viewer'` role can execute `SELECT` queries but are rejected on `INSERT`, `UPDATE`, and `DELETE`.
 5. **No Service-Role Key in the Browser:** The Supabase Service Role Key is strictly banned from client code, environment variables, and build outputs.
-6. **Strict Anti-Privilege Escalation:** Administrators can never promote themselves to Owner, assign the Owner role, or alter the Owner's records.
+6. **Strict Anti-Privilege Escalation:** Administrators can never promote themselves to Owner, assign the Owner role, alter another member's identity, or tamper with the Owner.
+7. **Controlled Provisioning & Invitations:** Direct client `INSERT` on `workspaces` and `workspace_members` is disabled. All memberships are established via trusted functions (`create_workspace_with_owner` and `accept_workspace_invitation`).
 
 ---
 
 ## 2. Hardened Owner & Administrator Role Model
 
-### 2.1 The Single-Owner Constraint
-A workspace represents a private command center. To prevent split ownership, hostile takeovers, or administrative deadlock:
-- **Rule:** A workspace has **exactly one Owner**.
-- **Database Engine Guarantee:**
-  ```sql
-  CREATE UNIQUE INDEX idx_workspace_single_owner 
-    ON public.workspace_members (workspace_id) 
-    WHERE (role = 'Owner');
-  ```
-- **Ownership Transfer Policy:** Ownership transfer is **explicitly prohibited** in this version. The Owner record cannot have its `user_id`, `role`, or `status` modified.
+### 2.1 The Single-Owner Invariant: Exact Enforcement Mechanism
+A workspace represents a private command center. The system guarantees that every active workspace has **exactly one Owner** ($\text{Count} = 1$).
 
-### 2.2 Administrator Privilege Restrictions
-In Phase 3, a generic policy `Admins manage roster FOR ALL` inadvertently allowed an Administrator to self-promote or alter the Owner. In Phase 3.1, this vulnerability is completely eliminated through granular RLS policies and trigger enforcement:
+To avoid inaccurate claims, this invariant is achieved not by a single constraint alone, but through a multi-layered defense:
+1. **Upper Bound ($\le 1$):** Enforced by the partial unique index:
+   ```sql
+   CREATE UNIQUE INDEX idx_workspace_single_owner 
+     ON public.workspace_members (workspace_id) 
+     WHERE (role = 'Owner');
+   ```
+2. **Lower Bound ($\ge 1$ at Provisioning):** Direct `INSERT` on `workspaces` is revoked. Workspaces can only be created via `public.create_workspace_with_owner()`, which atomically provisions the workspace, the initial `Owner` membership, and default settings in a single transaction.
+3. **Lower Bound ($\ge 1$ during Operation):**
+   - The trigger `protect_workspace_members_immutability()` prohibits updating an existing Owner's role away from `'Owner'`.
+   - The trigger `protect_workspace_owner()` prohibits deleting the Owner record during standard roster operations.
+4. **Ownership Transfer Policy:** Ownership transfer is **explicitly prohibited** in this version. Any attempt to promote a member to Owner or mutate `user_id` on an Owner record is blocked by trigger exceptions.
 
-1. **No Owner Role Assignment:** An Administrator **cannot insert** a member with `role = 'Owner'` (`WITH CHECK (role != 'Owner')`).
-2. **No Self-Promotion:** An Administrator **cannot update their own row** in `workspace_members` (`USING (user_id != auth.uid())`).
-3. **No Owner Modification:** An Administrator **cannot update or delete the Owner** (`USING (role != 'Owner')`).
-4. **No Administrator Demotion by Admins:** An Administrator can only delete/remove `Member` or `Viewer` roles; only the `Owner` can remove another Administrator.
+### 2.2 Workspace Deletion Lifecycle & Owner Protection Coordination
+In initial designs, cascading workspace deletion conflicted with Owner deletion protection triggers. In Phase 3.2, this lifecycle is harmonized:
+
+- **Lifecycle Rule:** Only the verified `Owner` can delete a workspace.
+- **Enforcement Architecture:**
+  1. Direct client `DELETE` on `workspaces` is restricted by RLS to `Owner` role.
+  2. The trigger `trg_workspace_deletion_auth` fires `BEFORE DELETE ON public.workspaces`:
+     - Verifies caller is active `Owner` of `OLD.id`.
+     - Sets a transaction-local session flag: `PERFORM set_config('app.deleting_workspace_id', OLD.id::text, true);`.
+  3. PostgreSQL begins cascading deletions to child tables, including `workspace_members`.
+  4. The trigger `protect_workspace_owner()` checks:
+     ```sql
+     IF TG_OP = 'DELETE' AND OLD.role = 'Owner' THEN
+       IF current_setting('app.deleting_workspace_id', true) = OLD.workspace_id::text THEN
+         RETURN OLD; -- Authorized workspace teardown
+       END IF;
+       RAISE EXCEPTION 'Security Policy Violation: The workspace Owner cannot be removed.';
+     END IF;
+     ```
+  5. If an unauthorized caller or standard roster mutation attempts to delete the Owner, the session flag is unset, immediately triggering an exception.
+
+### 2.3 Administrator Privilege Restrictions & Membership Immutability
+To eliminate administrator privilege escalation and self-promotion vectors:
+1. **Immutable Identifiers:** Trigger `protect_workspace_members_immutability()` strictly blocks any update to `user_id` or `workspace_id` across all roster records.
+2. **No Owner Role Assignment:** An Administrator cannot insert or update any member to `role = 'Owner'`.
+3. **No Self-Promotion:** An Administrator cannot alter their own row in `workspace_members` (`OLD.user_id = auth.uid() AND NEW.role != OLD.role`).
+4. **No Owner Modification:** An Administrator cannot update or delete the Owner record.
+5. **No Administrator Demotion by Admins:** An Administrator can only manage `Member` or `Viewer` roles; only the `Owner` can remove another Administrator.
 
 ---
 
 ## 3. The Recursive RLS Policy Trap & Architectural Solution
 
 ### 3.1 The Problem: Infinite Policy Recursion
-In a multi-tenant PostgreSQL RLS design, protecting `workspace_members` with a policy like this:
-```sql
--- DANGEROUS: Causes Infinite Recursion
-CREATE POLICY member_access ON workspace_members
-  FOR SELECT USING (
-    workspace_id IN (
-      SELECT workspace_id FROM workspace_members WHERE user_id = auth.uid()
-    )
-  );
-```
-causes PostgreSQL to re-evaluate the policy while executing the subquery on `workspace_members`, resulting in an infinite recursion error (`error: infinite recursion detected in policy for relation "workspace_members"`).
+In a multi-tenant PostgreSQL RLS design, evaluating membership within `workspace_members` using a subquery on `workspace_members` results in recursive evaluation and engine failure.
 
 ### 3.2 The Solution: Fast `SECURITY DEFINER` Helper Functions
-To eliminate recursion and optimize policy evaluation performance, three PostgreSQL helper functions are defined with `SECURITY DEFINER`, `STABLE` caching, and a fixed, secure `search_path`:
+Three PostgreSQL helper functions are defined with `SECURITY DEFINER`, `STABLE` caching, and a fixed, secure `search_path`:
 
 ```sql
 -- Helper 1: Check active non-suspended membership
@@ -126,173 +143,80 @@ GRANT EXECUTE ON FUNCTION public.is_workspace_admin_or_owner(uuid) TO authentica
 
 ---
 
-## 4. Secure Initial Workspace & Owner Provisioning
+## 4. Secure Member Onboarding & Invitation Lifecycle
 
-To prevent arbitrary authenticated users from inserting unauthorized `Owner` rows or claiming existing workspaces, initial workspace setup is wrapped in an atomic, security-definer stored procedure:
+Direct client `INSERT` on `workspace_members` is completely disabled. Members cannot be unilaterally injected by arbitrary client requests.
 
-```sql
-CREATE OR REPLACE FUNCTION public.create_workspace_with_owner(
-  ws_name varchar(100),
-  ws_description text DEFAULT '',
-  ws_timezone varchar(50) DEFAULT 'Asia/Kuala_Lumpur (GMT+8)'
-)
-RETURNS uuid
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, auth, pg_temp
-AS $$
-DECLARE
-  new_ws_id uuid;
-  caller_id uuid := auth.uid();
-BEGIN
-  IF caller_id IS NULL THEN
-    RAISE EXCEPTION 'Authentication required: caller must be authenticated.';
-  END IF;
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as Admin/Owner
+    participant Client as Hub Browser App
+    participant Edge as Edge Function (Invite)
+    participant DB as PostgreSQL Database
+    actor Recipient as Invited User
 
-  -- 1. Atomically Create Workspace
-  INSERT INTO public.workspaces (name, description, timezone, created_by)
-  VALUES (ws_name, ws_description, ws_timezone, caller_id)
-  RETURNING id INTO new_ws_id;
-
-  -- 2. Atomically Provision Initial Owner Membership
-  INSERT INTO public.workspace_members (workspace_id, user_id, role, status)
-  VALUES (new_ws_id, caller_id, 'Owner', 'Active');
-
-  -- 3. Atomically Initialize Workspace Settings
-  INSERT INTO public.workspace_settings (workspace_id)
-  VALUES (new_ws_id);
-
-  RETURN new_ws_id;
-END;
-$$;
+    Admin->>Client: Enter email and role in Members & Settings
+    Client->>DB: INSERT into workspace_invitations (role != 'Owner')
+    DB-->>Client: Invitation record created (token_hash, pending)
+    Client->>Edge: Trigger invite email dispatch
+    Edge->>Recipient: Send invitation link with secure token
+    Recipient->>Client: Open invite link & Authenticate via Supabase Auth
+    Client->>DB: Call accept_workspace_invitation(token)
+    DB->>DB: Verify token hash, status = 'pending', expires_at > now()
+    DB->>DB: Match auth.jwt() email with invitation email
+    DB->>DB: Auto-provision profile if missing
+    DB->>DB: INSERT into workspace_members (role, status = 'Active')
+    DB->>DB: UPDATE workspace_invitations status = 'accepted'
+    DB-->>Client: Return new membership ID
 ```
+
+### Key Security Invariants in Invitation Flow:
+1. **No Owner Invitations:** Table constraint `chk_invitation_role CHECK (role != 'Owner')` strictly blocks invitations for the Owner role.
+2. **Cryptographic Token Verification:** Tokens are stored as SHA-256 hashes (`token_hash = encode(digest(p_token, 'sha256'), 'hex')`). Plaintext tokens never persist in the database.
+3. **Identity Verification:** The authenticated caller's email (from `auth.jwt()->>'email'`) must match `invitation.email`. A stolen token cannot be accepted by an unintended user.
+4. **Single-Use Enforcement:** The invitation record is marked `'accepted'` atomically upon membership insertion.
 
 ---
 
-## 5. Comprehensive RLS Policy Matrix
+## 5. Audit Logging Foreign Key & Trust Model
 
-RLS is enabled explicitly on every table: `ALTER TABLE <table_name> ENABLE ROW LEVEL SECURITY;`.
+### 5.1 Relational Retention Model
+To resolve foreign key contradictions while maintaining legal and operational audit trails:
+- Column definition:
+  ```sql
+  user_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
+  actor_email varchar(255),
+  actor_role varchar(20),
+  ```
+- **Behavior:**
+  - If a user profile is deleted, `user_id` is cleanly nullified without violating constraints.
+  - Immutable snapshots (`actor_email`, `actor_role`) are captured at creation time, preserving non-repudiation for historical records.
 
-| Table | Operation | Target Role | Policy Rule (`USING` / `WITH CHECK`) | Security Objective |
-|:---|:---:|:---:|:---|:---|
-| **`profiles`** | SELECT | Authenticated | `id = auth.uid() OR EXISTS (SELECT 1 FROM workspace_members wm1 JOIN workspace_members wm2 ON wm1.workspace_id = wm2.workspace_id WHERE wm1.user_id = auth.uid() AND wm2.user_id = profiles.id AND wm1.status = 'Active')` | Read own profile and profiles of active co-members in shared workspaces. |
-| | INSERT | Self | `id = auth.uid()` | Users can only register their own profile row. |
-| | UPDATE | Self | `id = auth.uid()` | Users can only modify their own profile attributes. |
-| | DELETE | None | Disallowed (Managed via Supabase Auth) | Prevents dangling profile records. |
-| **`workspaces`** | SELECT | Member | `public.is_workspace_member(id)` | Only active members see the workspace. |
-| | UPDATE | Admin / Owner | `public.is_workspace_admin_or_owner(id)` | Configuration changes limited to Admins/Owners. |
-| | INSERT | None | Executed via `create_workspace_with_owner` | Direct table insert blocked to enforce atomic owner setup. |
-| | DELETE | Owner Only | `public.get_user_workspace_role(id) = 'Owner'` | Only the verified Owner can delete a workspace. |
-| **`workspace_members`** | SELECT | Member | `public.is_workspace_member(workspace_id)` | Active members see collaborator roster. |
-| | INSERT | Admin / Owner | `public.is_workspace_admin_or_owner(workspace_id) AND role != 'Owner'` | **Anti-Escalation:** Cannot insert Owner role. |
-| | UPDATE | Admin / Owner | `public.is_workspace_admin_or_owner(workspace_id) AND role != 'Owner' AND user_id != auth.uid()` | **Anti-Escalation:** Admins cannot update Owner or self-promote. |
-| | DELETE | Admin / Owner | `public.is_workspace_admin_or_owner(workspace_id) AND role != 'Owner' AND (public.get_user_workspace_role(workspace_id) = 'Owner' OR role IN ('Member', 'Viewer'))` | **Anti-Escalation:** Admins cannot remove Owner or peer Admins. |
-| **`workspace_invitations`**| SELECT | Admin / Owner | `public.is_workspace_admin_or_owner(workspace_id)` | View pending invitations. |
-| | INSERT | Admin / Owner | `public.is_workspace_admin_or_owner(workspace_id) AND role != 'Owner'` | Cannot invite as Owner. |
-| | UPDATE | Admin / Owner | `public.is_workspace_admin_or_owner(workspace_id)` | Update or revoke invitation. |
-| | DELETE | Admin / Owner | `public.is_workspace_admin_or_owner(workspace_id)` | Delete invitation record. |
-| **`workspace_settings`** | SELECT | Member | `public.is_workspace_member(workspace_id)` | Active members read notification flags. |
-| | UPDATE | Admin / Owner | `public.is_workspace_admin_or_owner(workspace_id)` | Admins configure notification flags. |
-| **`projects`** | SELECT | Member | `public.is_workspace_member(workspace_id)` | Workspace-scoped catalog read. |
-| | INSERT / UPDATE | Member + | `public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer'` | Viewers blocked from writing. |
-| | DELETE | Admin / Owner | `public.is_workspace_admin_or_owner(workspace_id)` | Deletions reserved for Admins/Owners. |
-| **`milestones`** | SELECT | Member | `public.is_workspace_member(workspace_id)` | Workspace-scoped milestone read. |
-| | ALL (Write) | Member + | `public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer'` | Standard write permissions for collaborators. |
-| **`tasks`** | SELECT | Member | `public.is_workspace_member(workspace_id)` | Workspace-scoped task read. |
-| | ALL (Write) | Member + | `public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer'` | Standard write permissions for collaborators. |
-| **`financial_transactions`**| SELECT | Member | `public.is_workspace_member(workspace_id)` | Workspace-scoped ledger read. |
-| | INSERT / UPDATE | Member + | `public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer'` | Collaborators can record transactions. |
-| | DELETE | Admin / Owner | `public.is_workspace_admin_or_owner(workspace_id)` | Deletions guarded to preserve financial audit trail. |
-| **`ai_subscriptions`** | SELECT | Member | `public.is_workspace_member(workspace_id)` | Workspace-scoped license read. |
-| | INSERT / UPDATE | Member + | `public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer'` | Collaborators can add/edit licenses. |
-| | DELETE | Admin / Owner | `public.is_workspace_admin_or_owner(workspace_id)` | License deletion guarded. |
-| **`workspace_notes`** | SELECT | Member | `public.is_workspace_member(workspace_id)` | Workspace-scoped notes read. |
-| | INSERT / UPDATE | Member + | `public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer'` | Collaborators can create notes/decisions. |
-| | DELETE | Member + | `public.is_workspace_member(workspace_id) AND public.get_user_workspace_role(workspace_id) != 'Viewer'` | Collaborators can prune notes. |
-| **`activity_logs`** | SELECT | Member | `public.is_workspace_member(workspace_id)` | Workspace-scoped audit view. |
-| | INSERT | Member | `public.is_workspace_member(workspace_id) AND user_id = auth.uid()` | **Anti-Forgery:** Can only insert own audit events. |
-| | UPDATE / DELETE | None | Disallowed (No policy created) | **Immutable Audit Log:** Zero updates/deletions allowed. |
+### 5.2 Anti-Forgery & Trust Boundaries
+- **Direct Client INSERT Disabled:** Ordinary browser clients cannot execute `INSERT INTO activity_logs`.
+- **System Event Logging:** Sensitive events (membership joins, role updates, workspace settings changes) are emitted automatically by database triggers.
+- **Client Event Logging:** Permitted UI events are recorded via the security-definer procedure `public.log_workspace_activity(...)`:
+  - Enforces `is_workspace_member(p_workspace_id)`.
+  - Captures `auth.uid()`, lookup profile email and member role.
+  - Prohibits non-administrators from submitting privileged action types (`admin.*`).
+- **Realistic Trust Boundary:** This design provides robust protection against ordinary authenticated users and malicious browser scripts, but does not claim cryptographic WORM (Write Once Read Many) immutability against database superusers.
 
 ---
 
-## 6. SQL View Security (`security_invoker = true`)
+## 6. Table-by-Table RLS Policy Matrix
 
-In PostgreSQL, standard SQL views run with the privileges of the view's creator (`security_definer` semantics). In an RLS multi-tenant environment, this is dangerous because querying a view could bypass the underlying table RLS!
-
-**Phase 3.1 Hardening:**
-All three financial views are created with `WITH (security_invoker = true)`:
-```sql
-CREATE OR REPLACE VIEW public.view_overall_finance_kpis
-WITH (security_invoker = true) AS ...
-```
-- **Execution Context:** The view executes under the identity and permissions of the calling user (`auth.uid()`).
-- **Underlying RLS Inheritance:** PostgreSQL evaluates `financial_transactions` RLS policies for every row processed by the view. A user cannot query aggregations of another workspace's transactions.
-- **Grants:** Anonymous access is completely revoked (`REVOKE ALL FROM anon, public; GRANT SELECT TO authenticated;`).
-
----
-
-## 7. Hardened Owner Protection Trigger
-
-```sql
-CREATE OR REPLACE FUNCTION public.protect_workspace_owner()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-AS $$
-BEGIN
-  -- 1. Prevent physical deletion of the Owner
-  IF TG_OP = 'DELETE' AND OLD.role = 'Owner' THEN
-    RAISE EXCEPTION 'Security Policy Violation: The workspace Owner cannot be removed.';
-  END IF;
-
-  -- 2. Protect existing Owner from mutation
-  IF TG_OP = 'UPDATE' AND OLD.role = 'Owner' THEN
-    IF NEW.role != 'Owner' THEN
-      RAISE EXCEPTION 'Security Policy Violation: The workspace Owner cannot be demoted.';
-    END IF;
-    IF NEW.status != 'Active' THEN
-      RAISE EXCEPTION 'Security Policy Violation: The workspace Owner cannot be suspended.';
-    END IF;
-    IF NEW.user_id != OLD.user_id THEN
-      RAISE EXCEPTION 'Security Policy Violation: Workspace ownership cannot be transferred by mutating user_id.';
-    END IF;
-    IF NEW.workspace_id != OLD.workspace_id THEN
-      RAISE EXCEPTION 'Security Policy Violation: Owner record workspace_id cannot be altered.';
-    END IF;
-  END IF;
-
-  -- 3. Prevent promoting non-owners to Owner (Ownership transfer prohibited)
-  IF TG_OP = 'UPDATE' AND OLD.role != 'Owner' AND NEW.role = 'Owner' THEN
-    RAISE EXCEPTION 'Security Policy Violation: Promoting a member to Owner is prohibited in this version.';
-  END IF;
-
-  RETURN NEW;
-END;
-$$;
-```
-
----
-
-## 8. Audit Log Anti-Forgery Trigger
-
-To prevent users from manually manipulating the `activity_logs` table via direct PostgREST calls:
-```sql
-CREATE OR REPLACE FUNCTION public.protect_activity_log_integrity()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, auth, pg_temp
-AS $$
-BEGIN
-  -- Force trusted server authentication context
-  NEW.user_id := auth.uid();
-  NEW.created_at := now();
-  RETURN NEW;
-END;
-$$;
-
-CREATE TRIGGER trg_activity_log_integrity
-  BEFORE INSERT ON public.activity_logs
-  FOR EACH ROW
-  EXECUTE FUNCTION public.protect_activity_log_integrity();
-```
-Even if a compromised client sends a falsified `user_id` or timestamp, the database trigger overrides them with `auth.uid()` and server `now()`.
+| Table | SELECT | INSERT | UPDATE | DELETE |
+| :--- | :--- | :--- | :--- | :--- |
+| `workspaces` | Active Member | **Disabled** (via `create_workspace_with_owner`) | Admin or Owner | Owner Only (via `trg_workspace_deletion_auth`) |
+| `profiles` | Self OR Shared Workspace Member | Self (`id = auth.uid()`) | Self (`id = auth.uid()`) | **Disabled** (Managed via Auth cleanup) |
+| `workspace_members` | Active Member | **Disabled** (via atomic provisioning / invite acceptance) | Admin or Owner (non-owner target, no self-update) | Admin (Member/Viewer) or Owner (Admin/Member/Viewer) |
+| `workspace_invitations` | Admin or Owner | Admin or Owner (`role != 'Owner'`) | Admin or Owner | Admin or Owner |
+| `workspace_settings` | Active Member | **Disabled** (Initialized at workspace creation) | Admin or Owner | **Disabled** (Cascade only) |
+| `projects` | Active Member | Active Non-Viewer | Active Non-Viewer | Admin or Owner |
+| `milestones` | Active Member | Active Non-Viewer | Active Non-Viewer | Active Non-Viewer |
+| `tasks` | Active Member | Active Non-Viewer | Active Non-Viewer | Active Non-Viewer |
+| `financial_transactions` | Active Member | Active Non-Viewer | Active Non-Viewer | Admin or Owner |
+| `ai_subscriptions` | Active Member | Active Non-Viewer | Active Non-Viewer | Admin or Owner |
+| `workspace_notes` | Active Member | Active Non-Viewer | Active Non-Viewer | Active Non-Viewer |
+| `activity_logs` | Active Member | **Disabled** (via triggers / `log_workspace_activity`) | **Disabled** (Permanent) | **Disabled** (Permanent) |
