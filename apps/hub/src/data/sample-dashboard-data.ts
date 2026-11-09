@@ -7,6 +7,9 @@ import {
   TransactionItem,
   AISubscriptionItem,
   WorkspaceNoteItem,
+  WorkspaceMember,
+  UserProfile,
+  WorkspaceSettings,
 } from "../types/dashboard";
 
 export const SAMPLE_SUMMARY_METRICS: SummaryMetric[] = [
@@ -1055,3 +1058,111 @@ export const SAMPLE_NOTES_AND_DECISIONS: WorkspaceNoteItem[] = [
       "Build workflow outputs clean zip package release artifacts instead of single monolithic HTML files.",
   },
 ];
+
+
+// ============================================================================
+// Phase 2G: Members & Settings Sample Dataset
+// ============================================================================
+export const SAMPLE_MEMBERS: WorkspaceMember[] = [
+  {
+    id: "mem-1",
+    name: "Khairul Tajudin",
+    email: "khairul@khaispace.my",
+    role: "Owner",
+    status: "Active",
+    joinedAt: "January 15, 2026",
+    joinedAtIso: "2026-01-15",
+    bio: "Founder, lead software architect, and principal engineer across all Khai Space initiatives and technology labs.",
+  },
+  {
+    id: "mem-2",
+    name: "Aisyah Rahman",
+    email: "aisyah.rahman@khaispace.my",
+    role: "Administrator",
+    status: "Active",
+    joinedAt: "February 1, 2026",
+    joinedAtIso: "2026-02-01",
+    bio: "Senior systems collaborator responsible for cloud infrastructure, automation pipelines, and API integrations.",
+  },
+  {
+    id: "mem-3",
+    name: "Daniel Tan",
+    email: "daniel.tan@khaispace.my",
+    role: "Member",
+    status: "Active",
+    joinedAt: "March 10, 2026",
+    joinedAtIso: "2026-03-10",
+    bio: "Full-stack engineer focusing on IoT telemetry, frontend UI components, and mobile responsiveness.",
+  },
+  {
+    id: "mem-4",
+    name: "Nurul Huda",
+    email: "nurul.huda@khaispace.my",
+    role: "Member",
+    status: "Active",
+    joinedAt: "April 5, 2026",
+    joinedAtIso: "2026-04-05",
+    bio: "Agronomy researcher and documentation specialist contributing to Hidroponik Pak Choy harvesting and crop guides.",
+  },
+  {
+    id: "mem-5",
+    name: "Farhan Malik",
+    email: "farhan.malik@external-partner.com",
+    role: "Viewer",
+    status: "Active",
+    joinedAt: "May 20, 2026",
+    joinedAtIso: "2026-05-20",
+    bio: "External business and investment advisor reviewing monthly finance reports and ROI projections.",
+  },
+  {
+    id: "mem-6",
+    name: "Sarah Lim",
+    email: "sarah.lim@creative-studio.io",
+    role: "Member",
+    status: "Pending",
+    joinedAt: "November 2, 2026",
+    joinedAtIso: "2026-11-02",
+    bio: "Invited 3D modeler and CAD asset designer for 3D Printing Clicker prototyping.",
+    personalMessage: "Welcome to the team Sarah, looking forward to your CAD design contributions!",
+    invitedBy: "Khairul Tajudin",
+  },
+  {
+    id: "mem-7",
+    name: "Zainal Abidin",
+    email: "zainal.a@legacy-contractor.net",
+    role: "Viewer",
+    status: "Suspended",
+    joinedAt: "February 18, 2026",
+    joinedAtIso: "2026-02-18",
+    bio: "Former external QA contractor. Access suspended following project completion.",
+  },
+];
+
+export const SAMPLE_OWNER_PROFILE: UserProfile = {
+  id: "profile-owner",
+  fullName: "Khairul Tajudin",
+  displayName: "Khai",
+  email: "khairul@khaispace.my",
+  role: "Owner",
+  bio: "Software engineer, systems architect, and maker building digital tools, IoT telemetry platforms, and agricultural technology.",
+  location: "Kuala Lumpur, Malaysia",
+  timezone: "Asia/Kuala_Lumpur (GMT+8)",
+  avatarInitials: "KT",
+};
+
+export const SAMPLE_WORKSPACE_SETTINGS: WorkspaceSettings = {
+  workspaceName: "Khai Space Command Center",
+  workspaceDescription:
+    "Private unified hub for managing engineering projects, task milestones, financial ROI, AI tooling subscriptions, and architectural decision records.",
+  timezone: "Asia/Kuala_Lumpur (GMT+8)",
+  defaultCurrency: "MYR (RM)",
+  dateFormat: "YYYY-MM-DD",
+  contentDensity: "comfortable",
+  notifications: {
+    taskReminders: true,
+    milestoneUpdates: true,
+    projectUpdates: true,
+    workspaceActivity: false,
+    subscriptionRenewals: true,
+  },
+};

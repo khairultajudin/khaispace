@@ -70,8 +70,7 @@ const NAV_ITEMS: NavItemConfig[] = [
     id: "settings",
     label: "Members & Settings",
     icon: Settings,
-    badge: "Coming Soon",
-    isReady: false,
+    isReady: true,
   },
 ];
 

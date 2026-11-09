@@ -184,3 +184,60 @@ export interface NoteMetricsSummary {
   rejectedDecisions: number;
   supersededDecisions: number;
 }
+
+// -------------------------------------------------------------
+// Phase 2G: Members & Settings Data Types
+// -------------------------------------------------------------
+export type MemberRole = "Owner" | "Administrator" | "Member" | "Viewer";
+export type MemberStatus = "Active" | "Pending" | "Suspended";
+
+export interface WorkspaceMember {
+  id: string;
+  name: string;
+  email: string;
+  role: MemberRole;
+  status: MemberStatus;
+  joinedAt: string;
+  joinedAtIso: string;
+  bio?: string;
+  invitedBy?: string;
+  personalMessage?: string;
+}
+
+export interface MemberMetricsSummary {
+  totalMembers: number;
+  activeMembers: number;
+  pendingInvitations: number;
+  suspendedMembers: number;
+}
+
+export interface UserProfile {
+  id: string;
+  fullName: string;
+  displayName: string;
+  email: string;
+  role: MemberRole;
+  bio: string;
+  location: string;
+  timezone: string;
+  avatarInitials: string;
+}
+
+export type ContentDensity = "comfortable" | "compact";
+export type DateFormatOption = "YYYY-MM-DD" | "DD/MM/YYYY" | "MM/DD/YYYY";
+
+export interface WorkspaceSettings {
+  workspaceName: string;
+  workspaceDescription: string;
+  timezone: string;
+  defaultCurrency: string;
+  dateFormat: DateFormatOption;
+  contentDensity: ContentDensity;
+  notifications: {
+    taskReminders: boolean;
+    milestoneUpdates: boolean;
+    projectUpdates: boolean;
+    workspaceActivity: boolean;
+    subscriptionRenewals: boolean;
+  };
+}

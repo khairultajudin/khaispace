@@ -15,6 +15,7 @@ import { TasksView } from "../tasks/tasks-view";
 import { FinanceView } from "../finance/finance-view";
 import { SubscriptionsView } from "../subscriptions/subscriptions-view";
 import { NotesView } from "../notes/notes-view";
+import { SettingsView } from "../settings/settings-view";
 
 const VALID_SECTIONS: NavSection[] = [
   "overview",
@@ -67,6 +68,16 @@ export function DashboardView() {
       ) {
         return "notes";
       }
+      if (
+        rawHash === "settings" ||
+        rawHash === "members" ||
+        rawHash === "profile" ||
+        rawHash === "workspace-settings" ||
+        rawHash === "workspace" ||
+        rawHash.startsWith("member-")
+      ) {
+        return "settings";
+      }
     }
     return "overview";
   });
@@ -112,6 +123,15 @@ export function DashboardView() {
         rawHash.startsWith("dec-")
       ) {
         setCurrentSection("notes");
+      } else if (
+        rawHash === "settings" ||
+        rawHash === "members" ||
+        rawHash === "profile" ||
+        rawHash === "workspace-settings" ||
+        rawHash === "workspace" ||
+        rawHash.startsWith("member-")
+      ) {
+        setCurrentSection("settings");
       }
     };
 
@@ -171,6 +191,8 @@ export function DashboardView() {
             <SubscriptionsView />
           ) : currentSection === "notes" ? (
             <NotesView />
+          ) : currentSection === "settings" ? (
+            <SettingsView />
           ) : (
             <ComingSoonView
               section={currentSection}
