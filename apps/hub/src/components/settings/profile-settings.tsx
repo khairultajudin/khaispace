@@ -10,6 +10,7 @@ import {
   Info,
 } from "lucide-react";
 import { UserProfile } from "../../types/dashboard";
+import { SAMPLE_OWNER_PROFILE } from "../../data/sample-dashboard-data";
 
 interface ProfileSettingsProps {
   profile: UserProfile;
@@ -31,6 +32,9 @@ export function ProfileSettings({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+
 
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
@@ -115,7 +119,7 @@ export function ProfileSettings({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={onResetProfile}
+              onClick={() => setShowResetConfirm(true)}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] hover:bg-[#E9E5DC] text-xs font-medium text-[#536B85] hover:text-[#0C2340] transition-colors cursor-pointer"
               title="Reset profile to baseline defaults"
             >
@@ -290,6 +294,56 @@ export function ProfileSettings({
           </div>
         </form>
       </div>
+
+      {/* Reset Profile Confirmation Modal */}
+      {showResetConfirm && (
+        <div
+          className="fixed inset-0 z-50 bg-[#0C2340]/40 backdrop-blur-2xs flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reset-profile-title"
+        >
+          <div className="w-full max-w-md bg-[#FFFFFF] rounded-lg border border-[#DCD7CC] shadow-xl p-6 space-y-4">
+            <div className="flex items-center gap-3 text-[#8C6D2B]">
+              <RotateCcw className="w-6 h-6 shrink-0" />
+              <h3 id="reset-profile-title" className="font-bold text-base text-[#0C2340]">
+                Reset Owner Profile Baseline?
+              </h3>
+            </div>
+            <p className="text-xs text-[#536B85] leading-relaxed">
+              Are you sure you want to restore the workspace owner profile to default baseline values? Legal name, display handle, notification email, and biography will be restored to &ldquo;Khairul Tajudin&rdquo;, and the corresponding Owner record in the member directory will be synchronized.
+            </p>
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowResetConfirm(false)}
+                className="px-3.5 py-2 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] text-xs font-medium text-[#536B85] hover:text-[#0C2340] hover:bg-[#E9E5DC] transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setFullName(SAMPLE_OWNER_PROFILE.fullName);
+                  setDisplayName(SAMPLE_OWNER_PROFILE.displayName);
+                  setEmail(SAMPLE_OWNER_PROFILE.email);
+                  setBio(SAMPLE_OWNER_PROFILE.bio);
+                  setLocation(SAMPLE_OWNER_PROFILE.location);
+                  setTimezone(SAMPLE_OWNER_PROFILE.timezone);
+                  setErrors({});
+                  onResetProfile();
+                  setShowResetConfirm(false);
+                  setSuccessMessage("Owner profile successfully restored to baseline defaults.");
+                  setTimeout(() => setSuccessMessage(null), 4000);
+                }}
+                className="px-4 py-2 rounded-md bg-[#8C6D2B] hover:bg-[#8C6D2B]/90 text-white text-xs font-medium transition-colors cursor-pointer"
+              >
+                Confirm Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

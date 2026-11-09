@@ -82,6 +82,8 @@ export function SettingsView() {
 
   // Reset baseline confirmation dialog state
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [profileVersion, setProfileVersion] = useState(0);
+  const [settingsVersion, setSettingsVersion] = useState(0);
 
   // Synchronize URL hash with active sub-tabs and deep links
   useEffect(() => {
@@ -224,8 +226,30 @@ export function SettingsView() {
     setIsModified(true);
   };
 
+  const handleResetProfile = () => {
+    setProfile(SAMPLE_OWNER_PROFILE);
+    setMembers((prev) =>
+      prev.map((m) =>
+        m.role === "Owner"
+          ? {
+              ...m,
+              name: SAMPLE_OWNER_PROFILE.fullName,
+              email: SAMPLE_OWNER_PROFILE.email,
+              bio: SAMPLE_OWNER_PROFILE.bio,
+            }
+          : m
+      )
+    );
+    setIsModified(true);
+  };
+
   const handleSaveWorkspaceSettings = (updatedSettings: WorkspaceSettings) => {
     setSettings(updatedSettings);
+    setIsModified(true);
+  };
+
+  const handleResetWorkspaceSettings = () => {
+    setSettings(SAMPLE_WORKSPACE_SETTINGS);
     setIsModified(true);
   };
 
@@ -233,6 +257,8 @@ export function SettingsView() {
     setMembers(SAMPLE_MEMBERS);
     setProfile(SAMPLE_OWNER_PROFILE);
     setSettings(SAMPLE_WORKSPACE_SETTINGS);
+    setProfileVersion((v) => v + 1);
+    setSettingsVersion((v) => v + 1);
     setIsModified(false);
     setSelectedMember(null);
     setShowResetConfirm(false);
@@ -353,23 +379,19 @@ export function SettingsView() {
 
       {activeTab === "profile" && (
         <ProfileSettings
+          key={`profile-${profileVersion}`}
           profile={profile}
           onSaveProfile={handleSaveProfile}
-          onResetProfile={() => {
-            setProfile(SAMPLE_OWNER_PROFILE);
-            setIsModified(true);
-          }}
+          onResetProfile={handleResetProfile}
         />
       )}
 
       {activeTab === "workspace" && (
         <WorkspaceSettingsView
+          key={`workspace-${settingsVersion}`}
           settings={settings}
           onSaveSettings={handleSaveWorkspaceSettings}
-          onResetSettings={() => {
-            setSettings(SAMPLE_WORKSPACE_SETTINGS);
-            setIsModified(true);
-          }}
+          onResetSettings={handleResetWorkspaceSettings}
         />
       )}
 

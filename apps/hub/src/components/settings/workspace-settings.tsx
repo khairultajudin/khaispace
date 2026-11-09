@@ -14,6 +14,7 @@ import {
   Sliders,
 } from "lucide-react";
 import { WorkspaceSettings, ContentDensity, DateFormatOption } from "../../types/dashboard";
+import { SAMPLE_WORKSPACE_SETTINGS } from "../../data/sample-dashboard-data";
 
 interface WorkspaceSettingsProps {
   settings: WorkspaceSettings;
@@ -43,6 +44,8 @@ export function WorkspaceSettingsView({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+
 
   const toggleNotification = (key: keyof typeof notifications) => {
     setNotifications((prev) => ({
@@ -213,18 +216,22 @@ export function WorkspaceSettingsView({
                 </select>
               </div>
 
-              {/* Default Currency */}
+              {/* Default Currency (Fixed Workspace Standard) */}
               <div className="space-y-1">
-                <label htmlFor="ws-currency" className="font-semibold text-[#0C2340] block">
-                  Default Accounting Currency
-                </label>
-                <div className="flex items-center gap-2">
-                  <div className="px-3 py-2 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] text-xs text-[#0C2340] font-mono flex-1 font-semibold">
-                    {defaultCurrency} &bull; Malaysian Ringgit (RM)
-                  </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-[#0C2340] block">
+                    Accounting Currency Standard
+                  </span>
+                  <span className="text-[10px] font-mono text-[#347A63] bg-[#EDF5F2] px-1.5 py-0.5 rounded border border-[#A8CFC2] font-semibold">
+                    Fixed Standard
+                  </span>
                 </div>
-                <p className="text-[11px] text-[#536B85]">
-                  Consistent with Finance &amp; ROI and AI Subscriptions currency standardization.
+                <div className="px-3 py-2 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] text-xs text-[#0C2340] font-mono flex items-center justify-between font-semibold">
+                  <span>Malaysian Ringgit ({defaultCurrency})</span>
+                  <span className="text-[#347A63] font-bold">RM</span>
+                </div>
+                <p className="text-[11px] text-[#536B85] leading-relaxed">
+                  Fixed workspace monetary standard. All ledger entries, cashflow metrics, and AI subscription cost analyses are strictly recorded in Malaysian Ringgit (MYR).
                 </p>
               </div>
 
@@ -280,10 +287,13 @@ export function WorkspaceSettingsView({
                     <Sliders className="w-3.5 h-3.5 text-[#347A63]" />
                     Content Density
                   </span>
-                  <span className="text-[10px] font-mono text-[#536B85] capitalize">
-                    {contentDensity}
+                  <span className="text-[10px] font-mono text-[#8C6D2B] bg-white px-2 py-0.5 rounded border border-[#DCD7CC]">
+                    Preference Preview
                   </span>
                 </div>
+                <p className="text-xs text-[#536B85] leading-relaxed">
+                  Controls layout spacing preferences for data tables and card rosters across Hub modules.
+                </p>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -307,6 +317,24 @@ export function WorkspaceSettingsView({
                   >
                     Compact (Data-Dense)
                   </button>
+                </div>
+                {/* Live Preview Box */}
+                <div
+                  className={`rounded border border-[#DCD7CC] bg-white transition-all text-xs ${
+                    contentDensity === "compact" ? "p-2.5 space-y-1" : "p-4 space-y-2"
+                  }`}
+                >
+                  <div className="flex items-center justify-between font-semibold text-[#0C2340]">
+                    <span>Sample Table Row / Card Preview</span>
+                    <span className="text-[10px] font-mono text-[#347A63] uppercase">
+                      {contentDensity === "compact" ? "Compact Spacing (Dense)" : "Comfortable Spacing (Editorial)"}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#536B85]">
+                    {contentDensity === "compact"
+                      ? "High-density view optimizes screen real estate for dense logs and tabular datasets."
+                      : "Comfortable view preserves editorial whitespace and generous touch targets."}
+                  </p>
                 </div>
               </div>
             </div>
@@ -508,8 +536,18 @@ export function WorkspaceSettingsView({
               <button
                 type="button"
                 onClick={() => {
+                  setWorkspaceName(SAMPLE_WORKSPACE_SETTINGS.workspaceName);
+                  setWorkspaceDescription(SAMPLE_WORKSPACE_SETTINGS.workspaceDescription);
+                  setTimezone(SAMPLE_WORKSPACE_SETTINGS.timezone);
+                  setDefaultCurrency(SAMPLE_WORKSPACE_SETTINGS.defaultCurrency);
+                  setDateFormat(SAMPLE_WORKSPACE_SETTINGS.dateFormat);
+                  setContentDensity(SAMPLE_WORKSPACE_SETTINGS.contentDensity);
+                  setNotifications({ ...SAMPLE_WORKSPACE_SETTINGS.notifications });
+                  setErrors({});
                   onResetSettings();
                   setShowResetConfirm(false);
+                  setSuccessMessage("Workspace configuration successfully restored to default baseline.");
+                  setTimeout(() => setSuccessMessage(null), 4000);
                 }}
                 className="px-4 py-2 rounded-md bg-[#8C6D2B] hover:bg-[#8C6D2B]/90 text-white text-xs font-medium transition-colors cursor-pointer"
               >
