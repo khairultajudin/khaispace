@@ -49,6 +49,7 @@ export function DashboardView() {
       }
       if (
         rawHash === "subscriptions" ||
+        rawHash === "directory" ||
         rawHash.startsWith("subscription-") ||
         rawHash.startsWith("sub-") ||
         rawHash === "renewals" ||
@@ -86,6 +87,7 @@ export function DashboardView() {
         setCurrentSection("finance");
       } else if (
         rawHash === "subscriptions" ||
+        rawHash === "directory" ||
         rawHash.startsWith("subscription-") ||
         rawHash.startsWith("sub-") ||
         rawHash === "renewals" ||

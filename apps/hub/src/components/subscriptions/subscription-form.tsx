@@ -8,7 +8,7 @@ import {
   SubscriptionBillingCycle,
 } from "../../types/dashboard";
 import { CATALOGED_PROJECTS } from "../../data/sample-dashboard-data";
-import { getLocalTodayIso } from "../../utils/date-utils";
+import { getLocalTodayIso, isValidCalendarDate } from "../../utils/date-utils";
 
 interface SubscriptionFormProps {
   isOpen: boolean;
@@ -67,12 +67,12 @@ export function SubscriptionForm({
       errs.category = "Capability category is required.";
     }
 
-    if (!startDateIso.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(startDateIso)) {
-      errs.startDateIso = "A valid start date in YYYY-MM-DD format is required.";
+    if (!startDateIso.trim() || !isValidCalendarDate(startDateIso)) {
+      errs.startDateIso = "A valid calendar start date (YYYY-MM-DD) is required.";
     }
 
-    if (!nextBillingDateIso.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(nextBillingDateIso)) {
-      errs.nextBillingDateIso = "A valid next billing date in YYYY-MM-DD format is required.";
+    if (!nextBillingDateIso.trim() || !isValidCalendarDate(nextBillingDateIso)) {
+      errs.nextBillingDateIso = "A valid calendar next billing date (YYYY-MM-DD) is required.";
     }
 
     if (projectId !== "none") {
