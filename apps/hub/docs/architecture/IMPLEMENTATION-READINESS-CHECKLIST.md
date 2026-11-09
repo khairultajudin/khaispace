@@ -28,45 +28,54 @@ Use this checklist to verify that all planning and architectural deliverables re
 - [x] Hybrid Architecture formally recommended (Static export preserved; Edge Functions for elevated admin tasks).
 - [x] Responsibilities of each architectural layer clearly defined.
 
-### Section C: Relational Database Model
-- [x] Normalized PostgreSQL schema designed for all 12 core entities.
+### Section C: Relational Database Model (Phase 3.1 Hardened)
+- [x] Standardized UUIDv4 primary keys (`id uuid DEFAULT gen_random_uuid()`) across all 12 tables.
+- [x] Projects table includes unique slug (`slug varchar(50) NOT NULL`) with `UNIQUE (workspace_id, slug)`.
 - [x] Custom PostgreSQL enums specified for all status, priority, role, and type fields.
-- [x] Primary keys defined as UUIDv4 (`gen_random_uuid()`) or clean slugs.
-- [x] Foreign keys configured with appropriate `ON DELETE` rules (`CASCADE`, `SET NULL`, `RESTRICT`).
+- [x] Composite unique constraints (`workspace_id, id`) on parent tables (`projects`, `milestones`).
+- [x] Composite foreign keys and cross-workspace validation triggers prevent cross-tenant contamination.
 - [x] Monetary amounts specified as `numeric(12, 2)` (zero floating-point types).
 - [x] Calendar dates separated as `date`; exact timestamps stored as UTC `timestamptz`.
-- [x] Automatic `updated_at` triggers specified for mutable tables.
+- [x] Automatic `handle_updated_at()` triggers installed across all 10 mutable tables.
 - [x] Complete Mermaid Entity-Relationship Diagram (ERD) provided.
 
-### Section D: Multi-User Workspace & Roster RBAC
+### Section D: Multi-User Workspace & Roster RBAC (Phase 3.1 Hardened)
 - [x] Flexible multi-tenant hierarchy designed (`workspaces` -> `workspace_members`).
 - [x] 4 collaborative roles specified (`Owner`, `Administrator`, `Member`, `Viewer`).
-- [x] Owner protected from accidental deletion or demotion via database trigger.
+- [x] Exactly ONE Owner per workspace enforced via partial unique index `idx_workspace_single_owner`.
+- [x] Owner protected from deletion, demotion, suspension, or user_id tampering via hardened trigger.
+- [x] Administrators strictly prohibited from self-promoting, modifying their own role, or assigning Owner.
+- [x] Ownership transfer explicitly prohibited in this version.
+- [x] Atomic initial provisioning flow defined via `create_workspace_with_owner()`.
 - [x] Suspended members blocked at database boundary (`status = 'Active'` required).
 - [x] Invitation-only workflow designed (`workspace_invitations` with hashed single-use tokens).
 - [x] Public self-registration permanently disabled.
 
-### Section E: Row Level Security (RLS) Design
+### Section E: Row Level Security (RLS) & View Design (Phase 3.1 Hardened)
 - [x] RLS enabled on all tables without exception.
-- [x] Recursive policy trap analyzed and resolved via `SECURITY DEFINER` helper functions.
-- [x] Helper functions implement safe, fixed `search_path = public, auth`.
+- [x] Anti-recursion helper functions implemented with `SECURITY DEFINER` and fixed `search_path = public, auth, pg_temp`.
+- [x] Anonymous execution of helper functions explicitly revoked (`REVOKE FROM public, anon; GRANT TO authenticated;`).
 - [x] Comprehensive policy matrix documented for `SELECT`, `INSERT`, `UPDATE`, `DELETE` across all 12 tables.
+- [x] Granular `workspace_members` policies prevent Administrator privilege escalation.
+- [x] All 3 financial SQL views created with `WITH (security_invoker = true)` to inherit underlying table RLS.
+- [x] Anonymous access to views revoked (`GRANT SELECT TO authenticated`).
 - [x] Viewer role restricted to strictly read-only access.
-- [x] Activity logs configured as tamper-resistant immutable append-only records.
+- [x] Activity logs secured via `protect_activity_log_integrity()` trigger forcing trusted server context.
 - [x] Threat modeling completed for IDOR, cross-tenant leaks, privilege escalation, and direct API bypass.
 
-### Section F: Financial Data & ROI Integrity
+### Section F: Financial Data & ROI Integrity (Phase 3.1 Hardened)
 - [x] Currency standardized strictly as Malaysian Ringgit (`MYR` / `RM`).
 - [x] Positive amount constraints enforced (`CHECK (amount > 0)`).
 - [x] Strict ROI accuracy rule preserved: Realized ROI calculated **only** from income marked `is_investment_return = true`.
 - [x] Constraint prevents non-income transactions from claiming investment return status.
-- [x] Project deletion preserves historical transactions via `ON DELETE SET NULL` -> General Operations (`"general-ops"`).
-- [x] Three high-performance SQL views designed (`view_overall_finance_kpis`, `view_project_finance_summary`, `view_monthly_financial_trends`).
+- [x] Project deletion preserves historical transactions via `handle_project_deletion_cleanup()`, setting `project_id = NULL` (General Operations / Shared).
+- [x] Three high-performance SQL views designed with `security_invoker = true` (`view_overall_finance_kpis`, `view_project_finance_summary`, `view_monthly_financial_trends`).
 - [x] AI Subscriptions decoupled from ledger to prevent double-counting.
 
-### Section G: Data Access & Application Integration
+### Section G: Data Access & Application Integration (Phase 3.1 Hardened)
 - [x] Clean directory structure designed under `apps/hub/src/` (`lib/supabase/`, `services/`, `hooks/`).
-- [x] Typed Supabase client singleton designed with `@supabase/ssr`.
+- [x] Standard `@supabase/supabase-js` browser client singleton designed with `localStorage` persistence.
+- [x] Next.js static export compatibility confirmed (`output: "export"`).
 - [x] Mapping table specified for existing in-memory state actions to future database service calls.
 - [x] Production safeguards designed to hide destructive "Reset Baseline" buttons in production environments.
 - [x] Sample data preserved as offline fixtures for local development and unit tests.

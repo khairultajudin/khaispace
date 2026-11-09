@@ -72,7 +72,7 @@ The audit was conducted by direct inspection of:
 
 | Entity | Current TypeScript Field | Data Type | Nullable / Optional | Description / Business Meaning | Proposed DB Target |
 |:---|:---|:---|:---:|:---|:---|
-| **HubProject** | `id` | `string` | No | Unique slug identifier (e.g. `biztrack`) | `projects.id` (UUID or slug PK) |
+| **HubProject** | `id` | `string` | No | Unique slug identifier (e.g. `biztrack`) | `projects.id` (UUID PK; slug in `projects.slug`) |
 | | `title` | `string` | No | Full human-readable project title | `projects.title` (varchar) |
 | | `category` | `string` | No | High-level classification (e.g. `SaaS / Business Automation`) | `projects.category` (varchar) |
 | | `status` | `ProjectStatus` | No | Lifecycle status | `projects.status` (enum `project_status`) |
@@ -196,7 +196,7 @@ The audit was conducted by direct inspection of:
 
 | Entity | Current TypeScript Field | Data Type | Nullable / Optional | Description / Business Meaning | Proposed DB Target |
 |:---|:---|:---|:---:|:---|:---|
-| **WorkspaceNoteItem** | `id` | `string` | No | Collision-resistant ID (`note-1`, `dec-1`) | `workspace_notes.id` (UUID or slug PK) |
+| **WorkspaceNoteItem** | `id` | `string` | No | Collision-resistant ID (`note-1`, `dec-1`) | `workspace_notes.id` (UUID PK; slug in `workspace_notes.slug`) |
 | | `type` | `NoteRecordType` | No | Record classification (`Note`, `Decision`) | `workspace_notes.type` (enum `note_record_type`) |
 | | `title` | `string` | No | Document title | `workspace_notes.title` (varchar) |
 | | `content` | `string` | No | Markdown content / working notes | `workspace_notes.content` (text) |

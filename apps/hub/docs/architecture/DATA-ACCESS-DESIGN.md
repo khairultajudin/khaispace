@@ -1,6 +1,6 @@
 # Khai Space Hub — Data Access Layer & Application Integration Design
-**Document Version:** 1.0.0  
-**Phase:** Phase 3 Architecture & Persistence Planning  
+**Document Version:** 1.1.0 (Phase 3.1 Standardized UUIDs)  
+**Phase:** Phase 3.1 Security & Architecture Correction Pass  
 **Application Target:** `apps/hub/`  
 **Working Branch:** `feature/khai-space-hub`  
 **Repository:** `khairultajudin/khaispace`
@@ -17,8 +17,8 @@ To transition Khai Space Hub from in-memory React session state to a persistent 
 apps/hub/src/
 ├── lib/
 │   └── supabase/
-│       ├── client.ts              # Browser Supabase client singleton
-│       └── server.ts              # Optional server-side utility (Edge Functions / SSR)
+│       ├── client.ts              # Browser Supabase client singleton (@supabase/supabase-js)
+│       └── session.ts             # Session management & token storage helpers
 ├── types/
 │   ├── dashboard.ts               # Existing domain model types (preserved & expanded)
 │   └── database.types.ts          # Auto-generated Supabase PostgreSQL schema types
@@ -45,14 +45,18 @@ apps/hub/src/
 
 ---
 
-## 2. Supabase Client Initialization & Environment Configuration
+## 2. Supabase Client Initialization (Static Export Compatible)
 
-### 2.1 Browser Client Singleton (`apps/hub/src/lib/supabase/client.ts`)
+In Next.js static export (`output: "export"`), there is no Node.js/Edge server runtime running at request time. Therefore, server cookies, server actions, and `@supabase/ssr` server helpers are unnecessary.
+
+The application initializes a standard, lightweight `@supabase/supabase-js` client configured for browser `localStorage` session persistence:
+
+### Browser Client Singleton (`apps/hub/src/lib/supabase/client.ts`)
 ```typescript
-import { createBrowserClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 import { Database } from '../../types/database.types';
 
-let clientInstance: ReturnType<typeof createBrowserClient<Database>> | null = null;
+let clientInstance: ReturnType<typeof createClient<Database>> | null = null;
 
 export function getSupabaseBrowserClient() {
   if (clientInstance) return clientInstance;
@@ -66,97 +70,51 @@ export function getSupabaseBrowserClient() {
     );
   }
 
-  clientInstance = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
+  clientInstance = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    },
+  });
+
   return clientInstance;
 }
 ```
 
-### 2.2 Environment Variables Standard (`.env.example`)
-```bash
-# Public variables exposed to static export client
-NEXT_PUBLIC_SUPABASE_URL="https://your-hub-project.supabase.co"
-NEXT_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOi..."
+---
 
-# Application configuration flags
-NEXT_PUBLIC_APP_ENV="production" # "development" | "production"
-NEXT_PUBLIC_ENABLE_DEMO_SEED="false" # "true" allowed only in local dev
-```
+## 3. Standardized UUID Mapping & Service Operations
+
+All entities are identified by standard PostgreSQL UUID primary keys. For engineering projects, human-readable slugs (`biztrack`, `smart-agro-telemetry`) are indexed uniquely within each workspace for clean URL deep-linking (`#project-<slug>`).
+
+### 3.1 Mapping Existing In-Memory State to Database Operations
+
+| Module | Current State Action | Future Database Service Call | Target PostgreSQL Query / View |
+|:---|:---|:---|:---|
+| **Workspaces** | Initial provisioning | `workspaceService.provisionWorkspace(name)` | `SELECT create_workspace_with_owner($1);` |
+| **Projects** | Load project catalog | `projectsService.getProjects(workspaceId)` | `SELECT * FROM projects WHERE workspace_id = $1 ORDER BY title ASC;` |
+| | Save new project | `projectsService.createProject(workspaceId, payload)`| `INSERT INTO projects (workspace_id, slug, title, category, ...) VALUES (...);` |
+| | Deep link resolution | `projectsService.getProjectBySlug(workspaceId, slug)`| `SELECT * FROM projects WHERE workspace_id = $1 AND slug = $2;` |
+| **Tasks** | Load task list | `tasksService.getTasks(workspaceId)` | `SELECT t.*, p.title as project_title, m.title as milestone_title FROM tasks t JOIN projects p ON t.project_id = p.id ...` |
+| | Toggle task status | `tasksService.updateTaskStatus(taskId, status)` | `UPDATE tasks SET status = $1, updated_at = now() WHERE id = $2;` |
+| **Milestones** | Load milestones | `tasksService.getMilestones(workspaceId)` | `SELECT m.*, p.title as project_title FROM milestones m JOIN projects p ON m.project_id = p.id ...` |
+| **Finance** | Overview KPI rollups | `financeService.getOverviewKPIs(workspaceId)` | `SELECT * FROM view_overall_finance_kpis WHERE workspace_id = $1;` |
+| | Project finance breakdown | `financeService.getProjectSummaries(workspaceId)` | `SELECT * FROM view_project_finance_summary WHERE workspace_id = $1;` |
+| | Monthly trend chart | `financeService.getMonthlyTrends(workspaceId)` | `SELECT * FROM view_monthly_financial_trends WHERE workspace_id = $1;` |
+| | Log transaction | `financeService.createTransaction(workspaceId, data)` | `INSERT INTO financial_transactions (workspace_id, amount, type, is_investment_return, ...) VALUES (...);` |
+| **Subscriptions** | Subscriptions directory | `subscriptionsService.getSubscriptions(workspaceId)` | `SELECT * FROM ai_subscriptions WHERE workspace_id = $1 ORDER BY product_name ASC;` |
+| **Notes** | Notes & Decisions load | `notesService.getNotes(workspaceId)` | `SELECT * FROM workspace_notes WHERE workspace_id = $1 ORDER BY updated_at DESC;` |
+| | Update decision status | `notesService.updateDecision(id, status, ...)` | `UPDATE workspace_notes SET decision_status = $1, ... WHERE id = $2;` |
+| **Members** | Roster list | `membersService.getMembers(workspaceId)` | `SELECT wm.*, p.full_name, p.email, p.bio FROM workspace_members wm JOIN profiles p ON wm.user_id = p.id ...` |
+| | Suspend member | `membersService.setMemberStatus(memberId, status)` | `UPDATE workspace_members SET status = $1 WHERE id = $2;` |
 
 ---
 
-## 3. Mapping Existing In-Memory State to Future Database Operations
+## 4. Production Safeguards Against Destructive Resets
 
-### 3.1 Projects Module
-| Current React State Action | Future Database Service Call | Target PostgreSQL Operation |
-|:---|:---|:---|
-| Initial load of `SAMPLE_PROJECTS` | `projectsService.getProjects(workspaceId)` | `SELECT * FROM projects WHERE workspace_id = $1 ORDER BY title ASC;` |
-| Filter by category or status | PostgREST URL filter in service | `SELECT * FROM projects WHERE workspace_id = $1 AND status = $2;` |
-| Save new project (`handleSave`) | `projectsService.createProject(workspaceId, payload)` | `INSERT INTO projects (workspace_id, title, category, ...) VALUES (...);` |
-| Edit existing project (`handleSave`) | `projectsService.updateProject(projectId, payload)` | `UPDATE projects SET title = $1, ... WHERE id = $2 AND workspace_id = $3;` |
-| Delete project | `projectsService.deleteProject(projectId)` | `DELETE FROM projects WHERE id = $1 AND workspace_id = $2;` |
-
-### 3.2 Tasks & Milestones Module
-| Current React State Action | Future Database Service Call | Target PostgreSQL Operation |
-|:---|:---|:---|
-| Initial load of `SAMPLE_TASKS` | `tasksService.getTasks(workspaceId)` | `SELECT t.*, p.title as project_title, m.title as milestone_title FROM tasks t JOIN projects p ...` |
-| Initial load of `SAMPLE_MILESTONES`| `tasksService.getMilestones(workspaceId)` | `SELECT m.*, p.title as project_title FROM milestones m JOIN projects p ...` |
-| Toggle task status (In Progress -> Completed)| `tasksService.updateTaskStatus(taskId, status)` | `UPDATE tasks SET status = $1, updated_at = now() WHERE id = $2;` |
-| Dynamic Overdue check | Computed dynamically on client vs local date | Query fetches raw `due_date`; client checks `due_date < today && status != 'Completed'` |
-| Create milestone | `tasksService.createMilestone(workspaceId, payload)` | `INSERT INTO milestones (workspace_id, project_id, title, target_date, ...) VALUES (...);` |
-
-### 3.3 Finance & ROI Module
-| Current React State Action | Future Database Service Call | Target PostgreSQL Operation |
-|:---|:---|:---|
-| Financial Overview KPI calculation | `financeService.getOverviewKPIs(workspaceId)` | `SELECT * FROM view_overall_finance_kpis WHERE workspace_id = $1;` |
-| Project Finance breakdown table | `financeService.getProjectSummaries(workspaceId)`| `SELECT * FROM view_project_finance_summary WHERE workspace_id = $1;` |
-| Monthly Cashflow trends chart | `financeService.getMonthlyTrends(workspaceId)` | `SELECT * FROM view_monthly_financial_trends WHERE workspace_id = $1;` |
-| Create transaction (`handleSave`) | `financeService.createTransaction(workspaceId, payload)`| `INSERT INTO financial_transactions (workspace_id, amount, type, is_investment_return, ...) VALUES (...);` |
-| Filter transactions (Income/Expense/Investment)| Service filter parameters | `SELECT * FROM financial_transactions WHERE workspace_id = $1 AND type = $2 ORDER BY transaction_date DESC;` |
-
-### 3.4 AI Subscriptions Module
-| Current React State Action | Future Database Service Call | Target PostgreSQL Operation |
-|:---|:---|:---|
-| Subscription directory load | `subscriptionsService.getSubscriptions(workspaceId)`| `SELECT * FROM ai_subscriptions WHERE workspace_id = $1 ORDER BY product_name ASC;` |
-| Active commitments & cost rollups | Client utility or database view | Computes monthly/annual equivalent using `getMonthlyEquivalent()` |
-| Upcoming renewals (< 30 days) | `subscriptionsService.getUpcomingRenewals(workspaceId)` | `SELECT * FROM ai_subscriptions WHERE workspace_id = $1 AND status = 'Active' AND next_billing_date <= (current_date + interval '30 days');` |
-| Add / edit subscription | `subscriptionsService.saveSubscription(workspaceId, data)`| `INSERT INTO ai_subscriptions ...` or `UPDATE ai_subscriptions ...` |
-
-### 3.5 Notes & Decisions Module
-| Current React State Action | Future Database Service Call | Target PostgreSQL Operation |
-|:---|:---|:---|
-| Notes & Decisions directory load | `notesService.getNotes(workspaceId)` | `SELECT * FROM workspace_notes WHERE workspace_id = $1 ORDER BY updated_at DESC;` |
-| Save new Note or Decision | `notesService.createNote(workspaceId, payload)` | `INSERT INTO workspace_notes (workspace_id, type, title, content, ...) VALUES (...);` |
-| Update existing record | `notesService.updateNote(noteId, payload)` | `UPDATE workspace_notes SET title = $1, content = $2 WHERE id = $3;` (Trigger prohibits type shift) |
-| Deep-link routing (`#note-<id>`, `#decision-<id>`)| `notesService.getNoteById(noteId)` | `SELECT * FROM workspace_notes WHERE id = $1 AND workspace_id = $2;` |
-
-### 3.6 Members & Settings Module
-| Current React State Action | Future Database Service Call | Target PostgreSQL Operation |
-|:---|:---|:---|
-| Member Directory roster load | `membersService.getMembers(workspaceId)` | `SELECT wm.*, p.full_name, p.email, p.bio FROM workspace_members wm JOIN profiles p ...` |
-| Update Owner profile | `membersService.updateProfile(userId, profileData)`| `UPDATE profiles SET full_name = $1, bio = $2 ... WHERE id = $3;` |
-| Suspend / Reactivate collaborator | `membersService.setMemberStatus(memberId, status)` | `UPDATE workspace_members SET status = $1 WHERE id = $2;` |
-| Update workspace parameters | `settingsService.updateSettings(workspaceId, data)` | `UPDATE workspaces SET name = $1, ... WHERE id = $2;` |
-| Toggle notification preferences | `settingsService.updateNotifications(workspaceId, flags)`| `UPDATE workspace_settings SET notification_task_reminders = $1 ... WHERE workspace_id = $2;` |
-
----
-
-## 4. Separation of Demo/Sample Data from Real Production Data
-
-### 4.1 The Production Danger of "Reset Baseline"
-In the existing prototype, every module features a "Reset Baseline" or "Reset to Defaults" button that immediately replaces in-memory state with sample datasets (`SAMPLE_PROJECTS`, `SAMPLE_TASKS`, etc.).
-
-**In a persistent database environment, allowing users to execute "Reset Baseline" would cause catastrophic accidental data loss by overwriting real business transactions, tasks, and collaborator records.**
-
-### 4.2 Production Safeguards & Demo Mode Architecture
-To prevent accidental destruction of production data:
-1. **Environment Flag:**
-   ```typescript
-   export const IS_DEMO_MODE = process.env.NEXT_PUBLIC_ENABLE_DEMO_SEED === 'true';
-   ```
-2. **Conditional Rendering of Reset Controls:**
-   - In production (`NEXT_PUBLIC_APP_ENV="production"`), the "Reset Baseline" buttons in module headers and settings views are **completely hidden from the UI**.
-   - In local development (`NEXT_PUBLIC_APP_ENV="development"`), the button is clearly badged: `Development: Seed Sample Data` and calls an isolated development seeding function.
-3. **Empty State Architecture:**
-   - When a new real workspace is initialized, modules display elegant, production-grade empty states with actionable "Create your first task", "Add project", or "Record transaction" callouts rather than injecting fictional placeholder rows.
-4. **Permanent Offline Demonstration:**
-   - `sample-dashboard-data.ts` remains permanently in the repository as a mock fixtures file for offline unit tests, Storybook/component development, and automated CI pipelines.
+In production environments (`NEXT_PUBLIC_APP_ENV="production"`):
+- All "Reset Baseline" and "Reset to Defaults" buttons are **permanently removed from the UI DOM**.
+- The database schema enforces that only local development instances with `NEXT_PUBLIC_ENABLE_DEMO_SEED="true"` can trigger the mock seed script (`seed-draft.sql`).
+- Brand-new production workspaces display elegant empty states with explicit creation prompts rather than sample mock rows.

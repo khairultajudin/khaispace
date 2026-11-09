@@ -1,6 +1,6 @@
 # Khai Space Hub — Architecture Decision Records (ADR)
-**Document Version:** 1.0.0  
-**Phase:** Phase 3 Architecture & Persistence Planning  
+**Document Version:** 1.1.0 (Phase 3.1 Security Hardened)  
+**Phase:** Phase 3.1 Security & Architecture Correction Pass  
 **Application Target:** `apps/hub/`  
 **Working Branch:** `feature/khai-space-hub`  
 **Repository:** `khairultajudin/khaispace`
@@ -19,6 +19,10 @@
 - [ADR-008: Soft Deletion vs Hard Deletion Policy across Hub Entities](#adr-008-soft-deletion-vs-hard-deletion-policy-across-hub-entities)
 - [ADR-009: Invitation-Only Workspace Membership (No Public Signup)](#adr-009-invitation-only-workspace-membership-no-public-signup)
 - [ADR-010: Separation of Development Sample Data from Production Storage](#adr-010-separation-of-development-sample-data-from-production-storage)
+- [ADR-011: Enforcing Single Owner & Prohibiting Admin Privilege Escalation](#adr-011-enforcing-single-owner--prohibiting-admin-privilege-escalation)
+- [ADR-012: Database-Level Cross-Workspace Relational Integrity & Safe Cleanup](#adr-012-database-level-cross-workspace-relational-integrity--safe-cleanup)
+- [ADR-013: SQL Views Security Hardening via Security Invoker Mode](#adr-013-sql-views-security-hardening-via-security-invoker-mode)
+- [ADR-014: Standardized UUID Primary Keys Across All Core Entities](#adr-014-standardized-uuid-primary-keys-across-all-core-entities)
 
 ---
 
@@ -98,7 +102,7 @@
 - **Status:** **ACCEPTED**
 - **Date:** 2026-11-09
 - **Context:** Enforcing RLS on `workspace_members` by querying `workspace_members` triggers PostgreSQL infinite policy recursion.
-- **Decision:** Implement `is_workspace_member(ws_id)` and `get_user_workspace_role(ws_id)` as `SECURITY DEFINER` functions with fixed `search_path = public, auth`.
+- **Decision:** Implement `is_workspace_member(ws_id)` and `get_user_workspace_role(ws_id)` as `SECURITY DEFINER` functions with fixed `search_path = public, auth, pg_temp`. Revoke anonymous execution privileges.
 - **Consequences:**
   - *Positive:* Completely bypasses the recursive policy trap; caches results per transaction using `STABLE`; protects against search-path hijacking.
   - *Negative:* Helper functions must be maintained with strict security hygiene.
@@ -111,7 +115,7 @@
 - **Date:** 2026-11-09
 - **Context:** Different data entities require different lifecycle and deletion behaviors.
 - **Decision:** Adopt a hybrid deletion policy:
-  - **Financial Transactions:** Hard deletion restricted to Admins/Owners. Deleting a project triggers `ON DELETE SET NULL`, preserving historical transactions under General Operations (`"general-ops"`).
+  - **Financial Transactions:** Hard deletion restricted to Admins/Owners. Deleting a project triggers `handle_project_deletion_cleanup()`, setting `project_id = NULL` and preserving historical transactions under General Operations (Unassigned / Shared).
   - **Projects, Milestones, Tasks:** Hard deletion with cascade for subordinate tasks/milestones.
   - **AI Subscriptions:** Soft state transition (`status = 'Cancelled'`) preferred over physical deletion to preserve renewal history.
   - **Activity Logs:** Append-only; `UPDATE` and `DELETE` permanently blocked via RLS.
@@ -142,3 +146,55 @@
   - *Positive:* Eliminates catastrophic accidental data wipeouts in production; retains offline mock data for testing and development.
   - *Negative:* Developers must ensure empty state UI components are fully designed and accessible.
 - **Alternatives Considered:** Allowing reset with a password confirmation (rejected: too dangerous to leave destructive sample-override endpoints in production code).
+
+---
+
+## ADR-011: Enforcing Single Owner & Prohibiting Admin Privilege Escalation
+- **Status:** **ACCEPTED**
+- **Date:** 2026-11-09 (Phase 3.1)
+- **Context:** In Phase 3, the RLS policy `Admins manage roster FOR ALL` inadvertently allowed an Administrator to promote themselves to Owner, assign the Owner role to another user, or modify the Owner's row.
+- **Decision:** 
+  1. Add a partial unique index: `CREATE UNIQUE INDEX idx_workspace_single_owner ON workspace_members(workspace_id) WHERE (role = 'Owner')`.
+  2. Implement granular RLS policies on `workspace_members` prohibiting Administrators from inserting `role = 'Owner'`, modifying their own role (`user_id != auth.uid()`), or altering the Owner.
+  3. Prohibit ownership transfer in this version.
+  4. Implement an atomic, security-definer function `create_workspace_with_owner()` for initial setup.
+- **Consequences:**
+  - *Positive:* Eliminates administrative privilege escalation, split ownership, and lockout vulnerabilities.
+  - *Negative:* Ownership changes require database administrator intervention if ever needed in the future.
+- **Alternatives Considered:** Multi-owner consensus model (rejected: inappropriate for a private executive command center owned by Khai).
+
+---
+
+## ADR-012: Database-Level Cross-Workspace Relational Integrity & Safe Cleanup
+- **Status:** **ACCEPTED**
+- **Date:** 2026-11-09 (Phase 3.1)
+- **Context:** Foreign keys on `project_id` alone allowed records in Workspace A to point to projects in Workspace B. Furthermore, composite foreign keys with `ON DELETE SET NULL` can fail in PostgreSQL if they attempt to nullify `workspace_id`.
+- **Decision:**
+  1. Add composite unique constraints on parent entities: `projects(workspace_id, id)` and `milestones(workspace_id, id)`.
+  2. Use composite foreign keys for tight child entities (`milestones -> projects`, `tasks -> projects`, `tasks -> milestones`) with `ON DELETE CASCADE`.
+  3. For optional associations (`financial_transactions`, `ai_subscriptions`, `workspace_notes`), implement an explicit validation trigger `validate_project_workspace_integrity()` and an atomic cleanup trigger `handle_project_deletion_cleanup()`.
+- **Consequences:**
+  - *Positive:* Prevents cross-workspace data leakage at the database engine level; preserves financial history when projects are deleted without violating `NOT NULL` constraints.
+  - *Negative:* Slight additional trigger overhead on project deletion.
+
+---
+
+## ADR-013: SQL Views Security Hardening via Security Invoker Mode
+- **Status:** **ACCEPTED**
+- **Date:** 2026-11-09 (Phase 3.1)
+- **Context:** By default in PostgreSQL, SQL views run with view-owner privileges (`security_definer` behavior), which could allow users querying PostgREST views to bypass table-level RLS.
+- **Decision:** Create all three financial views (`view_overall_finance_kpis`, `view_project_finance_summary`, `view_monthly_financial_trends`) with `WITH (security_invoker = true)` and revoke permissions from `anon` and `public`.
+- **Consequences:**
+  - *Positive:* Guarantees that view queries execute under the identity and RLS policies of the authenticated caller (`auth.uid()`), preventing cross-tenant financial aggregation leaks.
+  - *Negative:* Requires PostgreSQL 15+ (standard in all modern Supabase clusters).
+
+---
+
+## ADR-014: Standardized UUID Primary Keys Across All Core Entities
+- **Status:** **ACCEPTED**
+- **Date:** 2026-11-09 (Phase 3.1)
+- **Context:** Phase 3 documentation claimed UUID primary keys, but the SQL draft utilized client-prefixed varchar IDs (`task-1`, `tx-01`, `biztrack`).
+- **Decision:** Standardize all table primary keys to `uuid DEFAULT gen_random_uuid()`. For projects, introduce a separate workspace-scoped `slug varchar(50) NOT NULL` for clean human URLs and deep linking.
+- **Consequences:**
+  - *Positive:* 100% internal consistency between schema DDL and architecture documentation; eliminates cross-workspace ID collisions; follows PostgreSQL and Supabase best practices.
+  - *Negative:* Seed data and frontend services must map client slugs to UUIDs.

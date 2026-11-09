@@ -99,7 +99,7 @@ Significant workspace actions automatically generate records in `public.activity
 - **Workspace Settings:** Configuration adjustments (timezone, name, notification toggles).
 
 ### 4.2 Security Constraints on `activity_logs`
-- **Write Policy:** Authenticated members can append (`INSERT`) audit records.
+- **Write Policy & Anti-Forgery:** Authenticated members can append (`INSERT`) audit records scoped to their `workspace_id`. The database trigger `protect_activity_log_integrity()` automatically overrides `user_id` with `auth.uid()` and `created_at` with server `now()`, preventing client impersonation or timestamp manipulation.
 - **Read Policy:** Active workspace members can read (`SELECT`) logs scoped to their `workspace_id`.
 - **Tamper Resistance:** `UPDATE` and `DELETE` operations are **permanently disabled via RLS**, guaranteeing an immutable historical ledger.
 
