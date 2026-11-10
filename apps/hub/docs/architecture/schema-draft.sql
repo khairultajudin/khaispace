@@ -1,14 +1,14 @@
 -- ==============================================================================
 -- KHAI SPACE HUB — PROPOSED RELATIONAL DATABASE SCHEMA (DRAFT ONLY)
 -- ==============================================================================
--- Document Version: 1.2.0 (Phase 3.2 Integrity & Provisioning Safeguards)
--- Phase: Phase 3.2 Final Database Integrity & Security Correction
+-- Document Version: 1.3.0 (Phase 3.3 Security & Integrity Validation Finalized)
+-- Phase: Phase 3.3 Final SQL Validation & Security Closure
 -- Application Target: apps/hub/
 -- Working Branch: feature/khai-space-hub
 --
 -- CAUTION / SAFETY WARNING:
 -- THIS IS AN ARCHITECTURAL DRAFT SCRIPT FOR PLANNING AND STATIC VALIDATION ONLY.
--- DO NOT EXECUTE THIS SCRIPT AGAINST A LIVE DATABASE OR REMOTE INSTANCE IN PHASE 3.2.
+-- DO NOT EXECUTE THIS SCRIPT AGAINST A LIVE DATABASE OR REMOTE INSTANCE IN PHASE 3.3.
 -- ==============================================================================
 
 -- ------------------------------------------------------------------------------
@@ -361,6 +361,7 @@ CREATE INDEX IF NOT EXISTS idx_subs_ws ON public.ai_subscriptions(workspace_id, 
 CREATE INDEX IF NOT EXISTS idx_subs_renew ON public.ai_subscriptions(workspace_id, next_billing_date);
 CREATE INDEX IF NOT EXISTS idx_notes_ws ON public.workspace_notes(workspace_id, type);
 CREATE INDEX IF NOT EXISTS idx_activity_ws ON public.activity_logs(workspace_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_invitations_token ON public.workspace_invitations(token_hash) WHERE (status = 'pending');
 
 -- ------------------------------------------------------------------------------
 -- 5. CROSS-WORKSPACE REFERENTIAL INTEGRITY TRIGGERS
@@ -480,6 +481,12 @@ CREATE TRIGGER trg_milestone_deletion_cleanup
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_milestone_deletion_cleanup();
 
+-- Revoke RPC execution privileges from trigger functions
+REVOKE ALL ON FUNCTION public.validate_project_workspace_integrity() FROM public, anon, authenticated;
+REVOKE ALL ON FUNCTION public.validate_subscription_project_workspace_integrity() FROM public, anon, authenticated;
+REVOKE ALL ON FUNCTION public.handle_project_deletion_cleanup() FROM public, anon, authenticated;
+REVOKE ALL ON FUNCTION public.handle_milestone_deletion_cleanup() FROM public, anon, authenticated;
+
 -- ------------------------------------------------------------------------------
 -- 6. SECURITY DEFINER HELPER FUNCTIONS (Anti-Recursion RLS Engine)
 -- ------------------------------------------------------------------------------
@@ -555,10 +562,31 @@ DECLARE
   user_full_name varchar(100);
   user_display_name varchar(50);
   initials varchar(4);
+  raw_email varchar(255);
 BEGIN
-  user_full_name := COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1));
-  user_display_name := COALESCE(NEW.raw_user_meta_data->>'display_name', split_part(NEW.email, '@', 1));
+  -- Derive email safely with fallback for edge auth providers
+  raw_email := LOWER(TRIM(COALESCE(NEW.email, '')));
+  IF raw_email = '' THEN
+    raw_email := NEW.id::text || '@placeholder.khaispace.com';
+  END IF;
+
+  -- Treat raw_user_meta_data as untrusted input; clean and sanitize
+  user_full_name := COALESCE(
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'full_name'), ''),
+    NULLIF(TRIM(split_part(raw_email, '@', 1)), ''),
+    'Member'
+  );
+
+  user_display_name := COALESCE(
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'display_name'), ''),
+    NULLIF(TRIM(split_part(raw_email, '@', 1)), ''),
+    'Member'
+  );
+
   initials := UPPER(SUBSTRING(user_full_name FROM 1 FOR 2));
+  IF initials IS NULL OR LENGTH(initials) = 0 THEN
+    initials := 'KS';
+  END IF;
 
   INSERT INTO public.profiles (
     id,
@@ -570,7 +598,7 @@ BEGIN
     NEW.id,
     user_full_name,
     user_display_name,
-    NEW.email,
+    raw_email,
     initials
   )
   ON CONFLICT (id) DO NOTHING;
@@ -578,6 +606,16 @@ BEGIN
   RETURN NEW;
 END;
 $$;
+
+-- Trigger installation on auth.users (Supabase Auth Hook)
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.handle_new_user();
+
+-- Trigger function should never be callable as public RPC
+REVOKE ALL ON FUNCTION public.handle_new_user() FROM public, anon, authenticated;
 
 -- 7.2 Atomic Workspace & Owner Provisioning Function (Strictly 1 Owner Created)
 CREATE OR REPLACE FUNCTION public.create_workspace_with_owner(
@@ -594,6 +632,7 @@ DECLARE
   new_ws_id uuid;
   caller_id uuid := auth.uid();
   auth_user_record record;
+  caller_email varchar(255);
 BEGIN
   IF caller_id IS NULL THEN
     RAISE EXCEPTION 'Authentication required: caller must be authenticated.';
@@ -608,6 +647,8 @@ BEGIN
       RAISE EXCEPTION 'Authentication record not found for caller in auth.users.';
     END IF;
 
+    caller_email := LOWER(TRIM(COALESCE(auth_user_record.email, caller_id::text || '@placeholder.khaispace.com')));
+
     INSERT INTO public.profiles (
       id,
       full_name,
@@ -616,10 +657,10 @@ BEGIN
       avatar_initials
     ) VALUES (
       caller_id,
-      COALESCE(auth_user_record.raw_user_meta_data->>'full_name', split_part(auth_user_record.email, '@', 1)),
-      COALESCE(auth_user_record.raw_user_meta_data->>'display_name', split_part(auth_user_record.email, '@', 1)),
-      auth_user_record.email,
-      UPPER(SUBSTRING(COALESCE(auth_user_record.raw_user_meta_data->>'full_name', split_part(auth_user_record.email, '@', 1)) FROM 1 FOR 2))
+      COALESCE(NULLIF(TRIM(auth_user_record.raw_user_meta_data->>'full_name'), ''), NULLIF(TRIM(split_part(caller_email, '@', 1)), ''), 'Owner'),
+      COALESCE(NULLIF(TRIM(auth_user_record.raw_user_meta_data->>'display_name'), ''), NULLIF(TRIM(split_part(caller_email, '@', 1)), ''), 'Owner'),
+      caller_email,
+      UPPER(SUBSTRING(COALESCE(NULLIF(TRIM(auth_user_record.raw_user_meta_data->>'full_name'), ''), 'KT') FROM 1 FOR 2))
     )
     ON CONFLICT (id) DO NOTHING;
   END IF;
@@ -662,51 +703,60 @@ BEGIN
     RAISE EXCEPTION 'Authentication required: caller must be authenticated.';
   END IF;
 
-  -- Retrieve verified caller email
-  caller_email := LOWER(auth.jwt()->>'email');
-  IF caller_email IS NULL THEN
-    SELECT LOWER(email) INTO caller_email FROM auth.users WHERE id = caller_id;
+  -- Retrieve verified caller email from JWT claim or auth.users
+  caller_email := LOWER(TRIM(COALESCE(auth.jwt()->>'email', '')));
+  IF caller_email = '' THEN
+    SELECT LOWER(TRIM(COALESCE(email, ''))) INTO caller_email FROM auth.users WHERE id = caller_id;
+  END IF;
+
+  IF caller_email IS NULL OR caller_email = '' THEN
+    RAISE EXCEPTION 'Authentication required: caller email could not be verified from trusted auth session.';
+  END IF;
+
+  IF p_token IS NULL OR TRIM(p_token) = '' THEN
+    RAISE EXCEPTION 'Invalid invitation token: token cannot be empty.';
   END IF;
 
   -- Hash incoming token using sha256
-  hashed_input := encode(digest(p_token, 'sha256'), 'hex');
+  hashed_input := encode(digest(TRIM(p_token), 'sha256'), 'hex');
 
-  -- Locate active invitation
+  -- Locate active invitation with row locking (prevents concurrent double-acceptance)
   SELECT * INTO inv_record
   FROM public.workspace_invitations
   WHERE token_hash = hashed_input
     AND status = 'pending'
-    AND expires_at > now();
+    AND expires_at > now()
+  FOR UPDATE;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Invalid, expired, or already used invitation token.';
   END IF;
 
-  -- Verify recipient email matches authenticated caller
-  IF LOWER(inv_record.email) != caller_email THEN
+  -- NULL-safe email match between invitation email and verified session email
+  IF LOWER(TRIM(inv_record.email)) IS DISTINCT FROM caller_email THEN
     RAISE EXCEPTION 'Identity mismatch: invitation was sent to % but authenticated user is %.',
       inv_record.email, caller_email;
   END IF;
 
-  -- Ensure profile exists
-  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = caller_id) THEN
-    INSERT INTO public.profiles (id, full_name, display_name, email, avatar_initials)
-    VALUES (
-      caller_id,
-      split_part(caller_email, '@', 1),
-      split_part(caller_email, '@', 1),
-      caller_email,
-      UPPER(SUBSTRING(split_part(caller_email, '@', 1) FROM 1 FOR 2))
-    ) ON CONFLICT (id) DO NOTHING;
-  END IF;
-
-  -- Check if already a member
+  -- Check if caller is already an active member of this workspace
   IF EXISTS (
     SELECT 1 FROM public.workspace_members 
     WHERE workspace_id = inv_record.workspace_id AND user_id = caller_id
   ) THEN
-    UPDATE public.workspace_invitations SET status = 'accepted' WHERE id = inv_record.id;
-    RAISE EXCEPTION 'User is already a member of this workspace.';
+    -- Deterministic rejection without modifying invitation status or leaving partial side-effects
+    RAISE EXCEPTION 'User is already an active member of workspace %.', inv_record.workspace_id;
+  END IF;
+
+  -- Ensure profile exists (Self-healing defense-in-depth)
+  IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = caller_id) THEN
+    INSERT INTO public.profiles (id, full_name, display_name, email, avatar_initials)
+    VALUES (
+      caller_id,
+      COALESCE(NULLIF(TRIM(split_part(caller_email, '@', 1)), ''), 'Member'),
+      COALESCE(NULLIF(TRIM(split_part(caller_email, '@', 1)), ''), 'Member'),
+      caller_email,
+      UPPER(SUBSTRING(COALESCE(NULLIF(TRIM(split_part(caller_email, '@', 1)), ''), 'KS') FROM 1 FOR 2))
+    ) ON CONFLICT (id) DO NOTHING;
   END IF;
 
   -- Insert membership atomically (Direct client INSERT is disabled)
@@ -714,7 +764,7 @@ BEGIN
   VALUES (inv_record.workspace_id, caller_id, inv_record.role, 'Active', inv_record.invited_by)
   RETURNING id INTO new_member_id;
 
-  -- Mark invitation as accepted
+  -- Mark invitation as accepted atomically while holding row lock
   UPDATE public.workspace_invitations
   SET status = 'accepted'
   WHERE id = inv_record.id;
@@ -832,11 +882,17 @@ CREATE TRIGGER trg_workspace_deletion_auth
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_workspace_deletion_authorization();
 
--- 8.3 Membership Immutability Trigger (Protects user_id, workspace_id, role)
+REVOKE ALL ON FUNCTION public.handle_workspace_deletion_authorization() FROM public, anon, authenticated;
+
+-- 8.3 Membership Immutability Trigger (Protects user_id, workspace_id, role boundaries)
 CREATE OR REPLACE FUNCTION public.protect_workspace_members_immutability()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth, pg_temp
 AS $$
+DECLARE
+  caller_role public.member_role;
 BEGIN
   -- 1. user_id and workspace_id are globally immutable
   IF NEW.user_id != OLD.user_id THEN
@@ -867,6 +923,17 @@ BEGIN
     RAISE EXCEPTION 'Security Policy Violation: The workspace Owner cannot be suspended or deactivated.';
   END IF;
 
+  -- 6. Enforce Administrator Boundaries: Admins cannot manage other Admins or promote to Admin
+  caller_role := public.get_user_workspace_role(OLD.workspace_id);
+  IF caller_role = 'Administrator' THEN
+    IF OLD.role = 'Administrator' THEN
+      RAISE EXCEPTION 'Security Policy Violation: Administrators cannot modify another Administrator.';
+    END IF;
+    IF NEW.role = 'Administrator' AND OLD.role != 'Administrator' THEN
+      RAISE EXCEPTION 'Security Policy Violation: Administrators cannot promote members to Administrator.';
+    END IF;
+  END IF;
+
   RETURN NEW;
 END;
 $$;
@@ -877,29 +944,43 @@ CREATE TRIGGER trg_protect_members_immutability
   FOR EACH ROW
   EXECUTE FUNCTION public.protect_workspace_members_immutability();
 
--- 8.4 Owner Deletion Protection Trigger
-CREATE OR REPLACE FUNCTION public.protect_workspace_owner()
+REVOKE ALL ON FUNCTION public.protect_workspace_members_immutability() FROM public, anon, authenticated;
+
+-- 8.4 Owner & Administrator Deletion Protection Trigger
+CREATE OR REPLACE FUNCTION public.protect_workspace_members_deletion()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth, pg_temp
 AS $$
+DECLARE
+  caller_role public.member_role;
 BEGIN
   -- Allow Owner deletion ONLY during authorized parent workspace deletion
-  IF TG_OP = 'DELETE' AND OLD.role = 'Owner' THEN
+  IF OLD.role = 'Owner' THEN
     IF current_setting('app.deleting_workspace_id', true) = OLD.workspace_id::text THEN
       RETURN OLD;
     END IF;
     RAISE EXCEPTION 'Security Policy Violation: The workspace Owner cannot be removed.';
   END IF;
 
+  -- Prohibit Administrators from deleting another Administrator or themselves
+  caller_role := public.get_user_workspace_role(OLD.workspace_id);
+  IF caller_role = 'Administrator' AND OLD.role = 'Administrator' THEN
+    RAISE EXCEPTION 'Security Policy Violation: Administrators cannot remove another Administrator.';
+  END IF;
+
   RETURN OLD;
 END;
 $$;
 
-DROP TRIGGER IF EXISTS trg_protect_owner ON public.workspace_members;
-CREATE TRIGGER trg_protect_owner
+DROP TRIGGER IF EXISTS trg_protect_members_deletion ON public.workspace_members;
+CREATE TRIGGER trg_protect_members_deletion
   BEFORE DELETE ON public.workspace_members
   FOR EACH ROW
-  EXECUTE FUNCTION public.protect_workspace_owner();
+  EXECUTE FUNCTION public.protect_workspace_members_deletion();
+
+REVOKE ALL ON FUNCTION public.protect_workspace_members_deletion() FROM public, anon, authenticated;
 
 -- 8.5 Note Record Type Immutability
 CREATE OR REPLACE FUNCTION public.prevent_note_type_change()
@@ -1038,45 +1119,88 @@ CREATE POLICY "Users insert own profile" ON public.profiles
 CREATE POLICY "Users update own profile" ON public.profiles
   FOR UPDATE USING (id = auth.uid()) WITH CHECK (id = auth.uid());
 
--- 9.3 Workspace Members
+-- 9.3 Workspace Members (Strict Owner & Admin Separation)
 CREATE POLICY "Members view roster" ON public.workspace_members
   FOR SELECT USING (public.is_workspace_member(workspace_id));
 
 -- NOTE: Direct INSERT on workspace_members is intentionally omitted.
 -- Memberships are created ONLY via create_workspace_with_owner() or accept_workspace_invitation().
 
--- UPDATE: Admins cannot change their own role, cannot set role to Owner, cannot touch Owner
+-- UPDATE 1: Owners can update Administrator, Member, and Viewer records
+CREATE POLICY "Owners update roster" ON public.workspace_members
+  FOR UPDATE USING (
+    public.get_user_workspace_role(workspace_id) = 'Owner' AND 
+    role != 'Owner'
+  ) WITH CHECK (
+    public.get_user_workspace_role(workspace_id) = 'Owner' AND 
+    role != 'Owner'
+  );
+
+-- UPDATE 2: Administrators can ONLY update Member and Viewer records (cannot touch Owner or Admin, cannot self-update)
 CREATE POLICY "Admins update roster" ON public.workspace_members
   FOR UPDATE USING (
-    public.is_workspace_admin_or_owner(workspace_id) AND 
-    role != 'Owner' AND
+    public.get_user_workspace_role(workspace_id) = 'Administrator' AND 
+    role IN ('Member', 'Viewer') AND
     user_id != auth.uid()
   ) WITH CHECK (
-    public.is_workspace_admin_or_owner(workspace_id) AND 
-    role != 'Owner' AND
+    public.get_user_workspace_role(workspace_id) = 'Administrator' AND 
+    role IN ('Member', 'Viewer') AND
     user_id != auth.uid()
   );
 
--- DELETE: Admins and Owners can remove members, but CANNOT remove Owner or themselves
-CREATE POLICY "Admins remove roster" ON public.workspace_members
+-- DELETE 1: Owners can remove Administrator, Member, and Viewer records
+CREATE POLICY "Owners remove roster" ON public.workspace_members
   FOR DELETE USING (
-    public.is_workspace_admin_or_owner(workspace_id) AND 
-    role != 'Owner' AND
-    (public.get_user_workspace_role(workspace_id) = 'Owner' OR role IN ('Member', 'Viewer'))
+    public.get_user_workspace_role(workspace_id) = 'Owner' AND 
+    role != 'Owner'
   );
 
--- 9.4 Workspace Invitations
+-- DELETE 2: Administrators can ONLY remove Member and Viewer records (cannot remove Owner, Admin, or themselves)
+CREATE POLICY "Admins remove roster" ON public.workspace_members
+  FOR DELETE USING (
+    public.get_user_workspace_role(workspace_id) = 'Administrator' AND 
+    role IN ('Member', 'Viewer') AND
+    user_id != auth.uid()
+  );
+
+-- 9.4 Workspace Invitations (Owner vs Administrator Role Control)
 CREATE POLICY "Admins read invitations" ON public.workspace_invitations
   FOR SELECT USING (public.is_workspace_admin_or_owner(workspace_id));
 
+-- Owners can invite Administrators, Members, and Viewers
+CREATE POLICY "Owners create invitations" ON public.workspace_invitations
+  FOR INSERT WITH CHECK (
+    public.get_user_workspace_role(workspace_id) = 'Owner' AND 
+    role IN ('Administrator', 'Member', 'Viewer')
+  );
+
+-- Administrators can ONLY invite Members and Viewers (cannot invite another Administrator)
 CREATE POLICY "Admins create invitations" ON public.workspace_invitations
-  FOR INSERT WITH CHECK (public.is_workspace_admin_or_owner(workspace_id) AND role != 'Owner');
+  FOR INSERT WITH CHECK (
+    public.get_user_workspace_role(workspace_id) = 'Administrator' AND 
+    role IN ('Member', 'Viewer')
+  );
+
+CREATE POLICY "Owners update invitations" ON public.workspace_invitations
+  FOR UPDATE USING (public.get_user_workspace_role(workspace_id) = 'Owner');
 
 CREATE POLICY "Admins update invitations" ON public.workspace_invitations
-  FOR UPDATE USING (public.is_workspace_admin_or_owner(workspace_id));
+  FOR UPDATE USING (
+    public.get_user_workspace_role(workspace_id) = 'Administrator' AND 
+    role IN ('Member', 'Viewer')
+  ) WITH CHECK (
+    public.get_user_workspace_role(workspace_id) = 'Administrator' AND 
+    role IN ('Member', 'Viewer')
+  );
+
+CREATE POLICY "Owners delete invitations" ON public.workspace_invitations
+  FOR DELETE USING (public.get_user_workspace_role(workspace_id) = 'Owner');
 
 CREATE POLICY "Admins delete invitations" ON public.workspace_invitations
-  FOR DELETE USING (public.is_workspace_admin_or_owner(workspace_id));
+  FOR DELETE USING (
+    public.get_user_workspace_role(workspace_id) = 'Administrator' AND 
+    role IN ('Member', 'Viewer')
+  );
 
 -- 9.5 Workspace Settings
 CREATE POLICY "Members read settings" ON public.workspace_settings

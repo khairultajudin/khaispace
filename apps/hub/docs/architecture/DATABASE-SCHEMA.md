@@ -1,6 +1,6 @@
 # Khai Space Hub — Normalized PostgreSQL Database Schema
-**Document Version:** 1.2.0 (Phase 3.2 Integrity & Provisioning Safeguards)  
-**Phase:** Phase 3.2 Final Database Integrity & Security Correction  
+**Document Version:** 1.3.0 (Phase 3.3 Security & Integrity Validation Finalized)  
+**Phase:** Phase 3.3 Final SQL Validation & Security Closure  
 **Application Target:** `apps/hub/`  
 **Working Branch:** `feature/khai-space-hub`  
 **Repository:** `khairultajudin/khaispace`
@@ -27,6 +27,7 @@ The Khai Space Hub schema is engineered to production standards of relational no
    - On project deletion, `handle_project_deletion_cleanup()` safely unassigns these three relationships (setting them to `NULL`) without deleting historical financial ledgers or notes.
 5. **Exact Decimal Monetary Representation:** All monetary amounts are stored as `numeric(12, 2)`. Floating-point types are strictly prohibited.
 6. **Automatic Timestamp Maintenance:** All 10 mutable tables implement active triggers executing `handle_updated_at()`.
+7. **Strict Admin & Owner Boundary Enforcement:** Database triggers and RLS policies guarantee that Administrators cannot modify other Administrators, promote anyone to Administrator, or alter the Owner.
 
 ---
 
@@ -34,7 +35,7 @@ The Khai Space Hub schema is engineered to production standards of relational no
 
 ```mermaid
 erDiagram
-    auth_users ||--|| profiles : "identifies (1:1)"
+    auth_users ||--|| profiles : "identifies (1:1 via trigger)"
     workspaces ||--o{ workspace_members : "rosters"
     profiles ||--o{ workspace_members : "belongs_to"
     workspaces ||--o{ workspace_invitations : "invites"
@@ -92,6 +93,7 @@ erDiagram
   - `avatar_initials varchar(4) NOT NULL DEFAULT 'KT'`
   - `created_at timestamptz NOT NULL DEFAULT now()`
   - `updated_at timestamptz NOT NULL DEFAULT now()` (Trigger installed)
+- **Auto-Provisioning:** Created automatically by `handle_new_user()` via `on_auth_user_created` trigger on `auth.users`.
 
 ---
 
@@ -111,8 +113,8 @@ erDiagram
   - `uq_workspace_member UNIQUE (workspace_id, user_id)`
   - `idx_workspace_single_owner UNIQUE (workspace_id) WHERE (role = 'Owner')`
 - **Triggers:**
-  - `protect_workspace_members_immutability()`: blocks changes to `user_id`, `workspace_id`, self-promotions, and Owner role assignments.
-  - `protect_workspace_owner()`: blocks deleting the Owner record unless parent workspace is being deleted by Owner.
+  - `protect_workspace_members_immutability()`: blocks changes to `user_id`, `workspace_id`, role self-promotions, Owner role assignments, and prevents Administrators from modifying other Administrators or promoting to Administrator.
+  - `protect_workspace_members_deletion()`: blocks deleting the Owner record (unless during authorized workspace teardown) and blocks Administrators from deleting other Administrators.
 
 ---
 
@@ -128,8 +130,12 @@ erDiagram
   - `invited_by uuid NOT NULL REFERENCES profiles(id) ON DELETE CASCADE`
   - `expires_at timestamptz NOT NULL DEFAULT (now() + interval '7 days')`
   - `created_at timestamptz NOT NULL DEFAULT now()`
-- **Constraints:**
+- **Constraints & Indexes:**
   - `chk_invitation_role CHECK (role != 'Owner')`
+  - `idx_invitations_token ON (token_hash) WHERE (status = 'pending')`
+- **Role Control:**
+  - Only Owners can create Administrator invitations.
+  - Administrators can only invite Members and Viewers.
 
 ---
 

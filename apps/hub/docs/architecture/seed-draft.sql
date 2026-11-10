@@ -1,8 +1,8 @@
 -- ==============================================================================
 -- KHAI SPACE HUB — DEVELOPMENT SEED DATA (MOCK / DEVELOPMENT ONLY)
 -- ==============================================================================
--- Document Version: 1.2.0 (Phase 3.2 Relational Seed & Integrity)
--- Phase: Phase 3.2 Final Database Integrity & Security Correction
+-- Document Version: 1.3.0 (Phase 3.3 Valid UUIDs & Development Auth Alignment)
+-- Phase: Phase 3.3 Final SQL Validation & Security Closure
 -- Application Target: apps/hub/
 -- Working Branch: feature/khai-space-hub
 --
@@ -17,15 +17,16 @@
 -- For local development or isolated pgTAP testing environments, mock users MUST
 -- be created in `auth.users` prior to inserting into `profiles`.
 -- The script below includes a conditional mock auth block for local testing.
+-- Dummy password hashes are non-functional mock values for local testing only.
 -- ==============================================================================
 
 DO $$
 DECLARE
-  -- Deterministic mock UUIDs for reproducible local development testing
+  -- Deterministic mock UUIDs conforming strictly to RFC 4122 hexadecimal syntax
   v_ws_id       uuid := 'a0000000-0000-4000-8000-000000000001';
-  v_owner_id    uuid := 'u0000000-0000-4000-8000-000000000001';
-  v_admin_id    uuid := 'u0000000-0000-4000-8000-000000000002';
-  v_member_id   uuid := 'u0000000-0000-4000-8000-000000000003';
+  v_owner_id    uuid := 'a1000000-0000-4000-8000-000000000001';
+  v_admin_id    uuid := 'a1000000-0000-4000-8000-000000000002';
+  v_member_id   uuid := 'a1000000-0000-4000-8000-000000000003';
   
   -- Project UUIDs
   v_p_biztrack  uuid := 'b0000000-0000-4000-8000-000000000001';
@@ -63,7 +64,7 @@ BEGIN
   END;
 
   -- ----------------------------------------------------------------------------
-  -- 1. Insert Profiles
+  -- 1. Insert Profiles (Guaranteed Valid UUIDs)
   -- ----------------------------------------------------------------------------
   INSERT INTO public.profiles (id, full_name, display_name, email, bio, location, timezone, avatar_initials)
   VALUES
@@ -383,7 +384,7 @@ BEGIN
   -- ----------------------------------------------------------------------------
   -- 11. Insert Sample Activity Audit Logs
   -- ----------------------------------------------------------------------------
-  INSERT INTO public.activity_logs (id, workspace_id, user_id, actor_email, actor_role, action, entity_type, entity_id, category, metadata, created_at)
+  INSERT INTO public.activity_logs (id, workspace_id, user_id, actor_email, actor_role, action, entity_type, entity_id, project_id, category, metadata, created_at)
   VALUES
     (
       gen_random_uuid(),
@@ -394,6 +395,7 @@ BEGIN
       'workspace.provisioned',
       'workspace',
       v_ws_id,
+      NULL,
       'admin',
       '{"workspace_name": "Khai Space Command Center"}'::jsonb,
       now() - interval '2 days'
@@ -406,6 +408,7 @@ BEGIN
       'Owner',
       'project.created',
       'project',
+      v_p_biztrack,
       v_p_biztrack,
       'project',
       '{"title": "BizTrack", "slug": "biztrack"}'::jsonb,

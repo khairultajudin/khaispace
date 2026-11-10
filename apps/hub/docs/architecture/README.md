@@ -1,6 +1,6 @@
 # Khai Space Hub — Architecture & Persistence Documentation Index
-**Document Version:** 1.0.0  
-**Phase:** Phase 3 Data Architecture & Persistence Planning  
+**Document Version:** 1.3.0 (Phase 3.3 Security & Integrity Validation Finalized)  
+**Phase:** Phase 3.3 Final SQL Validation & Security Closure  
 **Application Target:** `apps/hub/`  
 **Working Branch:** `feature/khai-space-hub`  
 **Repository:** `khairultajudin/khaispace`
@@ -25,11 +25,12 @@ The architecture transitions the Hub from in-memory React session state to a sec
 
 ## 2. Documentation Map & Navigation
 
-The Phase 3, 3.1 & 3.2 deliverables under [`apps/hub/docs/architecture/`](file:///e:/KhaiSpace/apps/hub/docs/architecture/) comprise 15 comprehensive specifications:
+The Phase 3 architecture deliverables under [`apps/hub/docs/architecture/`](file:///e:/KhaiSpace/apps/hub/docs/architecture/) comprise 16 comprehensive specifications:
 
 | Document | Primary Focus | Target Audience |
 |:---|:---|:---|
-| **[`PHASE-3.2-FINAL-CORRECTION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-3.2-FINAL-CORRECTION-REPORT.md)** | Final database integrity, composite foreign key fixes, lifecycle coordination, and provisioning safeguards report. | All Stakeholders, Security Auditors |
+| **[`PHASE-3.3-FINAL-VALIDATION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-3.3-FINAL-VALIDATION-REPORT.md)** | Definitive SQL validation, UUID verification, Auth hook installation, and privilege boundary closure report. | All Stakeholders, Security Auditors |
+| **[`PHASE-3.2-FINAL-CORRECTION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-3.2-FINAL-CORRECTION-REPORT.md)** | Database integrity, composite foreign key nullification, lifecycle coordination, and provisioning safeguards report. | All Stakeholders, Security Auditors |
 | **[`PHASE-3.1-SECURITY-CORRECTION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-3.1-SECURITY-CORRECTION-REPORT.md)** | Initial security audit & correction pass report addressing privilege escalation, views, and keys. | All Stakeholders, Security Auditors |
 | **[`CURRENT-STATE-AUDIT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/CURRENT-STATE-AUDIT.md)** | Ground-truth audit of existing types, sample datasets, utilities, and session state limitations. | Full-Stack Engineers, Product Lead |
 | **[`SYSTEM-ARCHITECTURE.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/SYSTEM-ARCHITECTURE.md)** | Target system architecture, static export compatibility analysis, layer responsibilities, and Mermaid diagrams. | Principal Architects, DevOps |
@@ -39,7 +40,7 @@ The Phase 3, 3.1 & 3.2 deliverables under [`apps/hub/docs/architecture/`](file:/
 | **[`DATA-ACCESS-DESIGN.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/DATA-ACCESS-DESIGN.md)** | Frontend service/repository layer, typed client singleton, state mapping, and production demo-mode safeguards. | Frontend Developers, UI Engineers |
 | **[`MIGRATION-ROADMAP.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/MIGRATION-ROADMAP.md)** | Step-by-step future implementation roadmap (Phases 4 through 10), dashboard prerequisites, and rollback protocols. | Project Leads, Release Managers |
 | **[`OPERATIONS-AND-BACKUP.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/OPERATIONS-AND-BACKUP.md)** | Multi-tier backup strategy (PITR, Daily, Offsite, Portable Export), audit logging, and query health. | Site Reliability Engineers, SysAdmins |
-| **[`ARCHITECTURE-DECISIONS.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/ARCHITECTURE-DECISIONS.md)** | 14 formal Architecture Decision Records (ADRs) capturing rationale, consequences, and evaluated alternatives. | Technical Governance, Architecture Board |
+| **[`ARCHITECTURE-DECISIONS.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/ARCHITECTURE-DECISIONS.md)** | 18 formal Architecture Decision Records (ADRs) capturing rationale, consequences, and evaluated alternatives. | Technical Governance, Architecture Board |
 | **[`IMPLEMENTATION-READINESS-CHECKLIST.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/IMPLEMENTATION-READINESS-CHECKLIST.md)** | Verification checklist certifying Phase 3 completeness and sign-off prerequisites for Phase 4. | Lead Reviewers, Stakeholders |
 | **[`schema-draft.sql`](file:///e:/KhaiSpace/apps/hub/docs/architecture/schema-draft.sql)** | Complete PostgreSQL DDL script with tables, enums, indexes, triggers, helper functions, and RLS policies (Draft only). | Database Administrators |
 | **[`seed-draft.sql`](file:///e:/KhaiSpace/apps/hub/docs/architecture/seed-draft.sql)** | Development-only mock seed script mapping existing sample data into relational tables. | Developers (Local Testing) |
@@ -50,9 +51,10 @@ The Phase 3, 3.1 & 3.2 deliverables under [`apps/hub/docs/architecture/`](file:/
 
 ### For the Technical Lead & Stakeholders
 1. Start with this **`README.md`** for the executive summary.
-2. Review **[`SYSTEM-ARCHITECTURE.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/SYSTEM-ARCHITECTURE.md)** to inspect the hybrid static export approach.
-3. Review **[`ARCHITECTURE-DECISIONS.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/ARCHITECTURE-DECISIONS.md)** to evaluate key architectural trade-offs.
-4. Inspect **[`MIGRATION-ROADMAP.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/MIGRATION-ROADMAP.md)** and **[`IMPLEMENTATION-READINESS-CHECKLIST.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/IMPLEMENTATION-READINESS-CHECKLIST.md)** before approving Phase 4.
+2. Review **[`PHASE-3.3-FINAL-VALIDATION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-3.3-FINAL-VALIDATION-REPORT.md)** for validation evidence and security closure.
+3. Review **[`SYSTEM-ARCHITECTURE.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/SYSTEM-ARCHITECTURE.md)** to inspect the hybrid static export approach.
+4. Review **[`ARCHITECTURE-DECISIONS.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/ARCHITECTURE-DECISIONS.md)** to evaluate key architectural trade-offs.
+5. Inspect **[`MIGRATION-ROADMAP.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/MIGRATION-ROADMAP.md)** and **[`IMPLEMENTATION-READINESS-CHECKLIST.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/IMPLEMENTATION-READINESS-CHECKLIST.md)** before approving Phase 4.
 
 ### For the Senior Database & Security Engineer
 1. Review **[`DATABASE-SCHEMA.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/DATABASE-SCHEMA.md)** and the Mermaid ERD.

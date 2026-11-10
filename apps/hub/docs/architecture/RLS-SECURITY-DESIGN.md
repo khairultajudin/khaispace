@@ -1,6 +1,6 @@
 # Khai Space Hub — Row Level Security (RLS) & Multi-Tenant Security Design
-**Document Version:** 1.2.0 (Phase 3.2 Integrity & Provisioning Safeguards)  
-**Phase:** Phase 3.2 Final Database Integrity & Security Correction  
+**Document Version:** 1.3.0 (Phase 3.3 Security & Integrity Validation Finalized)  
+**Phase:** Phase 3.3 Final SQL Validation & Security Closure  
 **Application Target:** `apps/hub/`  
 **Working Branch:** `feature/khai-space-hub`  
 **Repository:** `khairultajudin/khaispace`
@@ -17,8 +17,12 @@ Khai Space Hub adopts a strict **Zero-Trust Client** security architecture. Beca
 3. **Suspended Means Inactive:** Collaborators whose status is `'Suspended'` or `'Pending'` are blocked from reading or writing any workspace data.
 4. **Viewer Role is Strictly Read-Only:** Users with the `'Viewer'` role can execute `SELECT` queries but are rejected on `INSERT`, `UPDATE`, and `DELETE`.
 5. **No Service-Role Key in the Browser:** The Supabase Service Role Key is strictly banned from client code, environment variables, and build outputs.
-6. **Strict Anti-Privilege Escalation:** Administrators can never promote themselves to Owner, assign the Owner role, alter another member's identity, or tamper with the Owner.
-7. **Controlled Provisioning & Invitations:** Direct client `INSERT` on `workspaces` and `workspace_members` is disabled. All memberships are established via trusted functions (`create_workspace_with_owner` and `accept_workspace_invitation`).
+6. **Strict Privilege Boundary Separation:** 
+   - Administrators cannot manage another Administrator's record or status.
+   - Administrators cannot promote any member to Administrator or Owner.
+   - Administrators cannot modify or delete the Owner.
+   - Administrators cannot modify their own membership role or status.
+7. **Controlled Provisioning & Invitations:** Direct client `INSERT` on `workspaces` and `workspace_members` is disabled. Memberships are created exclusively via trusted functions (`create_workspace_with_owner` and `accept_workspace_invitation`).
 
 ---
 
@@ -27,7 +31,7 @@ Khai Space Hub adopts a strict **Zero-Trust Client** security architecture. Beca
 ### 2.1 The Single-Owner Invariant: Exact Enforcement Mechanism
 A workspace represents a private command center. The system guarantees that every active workspace has **exactly one Owner** ($\text{Count} = 1$).
 
-To avoid inaccurate claims, this invariant is achieved not by a single constraint alone, but through a multi-layered defense:
+To avoid inaccurate claims, this invariant is achieved through a multi-layered defense:
 1. **Upper Bound ($\le 1$):** Enforced by the partial unique index:
    ```sql
    CREATE UNIQUE INDEX idx_workspace_single_owner 
@@ -37,12 +41,10 @@ To avoid inaccurate claims, this invariant is achieved not by a single constrain
 2. **Lower Bound ($\ge 1$ at Provisioning):** Direct `INSERT` on `workspaces` is revoked. Workspaces can only be created via `public.create_workspace_with_owner()`, which atomically provisions the workspace, the initial `Owner` membership, and default settings in a single transaction.
 3. **Lower Bound ($\ge 1$ during Operation):**
    - The trigger `protect_workspace_members_immutability()` prohibits updating an existing Owner's role away from `'Owner'`.
-   - The trigger `protect_workspace_owner()` prohibits deleting the Owner record during standard roster operations.
+   - The trigger `protect_workspace_members_deletion()` prohibits deleting the Owner record during standard roster operations.
 4. **Ownership Transfer Policy:** Ownership transfer is **explicitly prohibited** in this version. Any attempt to promote a member to Owner or mutate `user_id` on an Owner record is blocked by trigger exceptions.
 
 ### 2.2 Workspace Deletion Lifecycle & Owner Protection Coordination
-In initial designs, cascading workspace deletion conflicted with Owner deletion protection triggers. In Phase 3.2, this lifecycle is harmonized:
-
 - **Lifecycle Rule:** Only the verified `Owner` can delete a workspace.
 - **Enforcement Architecture:**
   1. Direct client `DELETE` on `workspaces` is restricted by RLS to `Owner` role.
@@ -50,9 +52,9 @@ In initial designs, cascading workspace deletion conflicted with Owner deletion 
      - Verifies caller is active `Owner` of `OLD.id`.
      - Sets a transaction-local session flag: `PERFORM set_config('app.deleting_workspace_id', OLD.id::text, true);`.
   3. PostgreSQL begins cascading deletions to child tables, including `workspace_members`.
-  4. The trigger `protect_workspace_owner()` checks:
+  4. The trigger `protect_workspace_members_deletion()` checks:
      ```sql
-     IF TG_OP = 'DELETE' AND OLD.role = 'Owner' THEN
+     IF OLD.role = 'Owner' THEN
        IF current_setting('app.deleting_workspace_id', true) = OLD.workspace_id::text THEN
          RETURN OLD; -- Authorized workspace teardown
        END IF;
@@ -61,13 +63,32 @@ In initial designs, cascading workspace deletion conflicted with Owner deletion 
      ```
   5. If an unauthorized caller or standard roster mutation attempts to delete the Owner, the session flag is unset, immediately triggering an exception.
 
-### 2.3 Administrator Privilege Restrictions & Membership Immutability
-To eliminate administrator privilege escalation and self-promotion vectors:
+### 2.3 Comprehensive Administrator & Owner Boundary Separation
+To enforce strict role tiers:
 1. **Immutable Identifiers:** Trigger `protect_workspace_members_immutability()` strictly blocks any update to `user_id` or `workspace_id` across all roster records.
-2. **No Owner Role Assignment:** An Administrator cannot insert or update any member to `role = 'Owner'`.
-3. **No Self-Promotion:** An Administrator cannot alter their own row in `workspace_members` (`OLD.user_id = auth.uid() AND NEW.role != OLD.role`).
-4. **No Owner Modification:** An Administrator cannot update or delete the Owner record.
-5. **No Administrator Demotion by Admins:** An Administrator can only manage `Member` or `Viewer` roles; only the `Owner` can remove another Administrator.
+2. **Owner Role Management:**
+   - Can update and remove `Administrator`, `Member`, and `Viewer` records.
+   - Cannot demote or delete their own protected `Owner` membership.
+   - Cannot create another `Owner`.
+3. **Administrator Role Management:**
+   - Can manage `Member` and `Viewer` records ONLY.
+   - Cannot modify another Administrator's record or status.
+   - Cannot promote a Member or Viewer to Administrator.
+   - Cannot modify or remove the Owner.
+   - Cannot alter their own membership record or self-promote.
+4. **Trigger-Level Boundary Enforcement:**
+   In `protect_workspace_members_immutability()`:
+   ```sql
+   caller_role := public.get_user_workspace_role(OLD.workspace_id);
+   IF caller_role = 'Administrator' THEN
+     IF OLD.role = 'Administrator' THEN
+       RAISE EXCEPTION 'Security Policy Violation: Administrators cannot modify another Administrator.';
+     END IF;
+     IF NEW.role = 'Administrator' AND OLD.role != 'Administrator' THEN
+       RAISE EXCEPTION 'Security Policy Violation: Administrators cannot promote members to Administrator.';
+     END IF;
+   END IF;
+   ```
 
 ---
 
@@ -150,21 +171,22 @@ Direct client `INSERT` on `workspace_members` is completely disabled. Members ca
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Admin as Admin/Owner
+    actor Admin as Admin or Owner
     participant Client as Hub Browser App
     participant Edge as Edge Function (Invite)
     participant DB as PostgreSQL Database
     actor Recipient as Invited User
 
     Admin->>Client: Enter email and role in Members & Settings
-    Client->>DB: INSERT into workspace_invitations (role != 'Owner')
+    Client->>DB: INSERT into workspace_invitations (role check enforced)
     DB-->>Client: Invitation record created (token_hash, pending)
     Client->>Edge: Trigger invite email dispatch
     Edge->>Recipient: Send invitation link with secure token
     Recipient->>Client: Open invite link & Authenticate via Supabase Auth
     Client->>DB: Call accept_workspace_invitation(token)
-    DB->>DB: Verify token hash, status = 'pending', expires_at > now()
-    DB->>DB: Match auth.jwt() email with invitation email
+    DB->>DB: Lock invitation row (SELECT FOR UPDATE)
+    DB->>DB: NULL-safe match auth.jwt() email with invitation email
+    DB->>DB: Verify caller is not already an active member
     DB->>DB: Auto-provision profile if missing
     DB->>DB: INSERT into workspace_members (role, status = 'Active')
     DB->>DB: UPDATE workspace_invitations status = 'accepted'
@@ -172,17 +194,19 @@ sequenceDiagram
 ```
 
 ### Key Security Invariants in Invitation Flow:
-1. **No Owner Invitations:** Table constraint `chk_invitation_role CHECK (role != 'Owner')` strictly blocks invitations for the Owner role.
-2. **Cryptographic Token Verification:** Tokens are stored as SHA-256 hashes (`token_hash = encode(digest(p_token, 'sha256'), 'hex')`). Plaintext tokens never persist in the database.
-3. **Identity Verification:** The authenticated caller's email (from `auth.jwt()->>'email'`) must match `invitation.email`. A stolen token cannot be accepted by an unintended user.
-4. **Single-Use Enforcement:** The invitation record is marked `'accepted'` atomically upon membership insertion.
+1. **Role-Restricted Invitations:**
+   - Table constraint `chk_invitation_role CHECK (role != 'Owner')` permanently blocks Owner invitations.
+   - RLS policy enforces that only the `Owner` can invite `Administrator` roles; Administrators can only invite `Member` and `Viewer` roles.
+2. **Cryptographic Token Verification:** Tokens are stored as SHA-256 hashes (`token_hash = encode(digest(TRIM(p_token), 'sha256'), 'hex')`). Plaintext tokens never persist in the database.
+3. **NULL-Safe Identity Verification:** The authenticated caller's email is compared using `IS DISTINCT FROM` against normalized lowercase email. Missing caller email causes immediate rejection.
+4. **Concurrency Protection:** The invitation record is retrieved with `SELECT ... FOR UPDATE`, serializing concurrent redemption attempts.
+5. **Clean Already-Member Rejection:** If the caller is already a member, the function immediately raises an exception without modifying the invitation status.
 
 ---
 
 ## 5. Audit Logging Foreign Key & Trust Model
 
 ### 5.1 Relational Retention Model
-To resolve foreign key contradictions while maintaining legal and operational audit trails:
 - Column definition:
   ```sql
   user_id uuid REFERENCES public.profiles(id) ON DELETE SET NULL,
@@ -195,8 +219,8 @@ To resolve foreign key contradictions while maintaining legal and operational au
 
 ### 5.2 Anti-Forgery & Trust Boundaries
 - **Direct Client INSERT Disabled:** Ordinary browser clients cannot execute `INSERT INTO activity_logs`.
-- **System Event Logging:** Sensitive events (membership joins, role updates, workspace settings changes) are emitted automatically by database triggers.
-- **Client Event Logging:** Permitted UI events are recorded via the security-definer procedure `public.log_workspace_activity(...)`:
+- **System Event Logging:** Sensitive events are recorded directly by PostgreSQL database triggers.
+- **Client Event Logging:** Permitted UI events are recorded via `public.log_workspace_activity(...)`:
   - Enforces `is_workspace_member(p_workspace_id)`.
   - Captures `auth.uid()`, lookup profile email and member role.
   - Prohibits non-administrators from submitting privileged action types (`admin.*`).
@@ -210,8 +234,8 @@ To resolve foreign key contradictions while maintaining legal and operational au
 | :--- | :--- | :--- | :--- | :--- |
 | `workspaces` | Active Member | **Disabled** (via `create_workspace_with_owner`) | Admin or Owner | Owner Only (via `trg_workspace_deletion_auth`) |
 | `profiles` | Self OR Shared Workspace Member | Self (`id = auth.uid()`) | Self (`id = auth.uid()`) | **Disabled** (Managed via Auth cleanup) |
-| `workspace_members` | Active Member | **Disabled** (via atomic provisioning / invite acceptance) | Admin or Owner (non-owner target, no self-update) | Admin (Member/Viewer) or Owner (Admin/Member/Viewer) |
-| `workspace_invitations` | Admin or Owner | Admin or Owner (`role != 'Owner'`) | Admin or Owner | Admin or Owner |
+| `workspace_members` | Active Member | **Disabled** (via atomic provisioning / invite acceptance) | Owner: Admin/Member/Viewer<br>Admin: Member/Viewer only | Owner: Admin/Member/Viewer<br>Admin: Member/Viewer only |
+| `workspace_invitations` | Admin or Owner | Owner: Admin/Member/Viewer<br>Admin: Member/Viewer only | Owner: Any<br>Admin: Member/Viewer only | Owner: Any<br>Admin: Member/Viewer only |
 | `workspace_settings` | Active Member | **Disabled** (Initialized at workspace creation) | Admin or Owner | **Disabled** (Cascade only) |
 | `projects` | Active Member | Active Non-Viewer | Active Non-Viewer | Admin or Owner |
 | `milestones` | Active Member | Active Non-Viewer | Active Non-Viewer | Active Non-Viewer |

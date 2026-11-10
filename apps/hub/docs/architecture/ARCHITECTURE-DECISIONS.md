@@ -1,6 +1,6 @@
 # Khai Space Hub — Architecture Decision Records (ADR)
-**Document Version:** 1.2.0 (Phase 3.2 Integrity & Provisioning Safeguards)  
-**Phase:** Phase 3.2 Final Database Integrity & Security Correction  
+**Document Version:** 1.3.0 (Phase 3.3 Security & Integrity Validation Finalized)  
+**Phase:** Phase 3.3 Final SQL Validation & Security Closure  
 **Application Target:** `apps/hub/`  
 **Working Branch:** `feature/khai-space-hub`  
 **Repository:** `khairultajudin/khaispace`
@@ -26,6 +26,7 @@
 - [ADR-015: Composite Foreign Key Delete Nullification & Milestone Cleanup](#adr-015-composite-foreign-key-delete-nullification--milestone-cleanup)
 - [ADR-016: Workspace Deletion Authorization & Owner Protection Lifecycle Coordination](#adr-016-workspace-deletion-authorization--owner-protection-lifecycle-coordination)
 - [ADR-017: Cryptographic Invitation Acceptance & Complete Membership Immutability](#adr-017-cryptographic-invitation-acceptance--complete-membership-immutability)
+- [ADR-018: Strict Administrator and Owner Permission Boundary Separation](#adr-018-strict-administrator-and-owner-permission-boundary-separation)
 
 ---
 
@@ -242,3 +243,18 @@
 - **Consequences:**
   - *Positive:* Eliminates rogue membership injection; enforces user consent and verified email identity; secures roster immutability.
   - *Negative:* Adding a team member requires sending an invitation rather than instant addition.
+
+---
+
+## ADR-018: Strict Administrator and Owner Permission Boundary Separation
+- **Status:** **ACCEPTED**
+- **Date:** 2026-11-10 (Phase 3.3)
+- **Context:** In Phase 3.2, an Administrator could update another Administrator's membership record or promote a Member to Administrator because RLS policies only checked `role != 'Owner'`.
+- **Decision:**
+  1. Split `workspace_members` UPDATE and DELETE policies into dedicated Owner and Administrator policies.
+  2. Restrict Administrators strictly to updating and deleting `role IN ('Member', 'Viewer')` with `WITH CHECK (role IN ('Member', 'Viewer'))`.
+  3. Prohibit Administrators from creating `Administrator` invitations; only Owners can invite Administrators.
+  4. Enforce Administrator boundaries inside triggers (`protect_workspace_members_immutability()` and `protect_workspace_members_deletion()`).
+- **Consequences:**
+  - *Positive:* Eliminates administrative horizontal and vertical privilege escalation; guarantees that only the Owner can manage or promote Administrators.
+  - *Negative:* An Administrator cannot delegate administrative powers without Owner action.
