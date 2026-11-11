@@ -694,33 +694,48 @@ SET search_path = public, auth, pg_temp
 AS $$
 DECLARE
   caller_id uuid := auth.uid();
+  auth_user_record record;
   caller_email text;
   inv_record record;
   hashed_input text;
   new_member_id uuid;
 BEGIN
+  -- 1. Caller authentication enforcement
   IF caller_id IS NULL THEN
     RAISE EXCEPTION 'Authentication required: caller must be authenticated.';
   END IF;
 
-  -- Retrieve verified caller email from JWT claim or auth.users
-  caller_email := LOWER(TRIM(COALESCE(auth.jwt()->>'email', '')));
-  IF caller_email = '' THEN
-    SELECT LOWER(TRIM(COALESCE(email, ''))) INTO caller_email FROM auth.users WHERE id = caller_id;
+  -- 2. Retrieve authoritative user record from auth.users (never rely on raw JWT or unconfirmed metadata)
+  SELECT email, email_confirmed_at
+  INTO auth_user_record
+  FROM auth.users
+  WHERE id = caller_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'User verification failed: authoritative account not found.';
   END IF;
 
-  IF caller_email IS NULL OR caller_email = '' THEN
-    RAISE EXCEPTION 'Authentication required: caller email could not be verified from trusted auth session.';
+  -- 3 & 4. Verified email non-null and non-empty validation
+  IF auth_user_record.email IS NULL OR TRIM(auth_user_record.email) = '' THEN
+    RAISE EXCEPTION 'User verification failed: account does not have a valid email address.';
   END IF;
 
+  -- 5. Verified email confirmation enforcement
+  IF auth_user_record.email_confirmed_at IS NULL THEN
+    RAISE EXCEPTION 'Email verification required: user email address has not been confirmed.';
+  END IF;
+
+  -- 6. Canonical normalization of authoritative email
+  caller_email := LOWER(TRIM(auth_user_record.email));
+
+  -- 7. Token validation & SHA-256 hashing
   IF p_token IS NULL OR TRIM(p_token) = '' THEN
     RAISE EXCEPTION 'Invalid invitation token: token cannot be empty.';
   END IF;
 
-  -- Hash incoming token using sha256
   hashed_input := encode(digest(TRIM(p_token), 'sha256'), 'hex');
 
-  -- Locate active invitation with row locking (prevents concurrent double-acceptance)
+  -- 8. Locate active invitation with row locking (serializes concurrent acceptance requests)
   SELECT * INTO inv_record
   FROM public.workspace_invitations
   WHERE token_hash = hashed_input
@@ -732,13 +747,12 @@ BEGIN
     RAISE EXCEPTION 'Invalid, expired, or already used invitation token.';
   END IF;
 
-  -- NULL-safe email match between invitation email and verified session email
+  -- 9. Canonical comparison between invitation email and authoritative verified user email
   IF LOWER(TRIM(inv_record.email)) IS DISTINCT FROM caller_email THEN
-    RAISE EXCEPTION 'Identity mismatch: invitation was sent to % but authenticated user is %.',
-      inv_record.email, caller_email;
+    RAISE EXCEPTION 'Identity mismatch: invitation was sent to a different email address.';
   END IF;
 
-  -- Check if caller is already an active member of this workspace
+  -- 10. Check if caller is already an active member of this workspace
   IF EXISTS (
     SELECT 1 FROM public.workspace_members 
     WHERE workspace_id = inv_record.workspace_id AND user_id = caller_id
@@ -747,7 +761,7 @@ BEGIN
     RAISE EXCEPTION 'User is already an active member of workspace %.', inv_record.workspace_id;
   END IF;
 
-  -- Ensure profile exists (Self-healing defense-in-depth)
+  -- 11. Ensure profile exists (Self-healing defense-in-depth)
   IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = caller_id) THEN
     INSERT INTO public.profiles (id, full_name, display_name, email, avatar_initials)
     VALUES (
@@ -759,12 +773,12 @@ BEGIN
     ) ON CONFLICT (id) DO NOTHING;
   END IF;
 
-  -- Insert membership atomically (Direct client INSERT is disabled)
+  -- 12. Insert membership atomically (Direct client INSERT is disabled)
   INSERT INTO public.workspace_members (workspace_id, user_id, role, status, invited_by)
   VALUES (inv_record.workspace_id, caller_id, inv_record.role, 'Active', inv_record.invited_by)
   RETURNING id INTO new_member_id;
 
-  -- Mark invitation as accepted atomically while holding row lock
+  -- 13. Mark invitation as accepted atomically while holding row lock
   UPDATE public.workspace_invitations
   SET status = 'accepted'
   WHERE id = inv_record.id;

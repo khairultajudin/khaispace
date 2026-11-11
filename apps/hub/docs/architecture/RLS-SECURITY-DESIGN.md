@@ -184,8 +184,10 @@ sequenceDiagram
     Edge->>Recipient: Send invitation link with secure token
     Recipient->>Client: Open invite link & Authenticate via Supabase Auth
     Client->>DB: Call accept_workspace_invitation(token)
-    DB->>DB: Lock invitation row (SELECT FOR UPDATE)
-    DB->>DB: NULL-safe match auth.jwt() email with invitation email
+    DB->>DB: Lock invitation row (SELECT ... FOR UPDATE)
+    DB->>DB: Query authoritative auth.users by caller auth.uid()
+    DB->>DB: Verify email IS NOT NULL AND email_confirmed_at IS NOT NULL
+    DB->>DB: NULL-safe canonical match: LOWER(TRIM(auth.users.email)) IS NOT DISTINCT FROM LOWER(TRIM(inv.email))
     DB->>DB: Verify caller is not already an active member
     DB->>DB: Auto-provision profile if missing
     DB->>DB: INSERT into workspace_members (role, status = 'Active')
@@ -198,9 +200,15 @@ sequenceDiagram
    - Table constraint `chk_invitation_role CHECK (role != 'Owner')` permanently blocks Owner invitations.
    - RLS policy enforces that only the `Owner` can invite `Administrator` roles; Administrators can only invite `Member` and `Viewer` roles.
 2. **Cryptographic Token Verification:** Tokens are stored as SHA-256 hashes (`token_hash = encode(digest(TRIM(p_token), 'sha256'), 'hex')`). Plaintext tokens never persist in the database.
-3. **NULL-Safe Identity Verification:** The authenticated caller's email is compared using `IS DISTINCT FROM` against normalized lowercase email. Missing caller email causes immediate rejection.
+3. **Verified Email Identity Enforcement:**
+   - The authenticated caller is identified exclusively via `auth.uid()`.
+   - The authoritative user record is fetched directly from `auth.users`.
+   - Caller ID, record existence, email existence, and non-empty email are strictly validated.
+   - Caller email confirmation is mandatory (`email_confirmed_at IS NOT NULL`). Unconfirmed accounts are rejected.
+   - Raw user metadata (`raw_user_meta_data`) and unverified JWT claims are never trusted for email identity.
+   - Canonical lowercase trimmed email values are compared using `IS DISTINCT FROM`.
 4. **Concurrency Protection:** The invitation record is retrieved with `SELECT ... FOR UPDATE`, serializing concurrent redemption attempts.
-5. **Clean Already-Member Rejection:** If the caller is already a member, the function immediately raises an exception without modifying the invitation status.
+5. **Clean Already-Member Rejection:** If the caller is already a member, the function immediately raises a deterministic exception without modifying the invitation status or leaving partial side-effects.
 
 ---
 
@@ -244,3 +252,51 @@ sequenceDiagram
 | `ai_subscriptions` | Active Member | Active Non-Viewer | Active Non-Viewer | Admin or Owner |
 | `workspace_notes` | Active Member | Active Non-Viewer | Active Non-Viewer | Active Non-Viewer |
 | `activity_logs` | Active Member | **Disabled** (via triggers / `log_workspace_activity`) | **Disabled** (Permanent) | **Disabled** (Permanent) |
+
+---
+
+## 7. Complete Function Security & Privilege Inventory
+
+The schema defines **17 functions in total**, comprising **15 `SECURITY DEFINER` functions** and **2 `SECURITY INVOKER` functions**. Every `SECURITY DEFINER` function explicitly locks down search path resolution via `SET search_path = public, auth, pg_temp` to prevent search_path injection attacks.
+
+### 7.1 Category A: Database Trigger Functions (8 Functions)
+Trigger functions execute solely in response to database lifecycle events. All external RPC execution privileges are explicitly revoked from `PUBLIC`, `anon`, and `authenticated`.
+
+| Function Name | Attached Trigger / Table | Execution Boundary | Permissions |
+| :--- | :--- | :--- | :--- |
+| `public.validate_project_workspace_integrity()` | `trg_tasks_project_workspace_check` on `tasks` | Trigger only | `REVOKE ALL FROM public, anon, authenticated` |
+| `public.validate_subscription_project_workspace_integrity()` | `trg_ai_subscriptions_project_workspace_check` on `ai_subscriptions` | Trigger only | `REVOKE ALL FROM public, anon, authenticated` |
+| `public.handle_project_deletion_cleanup()` | `trg_projects_deletion_cleanup` on `projects` | Trigger only | `REVOKE ALL FROM public, anon, authenticated` |
+| `public.handle_milestone_deletion_cleanup()` | `trg_milestones_deletion_cleanup` on `milestones` | Trigger only | `REVOKE ALL FROM public, anon, authenticated` |
+| `public.handle_new_user()` | `on_auth_user_created` on `auth.users` | Supabase Auth trigger only | `REVOKE ALL FROM public, anon, authenticated` |
+| `public.handle_workspace_deletion_authorization()` | `trg_workspace_deletion_auth` on `workspaces` | Trigger only | `REVOKE ALL FROM public, anon, authenticated` |
+| `public.protect_workspace_members_immutability()` | `trg_protect_members_immutability` on `workspace_members` | Trigger only | `REVOKE ALL FROM public, anon, authenticated` |
+| `public.protect_workspace_members_deletion()` | `trg_protect_members_deletion` on `workspace_members` | Trigger only | `REVOKE ALL FROM public, anon, authenticated` |
+
+### 7.2 Category B: Anti-Recursion RLS Engine Helpers (3 Functions)
+Helper functions evaluate caller permissions inside RLS policies without causing recursive policy evaluation loops. They are declared `STABLE` to allow PostgreSQL to cache results within single query plans.
+
+| Function Name | Purpose | Execution Boundary | Permissions |
+| :--- | :--- | :--- | :--- |
+| `public.is_workspace_member(uuid)` | Verifies caller has an `Active` membership in target workspace | RLS Policy Evaluation / Authenticated | `REVOKE FROM public, anon; GRANT TO authenticated` |
+| `public.get_user_workspace_role(uuid)` | Returns caller's active role (`Owner`, `Administrator`, `Member`, `Viewer`) | RLS Policy Evaluation / Authenticated | `REVOKE FROM public, anon; GRANT TO authenticated` |
+| `public.is_workspace_admin_or_owner(uuid)` | Verifies caller holds `Owner` or `Administrator` role | RLS Policy Evaluation / Authenticated | `REVOKE FROM public, anon; GRANT TO authenticated` |
+
+### 7.3 Category C: User-Facing RPC Functions & Stored Procedures (4 Functions)
+These functions provide transactional business logic that bypasses direct client table mutations while enforcing strict validation and authorization.
+
+| Function Name | Purpose | Caller Trust Boundary | Permissions |
+| :--- | :--- | :--- | :--- |
+| `public.create_workspace_with_owner(varchar, text, varchar)` | Creates workspace, auto-provisions profile, and assigns caller as `Owner` atomically | Authenticated users | `REVOKE FROM public, anon; GRANT TO authenticated` |
+| `public.accept_workspace_invitation(text)` | Validates verified email (`auth.users.email_confirmed_at IS NOT NULL`), acquires row lock, and creates membership | Authenticated users with confirmed email matching invite | `REVOKE FROM public, anon; GRANT TO authenticated` |
+| `public.delete_workspace_by_owner(uuid)` | Authorizes workspace deletion strictly by certified workspace `Owner` | Authenticated `Owner` | `REVOKE FROM public, anon; GRANT TO authenticated` |
+| `public.log_workspace_activity(...)` | Validates caller membership and records client UI activity in `activity_logs` | Authenticated members | `REVOKE FROM public, anon; GRANT TO authenticated` |
+
+### 7.4 Category D: Non-Security Definer Functions (2 Functions)
+These functions do not access external tables or require elevated privileges. They execute with standard `SECURITY INVOKER` semantics.
+
+| Function Name | Purpose | Execution Boundary |
+| :--- | :--- | :--- |
+| `public.handle_updated_at()` | Sets `NEW.updated_at = now()` before updates | Trigger only (`BEFORE UPDATE`) |
+| `public.prevent_note_type_change()` | Enforces note type immutability between `'Note'` and `'Decision'` | Trigger only (`BEFORE UPDATE`) |
+

@@ -100,8 +100,8 @@ The following files under `apps/hub/docs/architecture/` were updated or created:
   - Restricted `workspace_invitations` creation: only Owners can invite Administrators; Administrators can only invite Members and Viewers.
 
 ### Correction F — Security Definer Function Review & Privilege Hardening
-- **Review Conducted:** All 13 SECURITY DEFINER functions were audited:
-  - All use explicit `SET search_path = public, auth, pg_temp`.
+- **Review Conducted:** All 15 SECURITY DEFINER functions were audited (reconciled in Phase 3.3.1 from the previously reported count of 13 to match the exact source inventory of 8 trigger functions, 3 RLS helpers, and 4 RPCs):
+  - All 15 use explicit `SET search_path = public, auth, pg_temp`.
   - Trigger functions (`validate_project_workspace_integrity`, `validate_subscription_project_workspace_integrity`, `handle_project_deletion_cleanup`, `handle_milestone_deletion_cleanup`, `handle_workspace_deletion_authorization`, `handle_new_user`, `protect_workspace_members_immutability`, `protect_workspace_members_deletion`) have EXECUTE explicitly revoked from `public, anon, authenticated`.
   - User-facing RPCs (`create_workspace_with_owner`, `accept_workspace_invitation`, `delete_workspace_by_owner`, `log_workspace_activity`) and RLS helpers (`is_workspace_member`, `get_user_workspace_role`, `is_workspace_admin_or_owner`) have EXECUTE revoked from `public, anon` and granted strictly to `authenticated`.
 
@@ -161,12 +161,12 @@ Zero invalid UUID characters remain in `seed-draft.sql`.
 | **1** | UUID literals in `seed-draft.sql` | 17/17 deterministic UUID literals conform to RFC 4122 hex syntax. | **PASS** |
 | **2** | Seed relational references | Parent entities precede child rows. Foreign keys match parent UUIDs. | **PASS** |
 | **3** | Auth profile hook trigger | `on_auth_user_created` trigger defined on `auth.users` executing `handle_new_user()`. | **PASS** |
-| **4** | Invitation email validation | `IS DISTINCT FROM` comparison between normalized emails with null check. | **PASS** |
+| **4** | Invitation email validation | Authoritative lookup in `auth.users`, confirmed email enforcement (`email_confirmed_at IS NOT NULL`), and `IS DISTINCT FROM` canonical comparison. | **PASS** |
 | **5** | Invitation concurrency protection | Row-level locking implemented via `SELECT ... FOR UPDATE`. | **PASS** |
 | **6** | Already-member invitation logic | Deterministic exception raised without mutating invitation status. | **PASS** |
 | **7** | Admin cannot manage Admin | RLS UPDATE/DELETE split; trigger enforces caller role boundary. | **PASS** |
 | **8** | Admin cannot invite Admin | RLS INSERT on `workspace_invitations` restricts Admin to Member/Viewer. | **PASS** |
-| **9** | SECURITY DEFINER search_path | Fixed `search_path = public, auth, pg_temp` on all 13 functions. | **PASS** |
+| **9** | SECURITY DEFINER search_path | Fixed `search_path = public, auth, pg_temp` on all 15 functions. | **PASS** |
 | **10** | Function execution privileges | Trigger functions revoked from all roles; RPCs granted to authenticated. | **PASS** |
 | **11** | Composite FK delete nullification | `tasks(workspace_id, milestone_id)` uses `ON DELETE SET NULL (milestone_id)`. | **PASS** |
 | **12** | Cross-workspace project validation | Validation triggers active on transactions, notes, and subscriptions. | **PASS** |
@@ -235,3 +235,29 @@ The documentation, database schema design, Row Level Security policies, and deve
 > [!IMPORTANT]
 > **Strict Phase Boundary Notice:**
 > `READY FOR PHASE 4 REVIEW` signifies architectural readiness. It does **NOT** authorize Phase 4 execution, Supabase project provisioning, remote SQL execution, or deployment. The final decision to proceed belongs to the project owner.
+
+---
+
+## 12. Phase 3.3.1 Reconciliation & Verified Email Enforcement Addendum
+
+During the independent post-Phase 3.3 review, two specific findings were identified and reconciled:
+
+### 12.1 Verified Email Enforcement in `accept_workspace_invitation`
+- **Finding:** The invitation acceptance function previously retrieved caller email from `auth.jwt()` or `auth.users` without verifying whether the email was confirmed.
+- **Correction:** 
+  1. The function now exclusively queries `auth.users` by `auth.uid()`.
+  2. Mandates that `email_confirmed_at IS NOT NULL`.
+  3. Rejects NULL, empty, or unconfirmed email addresses with clear, non-leaking exceptions.
+  4. Performs canonical `LOWER(TRIM(...))` normalization and `IS DISTINCT FROM` comparison against `workspace_invitations.email`.
+  5. Completely removes reliance on unconfirmed JWT claims or mutable metadata.
+
+### 12.2 SECURITY DEFINER Inventory Reconciliation
+- **Finding:** The Phase 3.3 narrative referred to 13 SECURITY DEFINER functions, whereas the SQL source actually defines 15.
+- **Correction & Full Inventory:** Reconciled to exactly 15 `SECURITY DEFINER` functions across 3 operational categories:
+  - **Database Triggers (8):** `validate_project_workspace_integrity`, `validate_subscription_project_workspace_integrity`, `handle_project_deletion_cleanup`, `handle_milestone_deletion_cleanup`, `handle_new_user`, `handle_workspace_deletion_authorization`, `protect_workspace_members_immutability`, `protect_workspace_members_deletion`. All 8 have execution revoked from `public, anon, authenticated`.
+  - **RLS Anti-Recursion Helpers (3):** `is_workspace_member`, `get_user_workspace_role`, `is_workspace_admin_or_owner`. All 3 are `STABLE`, revoked from `public, anon`, and granted to `authenticated`.
+  - **User-Facing RPCs / Stored Procedures (4):** `create_workspace_with_owner`, `accept_workspace_invitation`, `delete_workspace_by_owner`, `log_workspace_activity`. All 4 are revoked from `public, anon` and granted to `authenticated`.
+  - **SECURITY INVOKER Functions (2):** `handle_updated_at`, `prevent_note_type_change` (trigger functions without elevated permissions).
+  - All 15 `SECURITY DEFINER` functions explicitly enforce `SET search_path = public, auth, pg_temp`.
+
+See [PHASE-3.3.1-VERIFIED-EMAIL-CORRECTION-REPORT.md](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-3.3.1-VERIFIED-EMAIL-CORRECTION-REPORT.md) for the dedicated closure report.

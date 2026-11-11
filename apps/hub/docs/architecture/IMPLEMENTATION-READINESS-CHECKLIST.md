@@ -50,18 +50,19 @@ Use this checklist to verify that all planning and architectural deliverables re
 - [x] Strict Administrator boundaries enforced: Administrators cannot modify other Administrators, promote anyone to Administrator, or alter the Owner.
 - [x] Direct client `INSERT` on `workspace_members` disabled; replaced by `workspace_invitations` table with SHA-256 tokens and `accept_workspace_invitation()` RPC.
 - [x] Concurrency protection on invitation redemption implemented with `SELECT ... FOR UPDATE`.
-- [x] NULL-safe email verification implemented with `IS DISTINCT FROM` on normalized emails.
+- [x] Verified email identity enforced on invitation acceptance: Authoritative lookup in `auth.users` by `auth.uid()`, `email_confirmed_at IS NOT NULL` mandated, canonical `LOWER(TRIM(...))` normalization, and `IS DISTINCT FROM` comparison; zero trust in unconfirmed JWT claims or mutable metadata.
 - [x] Deterministic rejection of already-member callers without modifying invitation status.
 - [x] Role-restricted invitation creation: Only Owners can create Administrator invitations; Administrators can only invite Members and Viewers.
 - [x] Direct client `INSERT` on `workspaces` disabled; atomic provisioning enforced via `create_workspace_with_owner()`.
 - [x] Profile auto-bootstrapping implemented via `on_auth_user_created` trigger on `auth.users` executing `handle_new_user()`.
 - [x] Suspended members blocked at database boundary (`status = 'Active'` required).
 
-### Section E: Row Level Security (RLS) & Security Definer Audit (Phase 3.3 Validated)
+### Section E: Row Level Security (RLS) & Security Definer Audit (Phase 3.3.1 Reconciled)
 - [x] RLS enabled on all tables without exception.
-- [x] Anti-recursion helper functions implemented with `SECURITY DEFINER` and fixed `search_path = public, auth, pg_temp`.
-- [x] Anonymous execution of helper functions explicitly revoked (`REVOKE FROM public, anon; GRANT TO authenticated;`).
-- [x] Trigger functions execution revoked from all roles (`REVOKE ALL FROM public, anon, authenticated;`) to prevent public RPC execution.
+- [x] All 15 `SECURITY DEFINER` functions verified with fixed, secure `search_path = public, auth, pg_temp`.
+- [x] Anti-recursion helper functions (3) implemented with `SECURITY DEFINER`, `STABLE` caching, and granted strictly to `authenticated`.
+- [x] Trigger functions (8) execution revoked from all roles (`REVOKE ALL FROM public, anon, authenticated;`) to prevent unintended public RPC invocation.
+- [x] User-facing RPCs and stored procedures (4) restricted exclusively to `authenticated` users.
 - [x] Comprehensive policy matrix documented for `SELECT`, `INSERT`, `UPDATE`, `DELETE` across all tables.
 - [x] Granular `workspace_members` policies separate Owner and Administrator capabilities.
 - [x] All 3 financial SQL views created with `WITH (security_invoker = true)` to inherit underlying table RLS.

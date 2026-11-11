@@ -1,6 +1,6 @@
 # Khai Space Hub — Architecture & Persistence Documentation Index
-**Document Version:** 1.3.0 (Phase 3.3 Security & Integrity Validation Finalized)  
-**Phase:** Phase 3.3 Final SQL Validation & Security Closure  
+**Document Version:** 1.3.1 (Phase 3.3.1 Verified Email Enforcement & Audit Reconciliation Finalized)  
+**Phase:** Phase 3.3.1 Verified Email Enforcement & Audit Report Reconciliation  
 **Application Target:** `apps/hub/`  
 **Working Branch:** `feature/khai-space-hub`  
 **Repository:** `khairultajudin/khaispace`
@@ -15,6 +15,7 @@ The architecture transitions the Hub from in-memory React session state to a sec
 
 ### Core Architecture Pillars
 - **Zero-Trust Client Security:** Defense-in-depth enforced by PostgreSQL Row Level Security (RLS) on every table.
+- **Verified Email Identity:** Invitation acceptance enforces authoritative `auth.users` lookup, confirmed email check (`email_confirmed_at IS NOT NULL`), and row-level concurrency locking.
 - **Dedicated Supabase Project:** Absolute separation from other projects (e.g. BizTrack) with zero shared credentials.
 - **Exact Accounting Standards:** Financial transactions and AI subscriptions stored in exact `numeric(12, 2)` decimal currency (MYR).
 - **Strict ROI Calculation:** Realized ROI is computed **exclusively** from transactions certified with `is_investment_return = true`.
@@ -25,11 +26,12 @@ The architecture transitions the Hub from in-memory React session state to a sec
 
 ## 2. Documentation Map & Navigation
 
-The Phase 3 architecture deliverables under [`apps/hub/docs/architecture/`](file:///e:/KhaiSpace/apps/hub/docs/architecture/) comprise 16 comprehensive specifications:
+The Phase 3 architecture deliverables under [`apps/hub/docs/architecture/`](file:///e:/KhaiSpace/apps/hub/docs/architecture/) comprise 17 comprehensive specifications:
 
 | Document | Primary Focus | Target Audience |
 |:---|:---|:---|
-| **[`PHASE-3.3-FINAL-VALIDATION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-3.3-FINAL-VALIDATION-REPORT.md)** | Definitive SQL validation, UUID verification, Auth hook installation, and privilege boundary closure report. | All Stakeholders, Security Auditors |
+| **[`PHASE-3.3.1-VERIFIED-EMAIL-CORRECTION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-3.3.1-VERIFIED-EMAIL-CORRECTION-REPORT.md)** | Definitive verified-email enforcement, authoritative auth lookup, and full 15 SECURITY DEFINER inventory reconciliation. | All Stakeholders, Security Auditors |
+| **[`PHASE-3.3-FINAL-VALIDATION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-3.3-FINAL-VALIDATION-REPORT.md)** | SQL validation, UUID verification, Auth hook installation, and privilege boundary closure report. | All Stakeholders, Security Auditors |
 | **[`PHASE-3.2-FINAL-CORRECTION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-3.2-FINAL-CORRECTION-REPORT.md)** | Database integrity, composite foreign key nullification, lifecycle coordination, and provisioning safeguards report. | All Stakeholders, Security Auditors |
 | **[`PHASE-3.1-SECURITY-CORRECTION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-3.1-SECURITY-CORRECTION-REPORT.md)** | Initial security audit & correction pass report addressing privilege escalation, views, and keys. | All Stakeholders, Security Auditors |
 | **[`CURRENT-STATE-AUDIT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/CURRENT-STATE-AUDIT.md)** | Ground-truth audit of existing types, sample datasets, utilities, and session state limitations. | Full-Stack Engineers, Product Lead |
