@@ -26,7 +26,7 @@ The architecture transitions the Hub from in-memory React session state to a sec
 
 ## 2. Documentation Map & Navigation
 
-The Phase 3 architecture deliverables under [`apps/hub/docs/architecture/`](file:///e:/KhaiSpace/apps/hub/docs/architecture/) comprise 18 comprehensive specifications:
+The Phase 3 architecture directory under [`apps/hub/docs/architecture/`](file:///e:/KhaiSpace/apps/hub/docs/architecture/) contains **18 Markdown and SQL documentation files, including README.md**:
 
 | Document | Primary Focus | Target Audience |
 |:---|:---|:---|

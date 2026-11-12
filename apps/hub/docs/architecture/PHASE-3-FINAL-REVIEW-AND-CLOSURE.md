@@ -43,7 +43,7 @@ The final documented architecture captures the following design safeguards, whic
 3. **Comprehensive Row Level Security (RLS):** Enabled without exception across all 12 tables, backed by dedicated `SELECT`, `INSERT`, `UPDATE`, and `DELETE` policies.
 4. **Function Security Inventory:**
    - **15 `SECURITY DEFINER` Functions:** Comprising 8 database triggers (execution revoked from all roles), 3 `STABLE` anti-recursion RLS helpers (execution granted strictly to `authenticated`), and 4 user-facing RPCs/procedures (execution granted strictly to `authenticated`).
-   - **2 `SECURITY INVOKER` Functions:** In-memory trigger functions (`handle_updated_at`, `prevent_note_type_change`) executing without elevated privileges.
+   - **2 `SECURITY INVOKER` Functions:** PostgreSQL trigger functions executing with invoker privileges (`handle_updated_at`, `prevent_note_type_change`) without elevated privileges.
 5. **Fixed Function Search Paths:** All 15 `SECURITY DEFINER` functions explicitly enforce `SET search_path = public, auth, pg_temp` to eliminate search-path injection vulnerabilities.
 6. **Verified Email Identity Enforcement:** The `accept_workspace_invitation()` RPC exclusively resolves caller identity via `auth.uid()`, queries `auth.users`, enforces `email_confirmed_at IS NOT NULL`, rejects empty or whitespace email, and performs canonical `LOWER(TRIM(...))` comparison using `IS DISTINCT FROM`. Unverified JWT claims and user metadata are untrusted.
 7. **Cryptographic Tokens & Concurrency Locks:** Workspace invitations store tokens strictly as SHA-256 hashes (`token_hash`); redemption serializes concurrent attempts using pessimistic row locking (`SELECT ... FOR UPDATE`).
@@ -130,4 +130,4 @@ Any commencement of Phase 4 (Supabase Project Setup & Core Configuration) or app
 | **Outstanding Runtime Validation** | **Pending future approved implementation (Phase 4+)** |
 | **Phase 4 Authorization** | **Not granted** |
 | **Project Owner** | **Khai** |
-| **Closure Commit** | *(Recorded upon completion of this documentation task)* |
+| **Previous Closure Commit** | `087070bbb4aa74151826f72392fb244309bb78b1` |
