@@ -1,7 +1,7 @@
 # Khai Space Hub — Phase 4 Supabase Foundation & Client Setup Report
 
-**Document Version:** 1.0.0  
-**Phase:** Phase 4 — Supabase Foundation & Client Setup  
+**Document Version:** 1.1.0 (Reconciled in Phase 4.1)
+**Phase:** Phase 4 — Supabase Foundation & Client Setup (with Phase 4.1 Type Reconciliation)
 **Target Application:** `apps/hub/`  
 **Repository:** `https://github.com/khairultajudin/khaispace`  
 **Working Branch:** `feature/khai-space-hub`  
@@ -82,28 +82,29 @@ Created [`apps/hub/src/lib/supabase/client.ts`](file:///e:/KhaiSpace/apps/hub/sr
 
 ## 6. Database Type Definitions
 
-Created [`apps/hub/src/types/database.types.ts`](file:///e:/KhaiSpace/apps/hub/src/types/database.types.ts) based on the Phase 3.3.1 approved relational architecture (`schema-draft.sql`):
+Created [`apps/hub/src/types/database.types.ts`](file:///e:/KhaiSpace/apps/hub/src/types/database.types.ts) based on the Phase 3.3.1 approved relational architecture ([`schema-draft.sql`](file:///e:/KhaiSpace/apps/hub/docs/architecture/schema-draft.sql)) and reconciled 1:1 in Phase 4.1 ([`PHASE-4.1-TYPE-INTEGRITY-CORRECTION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-4.1-TYPE-INTEGRITY-CORRECTION-REPORT.md)):
 
-### 6.1 Entity Coverage (12 Core Relational Tables)
-1. `workspaces`: UUID primary key, timezone, audit timestamps.
-2. `profiles`: Linked 1:1 to `auth.users(id)`, avatar metadata, bio, phone.
-3. `workspace_members`: Composite constraints, 4 roles (`Owner`, `Administrator`, `Member`, `Viewer`), 3 statuses (`Active`, `Invited`, `Suspended`).
-4. `workspace_invitations`: SHA-256 token hashing, single-use states (`pending`, `accepted`, `revoked`, `expired`), role restrictions.
-5. `workspace_settings`: Currency standardization (MYR), notification preferences, renewal alert thresholds.
-6. `projects`: Slugs for URL deep-linking, target completion dates, status enums.
-7. `milestones`: Composite foreign keys `(workspace_id, project_id)`.
-8. `tasks`: Milestone association with column-specific NULL safety, priority, assignee relation.
-9. `financial_transactions`: Exact decimal currency (`numeric(12, 2)` mapped to `number`), income/expense categories, investment return flags.
-10. `ai_subscriptions`: Tool names, categories, billing cycles, exact costs, renewal schedules.
-11. `workspace_notes`: Note vs Decision type immutability, markdown content, tags, decision status.
-12. `activity_logs`: Append-only audit entries, nullable foreign key cleanup, actor snapshots, metadata jsonb.
+### 6.1 Entity Coverage (12 Core Relational Tables, 141 Columns, 28 Foreign Keys)
+1. `workspaces`: UUID primary key, `name`, `description`, `timezone`, `default_currency` (`MYR (RM)`), `date_format` (`YYYY-MM-DD`), `content_density` (`comfortable`), audit timestamps, and `created_by`.
+2. `profiles`: Linked 1:1 to `auth.users(id)`, `full_name`, `display_name`, `email`, `bio`, `location`, `timezone`, `avatar_initials`, and audit timestamps.
+3. `workspace_members`: RBAC junction with 4 roles (`Owner`, `Administrator`, `Member`, `Viewer` via `member_role`), 3 statuses (`Active`, `Pending`, `Suspended` via `member_status`), optional `bio`, `invited_by`, `joined_at`, `created_at`, and `updated_at`.
+4. `workspace_invitations`: `workspace_id`, `email`, `role` (`member_role` with `CHECK (role != 'Owner')`), `token_hash`, `status` (`varchar(20)` with `CHECK` values `'pending'`, `'accepted'`, `'revoked'`, `'expired'`), `personal_message`, `invited_by`, `expires_at`, and `created_at`.
+5. `workspace_settings`: Strict 1:1 `workspace_id` PK with 5 boolean notification preference columns (`notification_task_reminders`, `notification_milestone_updates`, `notification_project_updates`, `notification_workspace_activity`, `notification_subscription_renewals`) and `updated_at`.
+6. `projects`: `slug`, `title`, `category`, `status` (`project_status`: `'Active' | 'Production' | 'In Development' | 'Planning' | 'Documented'`), `location`, `description`, `full_description`, `tags` (`text[]`), `metadata` (`jsonb`), and audit fields.
+7. `milestones`: Composite foreign key `fk_milestone_project_ws (workspace_id, project_id)`, optional `slug`, `title`, `target_date`, `status` (`milestone_status`: `'Planned' | 'In Progress' | 'Completed'`), `description`, and audit fields.
+8. `tasks`: Composite foreign keys `fk_task_project_ws (workspace_id, project_id)` and `fk_task_milestone_ws (workspace_id, milestone_id)` with column-specific `ON DELETE SET NULL (milestone_id)`, `title`, `priority` (`task_priority`: `'High' | 'Medium' | 'Normal'`), `status` (`task_status`: `'In Progress' | 'Pending' | 'Completed'`), `due_date`, `description`, and audit fields.
+9. `financial_transactions`: `transaction_date`, `type` (`transaction_type`: `'Income' | 'Expense' | 'Investment'`), `category` (`varchar(100)`), `amount` (`numeric(12, 2)` mapped to `number`), `description`, `notes`, `is_investment_return`, and audit fields.
+10. `ai_subscriptions`: `assigned_project_id`, `provider`, `product_name`, `plan_name`, `category` (`varchar(100)`), `billing_cycle` (`billing_cycle`: `'Monthly' | 'Annual'`), `amount` (`numeric(12, 2)`), `currency` (`MYR`), `status` (`subscription_status`: `'Active' | 'Paused' | 'Cancelled' | 'Trial'`), `start_date`, `next_billing_date`, `purpose`, `notes`, and audit fields.
+11. `workspace_notes`: `type` (`note_record_type`: `'Note' | 'Decision'`), `title`, `content`, `category` (`varchar(100)`), `tags` (`text[]`), `decision_status` (`decision_status`: `'Proposed' | 'Approved' | 'Rejected' | 'Superseded'`), `rationale`, `impact`, and audit fields.
+12. `activity_logs`: Append-only audit entries (`workspace_id`, `user_id`, `actor_email`, `actor_role`, `action`, `entity_type`, `entity_id`, `project_id`, `category`, `metadata`, `created_at`).
 
-### 6.2 Views & RPC Signatures
-- **SQL Views:** `view_overall_finance_kpis`, `view_project_finance_summary`, `view_monthly_financial_trends`.
-- **Database RPCs:** `create_workspace_with_owner`, `accept_workspace_invitation`, `delete_workspace_by_owner`, `log_workspace_activity`, `is_workspace_member`, `get_user_workspace_role`, `is_workspace_admin_or_owner`.
+### 6.2 Enums, Views & RPC Signatures
+- **11 PostgreSQL Enums:** `project_status`, `task_priority`, `task_status`, `milestone_status`, `transaction_type`, `subscription_status`, `billing_cycle`, `note_record_type`, `decision_status`, `member_role`, `member_status`.
+- **3 SQL Views (`security_invoker = true`):** `view_overall_finance_kpis`, `view_project_finance_summary`, `view_monthly_financial_trends`.
+- **7 Callable Database RPCs:** `create_workspace_with_owner`, `accept_workspace_invitation`, `delete_workspace_by_owner`, `log_workspace_activity`, `is_workspace_member`, `get_user_workspace_role`, `is_workspace_admin_or_owner`.
 
 > [!NOTE]
-> **Schema Type Origin Notice:** These types reflect the planned architecture from Phase 3. The live database schema will be deployed in Phase 6, after which types can be reconciled against Supabase CLI generated types.
+> **Schema Type Origin Notice:** The TypeScript definitions are derived from the planned SQL blueprint (`schema-draft.sql`) and have not yet been verified against a deployed live database schema. The live database schema will be deployed in Phase 6, after which types will be verified against live Supabase CLI generated types. See [`PHASE-4.1-TYPE-INTEGRITY-CORRECTION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-4.1-TYPE-INTEGRITY-CORRECTION-REPORT.md) for the full 1:1 SQL-to-TypeScript reconciliation record.
 
 ---
 
