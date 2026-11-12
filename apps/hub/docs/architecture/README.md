@@ -1,6 +1,6 @@
 # Khai Space Hub — Architecture & Persistence Documentation Index
-**Document Version:** 1.5.1 (Phase 4.1 Type Integrity & Documentation Reconciled)
-**Phase:** Phase 4.1 — Database Type Integrity, RPC Contract Reconciliation & Documentation Correction
+**Document Version:** 1.6.0 (Phase 5 Authentication Foundation Implemented)
+**Phase:** Phase 5 — Authentication Foundation & Private Workspace Access
 **Application Target:** `apps/hub/`
 **Working Branch:** `feature/khai-space-hub`
 **Repository:** `khairultajudin/khaispace`
@@ -26,10 +26,11 @@ The architecture transitions the Hub from in-memory React session state to a sec
 
 ## 2. Documentation Map & Navigation
 
-The architecture directory under [`apps/hub/docs/architecture/`](file:///e:/KhaiSpace/apps/hub/docs/architecture/) contains **20 Markdown and SQL documentation files (18 Markdown documents and 2 SQL scripts), including README.md**:
+The architecture directory under [`apps/hub/docs/architecture/`](file:///e:/KhaiSpace/apps/hub/docs/architecture/) contains **21 Markdown and SQL documentation files (19 Markdown documents and 2 SQL scripts), including README.md**:
 
 | Document | Primary Focus | Target Audience |
 |:---|:---|:---|
+| **[`PHASE-5-AUTHENTICATION-IMPLEMENTATION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-5-AUTHENTICATION-IMPLEMENTATION-REPORT.md)** | Phase 5 client authentication service, `useAuth` hook, private `LoginView`, static-export callback handler, `AuthGuard`, and manual Supabase Auth checklist. | All Stakeholders, Security Auditors, Frontend & Auth Engineers |
 | **[`PHASE-4.1-TYPE-INTEGRITY-CORRECTION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-4.1-TYPE-INTEGRITY-CORRECTION-REPORT.md)** | Phase 4.1 audit and 1:1 reconciliation of TypeScript database types, enums, views, relationships, and RPC signatures against `schema-draft.sql`. | All Stakeholders, Security Auditors, TypeScript & Database Engineers |
 | **[`PHASE-4-SUPABASE-FOUNDATION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-4-SUPABASE-FOUNDATION-REPORT.md)** | Phase 4 Supabase foundation, project provisioning, SDK client singleton, planned database types, and safe verification report. | All Stakeholders, Security Auditors, Technical Lead |
 | **[`PHASE-3-FINAL-REVIEW-AND-CLOSURE.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-3-FINAL-REVIEW-AND-CLOSURE.md)** | Official Phase 3 Final Review & Closure Record certifying architectural completion and strict change control boundaries. | All Stakeholders, Security Auditors, Project Owner |
@@ -56,10 +57,10 @@ The architecture directory under [`apps/hub/docs/architecture/`](file:///e:/Khai
 
 ### For the Technical Lead & Stakeholders
 1. Start with this **`README.md`** for the executive summary and current phase status.
-2. Review **[`PHASE-4.1-TYPE-INTEGRITY-CORRECTION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-4.1-TYPE-INTEGRITY-CORRECTION-REPORT.md)** and **[`PHASE-4-SUPABASE-FOUNDATION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-4-SUPABASE-FOUNDATION-REPORT.md)** for the current Supabase project foundation, client setup, and 1:1 SQL-to-TypeScript schema type reconciliation.
+2. Review **[`PHASE-5-AUTHENTICATION-IMPLEMENTATION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-5-AUTHENTICATION-IMPLEMENTATION-REPORT.md)**, **[`PHASE-4.1-TYPE-INTEGRITY-CORRECTION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-4.1-TYPE-INTEGRITY-CORRECTION-REPORT.md)**, and **[`PHASE-4-SUPABASE-FOUNDATION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-4-SUPABASE-FOUNDATION-REPORT.md)** for the completed authentication foundation, Supabase project setup, and 1:1 SQL-to-TypeScript schema type reconciliation.
 3. Review **[`PHASE-3-FINAL-REVIEW-AND-CLOSURE.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-3-FINAL-REVIEW-AND-CLOSURE.md)**, **[`PHASE-3.3.1-VERIFIED-EMAIL-CORRECTION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-3.3.1-VERIFIED-EMAIL-CORRECTION-REPORT.md)**, and **[`PHASE-3.3-FINAL-VALIDATION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-3.3-FINAL-VALIDATION-REPORT.md)** for the Phase 3 architectural closure and security validation record.
 4. Review **[`SYSTEM-ARCHITECTURE.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/SYSTEM-ARCHITECTURE.md)** and **[`ARCHITECTURE-DECISIONS.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/ARCHITECTURE-DECISIONS.md)** to inspect the hybrid static export approach and architectural trade-offs.
-5. Inspect **[`MIGRATION-ROADMAP.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/MIGRATION-ROADMAP.md)** before authorizing Phase 5 (Authentication) or Phase 6 (Database Schema Deployment).
+5. Inspect **[`MIGRATION-ROADMAP.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/MIGRATION-ROADMAP.md)** before authorizing Phase 6 (Database Schema & RLS Deployment).
 
 ### For the Senior Database & Security Engineer
 1. Review **[`DATABASE-SCHEMA.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/DATABASE-SCHEMA.md)** and the Mermaid ERD.
@@ -77,11 +78,11 @@ The architecture directory under [`apps/hub/docs/architecture/`](file:///e:/Khai
 ## 4. Operational Boundaries & Current Project State
 
 > [!IMPORTANT]
-> **Historical Milestone Context & Current Phase 4.1 State:**
+> **Historical Milestone Context & Current Phase 5 State:**
 > - **Phase 3 Historical Boundary:** Phase 3 was strictly an architectural design, planning, and documentation milestone; no live database existed during Phase 3.
 > - **Phase 4 & 4.1 Foundation Completed:** Following explicit project-owner approval, Phase 4 provisioned the dedicated, isolated Supabase project **`khai-space-hub`** in region **`ap-southeast-1` (Singapore)**, installed the official `@supabase/supabase-js` SDK, and implemented the browser client singleton ([`apps/hub/src/lib/supabase/client.ts`](file:///e:/KhaiSpace/apps/hub/src/lib/supabase/client.ts)) and planned-schema TypeScript definitions ([`apps/hub/src/types/database.types.ts`](file:///e:/KhaiSpace/apps/hub/src/types/database.types.ts)), which were reconciled 1:1 with [`schema-draft.sql`](file:///e:/KhaiSpace/apps/hub/docs/architecture/schema-draft.sql) in Phase 4.1.
+> - **Phase 5 Authentication Foundation Completed:** Phase 5 implemented the client authentication service ([`apps/hub/src/lib/supabase/auth-service.ts`](file:///e:/KhaiSpace/apps/hub/src/lib/supabase/auth-service.ts)), `useAuth` hook and `AuthProvider` ([`apps/hub/src/hooks/use-auth.ts`](file:///e:/KhaiSpace/apps/hub/src/hooks/use-auth.ts)), private passwordless login screen ([`apps/hub/src/components/auth/login-view.tsx`](file:///e:/KhaiSpace/apps/hub/src/components/auth/login-view.tsx)), static-export callback route (`/auth/callback`), and application shell guard ([`apps/hub/src/components/auth/auth-guard.tsx`](file:///e:/KhaiSpace/apps/hub/src/components/auth/auth-guard.tsx)).
 > - **Planned-Schema Type Provenance:** The TypeScript definitions in `apps/hub/src/types/database.types.ts` are derived from the planned SQL blueprint (`schema-draft.sql`) and are **not** live-generated schema types.
-> - **Live Schema Not Yet Deployed:** No tables, enums, views, triggers, RLS policies, or seed data have been deployed to the remote Supabase database.
-> - **Authentication Not Yet Implemented:** No login UI, Magic Link/OTP flows, or session guards have been implemented.
-> - **Current Frontend Execution Mode:** All 7 Khai Space Hub modules continue to operate in local in-memory React session/demo mode with zero breaking changes.
-> - **Future Phase Authorization Required:** Execution of **Phase 5 (Authentication & Workspace Access)** and **Phase 6 (Database Schema & RLS Deployment)** remains strictly blocked pending separate explicit authorization from the project owner.
+> - **Live Schema & Database Membership Verification Deferred to Phase 6:** No tables, enums, views, triggers, RLS policies, or seed data have been deployed to the remote Supabase database yet. Phase 5 verifies Supabase user authentication (`auth.users`); database-level workspace membership (`public.workspace_members`) and role authorization (`Owner` / `Admin` / `Collaborator` / `Viewer`) will be enforced in Phase 6.
+> - **Current Frontend Execution Mode:** Once authenticated through `AuthGuard`, all 7 Khai Space Hub modules continue to operate in local in-memory React session/demo mode until Phases 7–9.
+> - **Future Phase Authorization Required:** Execution of **Phase 6 (Database Schema & RLS Deployment)** and subsequent persistence phases remains strictly gated pending separate explicit authorization from the project owner.

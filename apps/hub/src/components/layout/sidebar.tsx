@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -11,7 +11,11 @@ import {
   Settings,
   X,
   ExternalLink,
+  LogOut,
+  Loader2,
+  UserCheck,
 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 import { NavSection } from "../../types/dashboard";
 
 interface SidebarProps {
@@ -80,6 +84,21 @@ export function Sidebar({
   mobileOpen,
   onCloseMobile,
 }: SidebarProps) {
+  const { user, signOut } = useAuth();
+  const [isSigningOut, setIsSigningOut] = useState<boolean>(false);
+
+  const handleSignOut = async () => {
+    setIsSigningOut(true);
+    try {
+      await signOut();
+      if (mobileOpen) {
+        onCloseMobile();
+      }
+    } finally {
+      setIsSigningOut(false);
+    }
+  };
+
   const content = (
     <div className="flex flex-col h-full bg-[#FAF8F4] border-r border-[#DCD7CC] select-none">
       {/* Brand & Workspace Identity */}
@@ -153,7 +172,33 @@ export function Sidebar({
       </nav>
 
       {/* Footer Info / Links */}
-      <div className="p-4 border-t border-[#DCD7CC] bg-[#E9E5DC]/40 text-xs text-[#536B85] space-y-2">
+      <div className="p-4 border-t border-[#DCD7CC] bg-[#E9E5DC]/40 text-xs text-[#536B85] space-y-2.5">
+        {user?.email && (
+          <div className="p-2.5 rounded border border-[#DCD7CC] bg-white space-y-1.5">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#0C2340]">
+              <UserCheck className="w-3.5 h-3.5 text-[#347A63] shrink-0" />
+              <span className="truncate font-mono">{user.email}</span>
+            </div>
+            <div className="flex items-center justify-between text-[10px] text-[#536B85]">
+              <span>Auth Verified</span>
+              <span className="font-mono text-[#347A63]">DB Roles: Phase 6</span>
+            </div>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              disabled={isSigningOut}
+              className="w-full mt-1 inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded border border-[#DCD7CC] bg-[#FAF8F4] hover:bg-[#E9E5DC] text-[#0C2340] text-[11px] font-medium transition-colors disabled:opacity-60 cursor-pointer"
+            >
+              {isSigningOut ? (
+                <Loader2 className="w-3 h-3 animate-spin text-[#536B85]" />
+              ) : (
+                <LogOut className="w-3 h-3 text-[#536B85]" />
+              )}
+              <span>Sign Out</span>
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center justify-between text-[11px] font-mono">
           <span>Target Host</span>
           <span className="text-[#0C2340]">Cloudflare Pages</span>

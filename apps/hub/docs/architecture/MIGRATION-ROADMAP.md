@@ -1,27 +1,27 @@
 # Khai Space Hub — Persistence Implementation & Migration Roadmap
-**Document Version:** 1.0.0  
-**Phase:** Phase 3 Architecture & Persistence Planning  
-**Application Target:** `apps/hub/`  
-**Working Branch:** `feature/khai-space-hub`  
+**Document Version:** 1.1.0 (Updated through Phase 5 Completion)
+**Phase:** Phase 5 — Authentication Foundation & Private Workspace Access
+**Application Target:** `apps/hub/`
+**Working Branch:** `feature/khai-space-hub`
 **Repository:** `khairultajudin/khaispace`
 
 ---
 
 ## 1. Roadmap Overview & Phased Migration Strategy
 
-Moving Khai Space Hub from in-memory React session state to a persistent, production-grade Supabase architecture requires a controlled, phased migration. 
+Moving Khai Space Hub from in-memory React session state to a persistent, production-grade Supabase architecture requires a controlled, phased migration.
 
 ### Core Migration Principles
 1. **Zero Downtime / Zero Regressions:** Existing prototype functionality must remain operational at every step.
 2. **Incremental Adoption:** Entities are migrated module by module with automated quality gates between phases.
 3. **Manual Approval Gates:** Phases involving external project provisioning, DNS/Auth changes, or database schema deployment require explicit stakeholder review and approval.
-4. **Scope Control:** **Phase 3 plans the architecture; it does not execute any of the future phases below.**
+4. **Scope Control:** Each phase executes strictly within its approved boundaries; Phase 6 (Schema & RLS Deployment) and Phases 7–10 remain gated pending explicit project owner approval.
 
 ```mermaid
 flowchart LR
-    P3["Phase 3: Architecture Planning (Current)"] --> P4["Phase 4: Supabase Foundation"]
-    P4 --> P5["Phase 5: Auth & Workspace Access"]
-    P5 --> P6["Phase 6: Schema & RLS Deployment"]
+    P3["Phase 3: Architecture Planning (Completed)"] --> P4["Phase 4 & 4.1: Supabase Foundation & Types (Completed)"]
+    P4 --> P5["Phase 5: Auth & Workspace Access (Completed)"]
+    P5 --> P6["Phase 6: Schema & RLS Deployment (Next)"]
     P6 --> P7["Phase 7: Core Persistence (Projects, Tasks, Notes)"]
     P7 --> P8["Phase 8: Finance & Subscriptions"]
     P8 --> P9["Phase 9: Members & Settings"]
@@ -32,35 +32,33 @@ flowchart LR
 
 ## 2. Phase-by-Phase Implementation Specifications
 
-### Phase 4 — Supabase Foundation & Client Setup
-- **Objective:** Provision a dedicated Supabase project, install official SDK packages, and configure typed client wrappers without touching existing UI components.
+### Phase 4 & 4.1 — Supabase Foundation, Client Setup & Type Integrity (Completed)
+- **Status:** **COMPLETED** (See [`PHASE-4-SUPABASE-FOUNDATION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-4-SUPABASE-FOUNDATION-REPORT.md) and [`PHASE-4.1-TYPE-INTEGRITY-CORRECTION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-4.1-TYPE-INTEGRITY-CORRECTION-REPORT.md))
+- **Objective:** Provision a dedicated Supabase project, install official SDK packages, configure typed client wrappers, and reconcile 1:1 TypeScript database definitions against `schema-draft.sql` without touching existing UI components.
 - **Dependencies:** Completion and approval of Phase 3 architecture deliverables.
-- **Manual Stakeholder / Supabase Dashboard Actions:**
-  1. Create a new, isolated Supabase project named `khai-space-hub` (do not reuse BizTrack).
-  2. Retrieve the Project URL and Public Anon Key.
-  3. Set up local development environment secrets in `.env.local` (untracked in git).
-- **Code Changes in `apps/hub/`:**
-  - Install dependency: `@supabase/supabase-js` (pure client library; `@supabase/ssr` is omitted to match Next.js static export `output: "export"`).
-  - Create `apps/hub/src/lib/supabase/client.ts`.
-  - Create TypeScript database types file `apps/hub/src/types/database.types.ts`.
-  - Verify static export compatibility (`next build` succeeds).
-- **Exit Criteria:** Automated test script confirms successful connection to Supabase via `anon` key from local development environment.
+- **Completed Deliverables:**
+  1. Provisioned dedicated Supabase project `khai-space-hub` (`dpicdhjaabfjbvppmsxk`, region `ap-southeast-1` Singapore).
+  2. Installed `@supabase/supabase-js` and created `apps/hub/src/lib/supabase/client.ts` with isolated `khaispace-hub-auth` storage key.
+  3. Created and reconciled `apps/hub/src/types/database.types.ts` 1:1 with `schema-draft.sql`.
+  4. Verified static export compatibility (`next build` succeeds).
 
 ---
 
-### Phase 5 — Authentication & Private Workspace Access
-- **Objective:** Implement passwordless Magic Link authentication, private workspace gating, and secure session management.
-- **Dependencies:** Phase 4.
-- **Manual Stakeholder / Supabase Dashboard Actions:**
-  1. In Supabase Dashboard -> Authentication -> Providers: Enable **Email (Magic Link / OTP)**.
-  2. In Supabase Dashboard -> Authentication -> Settings: **Disable "Allow new users to sign up" (Public Signup Disabled)**.
-  3. Configure Site URL to `https://hub.khaispace.com` and development redirect `http://localhost:3001`.
-- **Code Changes in `apps/hub/`:**
-  - Implement login modal / view for Khai and invited collaborators.
-  - Create `useAuth` hook tracking active Supabase session.
-  - Implement authentication guard: unauthenticated users see the Login view; authenticated users enter the Hub.
-  - Store session in memory / local storage using Supabase Auth helpers.
-- **Exit Criteria:** Khai can log in via email OTP; uninvited public emails are rejected; session persists across browser refreshes.
+### Phase 5 — Authentication & Private Workspace Access (Completed)
+- **Status:** **COMPLETED** (See [`PHASE-5-AUTHENTICATION-IMPLEMENTATION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-5-AUTHENTICATION-IMPLEMENTATION-REPORT.md))
+- **Objective:** Implement passwordless Magic Link and Email OTP authentication, private workspace gating, and secure client session management compatible with static export.
+- **Dependencies:** Phase 4 & Phase 4.1.
+- **Manual Stakeholder / Supabase Dashboard Actions (Required Before Live Email Testing):**
+  1. In Supabase Dashboard -> Authentication -> Providers: Confirm **Email (Magic Link / OTP)** is enabled.
+  2. In Supabase Dashboard -> Authentication -> URL Configuration: Configure Site URL (`https://hub.khaispace.com`) and Redirect URLs (`http://localhost:3000/auth/callback`, `https://hub.khaispace.com/auth/callback`).
+  3. In Supabase Dashboard -> Authentication -> Users: Provision the initial Owner email account prior to first sign-in.
+- **Completed Code Deliverables in `apps/hub/`:**
+  - Created `apps/hub/src/lib/supabase/auth-service.ts` enforcing `shouldCreateUser: false`, open-redirect protection, token redaction, and account-enumeration protection.
+  - Created `apps/hub/src/hooks/use-auth.ts` (`AuthProvider` & `useAuth`) tracking active Supabase session and explicit `workspaceAccessStatus` boundary (`authenticated_membership_unverified_phase_6`).
+  - Created private `LoginView` (`apps/hub/src/components/auth/login-view.tsx`) and static `/login` route (`apps/hub/src/app/login/page.tsx`).
+  - Created client callback handler (`apps/hub/src/components/auth/auth-callback-view.tsx`) and static `/auth/callback` route (`apps/hub/src/app/auth/callback/page.tsx`).
+  - Created `AuthGuard` (`apps/hub/src/components/auth/auth-guard.tsx`) and integrated authenticated identity + Sign Out controls into `Header` and `Sidebar`.
+- **Architectural Boundary Note:** Phase 5 verifies Supabase user authentication (`auth.users`). Database-backed workspace membership (`public.workspace_members`) and role authorization (`Owner` / `Admin` / `Collaborator` / `Viewer`) are enforced in Phase 6 once `schema-draft.sql` is deployed.
 
 ---
 
