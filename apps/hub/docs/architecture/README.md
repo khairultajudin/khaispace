@@ -1,6 +1,6 @@
 # Khai Space Hub — Architecture & Persistence Documentation Index
-**Document Version:** 1.4.0 (Phase 3 Final Review & Architecture Closure Complete)  
-**Phase:** Phase 3 Final Review & Architecture Closure  
+**Document Version:** 1.5.0 (Phase 4 Supabase Foundation & Client Setup Completed)  
+**Phase:** Phase 4 Supabase Foundation & Client Setup  
 **Application Target:** `apps/hub/`  
 **Working Branch:** `feature/khai-space-hub`  
 **Repository:** `khairultajudin/khaispace`
@@ -15,8 +15,8 @@ The architecture transitions the Hub from in-memory React session state to a sec
 
 ### Core Architecture Pillars
 - **Zero-Trust Client Security:** Defense-in-depth enforced by PostgreSQL Row Level Security (RLS) on every table.
+- **Dedicated Supabase Project:** Isolated `khai-space-hub` project in `ap-southeast-1` (Singapore) with zero shared resources.
 - **Verified Email Identity:** Invitation acceptance enforces authoritative `auth.users` lookup, confirmed email check (`email_confirmed_at IS NOT NULL`), and row-level concurrency locking.
-- **Dedicated Supabase Project:** Absolute separation from other projects (e.g. BizTrack) with zero shared credentials.
 - **Exact Accounting Standards:** Financial transactions and AI subscriptions stored in exact `numeric(12, 2)` decimal currency (MYR).
 - **Strict ROI Calculation:** Realized ROI is computed **exclusively** from transactions certified with `is_investment_return = true`.
 - **Private Workspace Model:** Public self-registration is permanently disabled; access is strictly invitation-only.
@@ -26,10 +26,11 @@ The architecture transitions the Hub from in-memory React session state to a sec
 
 ## 2. Documentation Map & Navigation
 
-The Phase 3 architecture directory under [`apps/hub/docs/architecture/`](file:///e:/KhaiSpace/apps/hub/docs/architecture/) contains **18 Markdown and SQL documentation files, including README.md**:
+The Phase 4 architecture directory under [`apps/hub/docs/architecture/`](file:///e:/KhaiSpace/apps/hub/docs/architecture/) contains **19 Markdown and SQL documentation files, including README.md**:
 
 | Document | Primary Focus | Target Audience |
 |:---|:---|:---|
+| **[`PHASE-4-SUPABASE-FOUNDATION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-4-SUPABASE-FOUNDATION-REPORT.md)** | Phase 4 Supabase foundation, project provisioning, SDK client singleton, database types, and safe verification report. | All Stakeholders, Security Auditors, Technical Lead |
 | **[`PHASE-3-FINAL-REVIEW-AND-CLOSURE.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-3-FINAL-REVIEW-AND-CLOSURE.md)** | Official Phase 3 Final Review & Closure Record certifying architectural completion and strict change control boundaries. | All Stakeholders, Security Auditors, Project Owner |
 | **[`PHASE-3.3.1-VERIFIED-EMAIL-CORRECTION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-3.3.1-VERIFIED-EMAIL-CORRECTION-REPORT.md)** | Definitive verified-email enforcement, authoritative auth lookup, and full 15 SECURITY DEFINER inventory reconciliation. | All Stakeholders, Security Auditors |
 | **[`PHASE-3.3-FINAL-VALIDATION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-3.3-FINAL-VALIDATION-REPORT.md)** | SQL validation, UUID verification, Auth hook installation, and privilege boundary closure report. | All Stakeholders, Security Auditors |
