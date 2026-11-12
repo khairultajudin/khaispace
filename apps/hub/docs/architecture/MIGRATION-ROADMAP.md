@@ -50,7 +50,7 @@ flowchart LR
 - **Dependencies:** Phase 4 & Phase 4.1.
 - **Manual Stakeholder / Supabase Dashboard Actions (Required Before Live Email Testing):**
   1. In Supabase Dashboard -> Authentication -> Providers: Confirm **Email (Magic Link / OTP)** is enabled.
-  2. In Supabase Dashboard -> Authentication -> URL Configuration: Configure Site URL (`https://hub.khaispace.com`) and Redirect URLs (`http://localhost:3000/auth/callback`, `https://hub.khaispace.com/auth/callback`).
+  2. In Supabase Dashboard -> Authentication -> URL Configuration: Configure Site URL (`https://hub.khaispace.com`) and Redirect URLs (`http://localhost:3001/auth/callback`, `https://hub.khaispace.com/auth/callback` — matching the Hub local development server port `3001` in `apps/hub/package.json`).
   3. In Supabase Dashboard -> Authentication -> Users: Provision the initial Owner email account prior to first sign-in.
 - **Completed Code Deliverables in `apps/hub/`:**
   - Created `apps/hub/src/lib/supabase/auth-service.ts` enforcing `shouldCreateUser: false`, open-redirect protection, token redaction, and account-enumeration protection.

@@ -64,7 +64,7 @@ Because `shouldCreateUser: false` blocks automatic user creation from the login 
    - Open Supabase Dashboard (`khai-space-hub` / `dpicdhjaabfjbvppmsxk`) $\rightarrow$ **Authentication** $\rightarrow$ **Users**.
    - Click **Add user** $\rightarrow$ **Create new user** (or **Send invitation**) using the Owner's primary email address (with **Auto Confirm User** enabled when creating directly).
 2. **Sign In via Hub Login Screen:**
-   - Navigate to `https://hub.khaispace.com` (or `http://localhost:3000` in local development).
+   - Navigate to `https://hub.khaispace.com` (or `http://localhost:3001` in local development, matching `next dev --port 3001` in `apps/hub/package.json`).
    - Enter the provisioned Owner email address and click **Send Magic Link / Email OTP**.
    - Complete sign-in either by clicking the Magic Link in the email (which routes through `/auth/callback`) or by entering the 6-digit OTP code directly on the login screen.
 3. **Phase 6 Workspace Bootstrap (Next Phase):**
@@ -185,10 +185,10 @@ Because Phase 5 strictly prohibits automated remote changes to Supabase Auth set
 2. **Authentication $\rightarrow$ User Signups:**
    - Confirm **Allow new users to sign up** is **OFF** (or keep `shouldCreateUser: false` enforced at the application layer while provisioning initial users via Dashboard). *Note: If "Allow new users to sign up" is turned OFF globally in Supabase Dashboard, verify that existing provisioned users in `auth.users` can still request Magic Links/OTPs, or leave global signups enabled only if relying on `shouldCreateUser: false` + Phase 6 RLS gating.*
 3. **Authentication $\rightarrow$ URL Configuration:**
-   - **Site URL:** `https://hub.khaispace.com` (or `http://localhost:3000` during local-only testing).
+   - **Site URL:** `https://hub.khaispace.com` (or `http://localhost:3001` during local-only testing, matching `next dev --port 3001` in `apps/hub/package.json`).
    - **Redirect URLs (Allow List):**
-     - `http://localhost:3000/auth/callback`
-     - `http://localhost:3000/**`
+     - `http://localhost:3001/auth/callback`
+     - `http://localhost:3001/**`
      - `https://hub.khaispace.com/auth/callback`
      - `https://hub.khaispace.com/**`
 4. **Authentication $\rightarrow$ Email Templates $\rightarrow$ Magic Link:**
@@ -270,7 +270,7 @@ All 12 functional and security review cases specified in Section 11 of the Phase
 
 ## 18. Known Limitations
 
-1. **Remote Supabase Auth Dashboard Settings Require Owner Verification:** Because automated remote configuration changes are prohibited in Phase 5, the project owner must confirm the Redirect URLs (`http://localhost:3000/auth/callback`, `https://hub.khaispace.com/auth/callback`) and provision the initial Owner user in Supabase Dashboard before live email delivery testing (see Section 13).
+1. **Remote Supabase Auth Dashboard Settings Require Owner Verification:** Because automated remote configuration changes are prohibited in Phase 5, the project owner must confirm the Redirect URLs (`http://localhost:3001/auth/callback`, `https://hub.khaispace.com/auth/callback`) and provision the initial Owner user in Supabase Dashboard before live email delivery testing (see Section 13).
 2. **Database Schema & RLS Not Yet Deployed:** `public.workspaces`, `public.workspace_members`, and RLS policies exist in [`schema-draft.sql`](file:///e:/KhaiSpace/apps/hub/docs/architecture/schema-draft.sql) and [`database.types.ts`](file:///e:/KhaiSpace/apps/hub/src/types/database.types.ts) but are not deployed to the live PostgreSQL instance until Phase 6.
 3. **In-Memory Module Data Until Phases 7–9:** Authenticated users entering the Hub interact with the existing in-memory sample datasets until database service integration in Phases 7–9.
 
