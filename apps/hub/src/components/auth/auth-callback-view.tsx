@@ -27,7 +27,7 @@ type CallbackStatus = 'verifying' | 'authenticated' | 'failed';
  *
  * Security invariants:
  * - Validates and sanitizes any `next` or `redirect_to` parameter via `sanitizeInternalRedirectPath`.
- * - Scrubs sensitive query/hash tokens from browser history immediately after verification.
+ * - Scrubs sensitive query/hash tokens from browser history synchronously BEFORE asynchronous verification begins.
  */
 export function AuthCallbackView() {
   const [status, setStatus] = useState<CallbackStatus>('verifying');
@@ -43,18 +43,25 @@ export function AuthCallbackView() {
 
     let redirectTimer: ReturnType<typeof setTimeout> | null = null;
 
+    // 1. Capture callback query and hash parameters in local variables
+    const currentSearch = window.location.search;
+    const currentHash = window.location.hash;
+
+    // 2. Immediately scrub sensitive callback tokens from the visible browser URL
+    //    synchronously before initiating any asynchronous verification operation.
+    try {
+      window.history.replaceState(
+        window.history.state,
+        document.title,
+        window.location.pathname
+      );
+    } catch {
+      // Ignore history API restrictions in embedded contexts
+    }
+
     const processCallback = async () => {
-      const currentSearch = window.location.search;
-      const currentHash = window.location.hash;
-
+      // 3. Perform asynchronous callback verification using the preserved local variables
       const result = await completeAuthCallbackFromUrl(currentSearch, currentHash);
-
-      // Scrub sensitive callback tokens from the address bar
-      try {
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } catch {
-        // Ignore history API restrictions in embedded contexts
-      }
 
       if (!result.success || !result.data) {
         setStatus('failed');

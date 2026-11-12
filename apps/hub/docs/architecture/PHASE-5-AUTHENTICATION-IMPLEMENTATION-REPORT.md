@@ -297,3 +297,57 @@ All prerequisites for **Phase 6 — Database Schema & Row Level Security Deploym
 - [x] `apps/hub/src/components/auth/auth-guard.tsx` integrated into `apps/hub/src/app/page.tsx` with user email and Sign Out controls in `Header` and `Sidebar`.
 - [x] All 7 Hub modules and root public website (`khaispace.com`) preserved without regression.
 - [x] All 6 quality gates (`typecheck`, `lint`, `build` for Hub and Root) passed.
+
+---
+
+## 21. Phase 5.1 — Authentication Security Corrections
+
+Following an independent security and code audit of the Phase 5 implementation (`eed75086fe75b2b03d772f735d6ae62d53747826`), a narrowly scoped Phase 5.1 patch was applied across the three approved source files (`auth-callback-view.tsx`, `use-auth.ts`, and `auth-service.ts`).
+
+### 21.1 Issue A — Callback Token Scrubbing Order (`auth-callback-view.tsx`)
+- **Original Issue:** In Phase 5, `AuthCallbackView` awaited `completeAuthCallbackFromUrl(currentSearch, currentHash)` before calling `window.history.replaceState(...)`. While the asynchronous network verification was in flight, sensitive callback parameters (`?code=...`, `?token_hash=...`, or `#access_token=...`) remained visible in the browser address bar.
+- **Implemented Correction & Exact Ordering:**
+  1. Synchronously read `window.location.search` into `currentSearch`.
+  2. Synchronously read `window.location.hash` into `currentHash`.
+  3. Immediately invoke `window.history.replaceState(window.history.state, document.title, window.location.pathname)` synchronously before starting `processCallback()`, preserving any existing `window.history.state` while scrubbing query and hash tokens from the visible URL.
+  4. Only after synchronous URL scrubbing completes, invoke `await completeAuthCallbackFromUrl(currentSearch, currentHash)` using the preserved local variables.
+
+### 21.2 Issue B — Auth Session Initialization Race Condition & StrictMode Lifecycle (`use-auth.ts`)
+- **Original Issue:** In Phase 5, `AuthProvider` registered `supabase.auth.onAuthStateChange()` and then awaited `getCurrentSession()`. If an authentication event (such as `SIGNED_OUT` or `SIGNED_IN`) fired while `getCurrentSession()` was still in flight, the older `getCurrentSession()` result could resolve later and overwrite the newer authentication state. Additionally, using a persistent boolean `subscriptionActiveRef` across effect runs could prevent re-subscription if React 19 StrictMode ran effect setup $\rightarrow$ cleanup $\rightarrow$ setup.
+- **Mechanism Used to Prevent Stale State Overwrites:**
+  - Introduced a monotonic revision counter `authEventRevisionRef = useRef<number>(0)`.
+  - At the start of the initialization effect, `const initSnapshotRevision = authEventRevisionRef.current` captures the revision prior to `await getCurrentSession()`.
+  - Every `onAuthStateChange` event (`INITIAL_SESSION`, `SIGNED_IN`, `SIGNED_OUT`, `TOKEN_REFRESHED`, `USER_UPDATED`) and explicit state-mutating action (`verifyOtp`, `signOut`) increments `authEventRevisionRef.current += 1`.
+  - When `await getCurrentSession()` resolves (or throws), the handler checks `if (authEventRevisionRef.current !== initSnapshotRevision) return;`. Consequently, any auth event that occurred while `getCurrentSession()` was in flight strictly supersedes the older initialization result:
+    - `INITIALIZATION STARTED → SIGNED_OUT EVENT → OLD INITIALIZATION RESULT RETURNS` $\Rightarrow$ Final state remains `user = null`, `session = null`, `isAuthenticated = false`.
+    - `INITIALIZATION STARTED → SIGNED_IN EVENT → OLD NULL INITIALIZATION RESULT RETURNS` $\Rightarrow$ Final state preserves the newer authenticated session.
+- **StrictMode Lifecycle Handling:**
+  - Removed the cross-effect boolean `subscriptionActiveRef` guard and replaced it with per-effect lexical ownership (`let isEffectActive = true` and `let unsubscribe: (() => void) | null = null`).
+  - During React 19 StrictMode's `setup (1) → cleanup (1) → setup (2)` cycle:
+    1. `setup (1)` registers subscription #1 and starts `getCurrentSession()` #1.
+    2. `cleanup (1)` immediately sets `isEffectActive = false` for effect #1 and calls `subscription.unsubscribe()` on subscription #1, so any late resolution of `getCurrentSession()` #1 is discarded.
+    3. `setup (2)` registers a fresh subscription #2 with its own `isEffectActive = true` closure, guaranteeing exactly one active Supabase auth listener per mounted `AuthProvider`.
+
+### 21.3 Issue C — OTP Validation Consistency (`auth-service.ts`)
+- **Original Issue:** `LoginView` specifies a 6-digit numeric Email OTP code, but `validateOtpToken()` previously stripped internal whitespace (`replace(/\s+/g, '')`) and accepted 6-to-8 digits (`/^\d{6,8}$/`).
+- **Implemented Correction:**
+  - Updated `validateOtpToken(rawToken)` in [`auth-service.ts`](file:///e:/KhaiSpace/apps/hub/src/lib/supabase/auth-service.ts#L149-L174) to trim only surrounding whitespace (`rawToken.trim()`) and enforce `/^\d{6}$/`.
+  - Preserves leading zeroes (e.g., `'000123'` remains `'000123'` as a `string`), accepts `'123456'` and `'000123'`, and rejects `'12345'`, `'1234567'`, `'12a456'`, `''`, and `'12 456'` before any network request is made to Supabase.
+
+### 21.4 Phase 5.1 Executed Tests & Quality Gate Results
+- **Executed Unit & Deterministic State Simulation Tests:**
+  - Executed `validateOtpToken` and `verifyEmailOtpCode` against all required test vectors (`'123456'`, `'000123'`, `'  000123  '`, `'12345'`, `'1234567'`, `'12a456'`, `''`, `'12 456'`), confirming invalid inputs are rejected before `getSupabaseBrowserClient()` is invoked.
+  - Executed `parseAuthCallbackParams` and `sanitizeInternalRedirectPath` against PKCE (`?code=...`), token-hash (`?token_hash=...&type=magiclink`), hash-fragment (`#access_token=...`), expired callback errors with token redaction, and external open-redirect vectors (`https://evil.com`, `//evil.com`, `/\evil.com`, `javascript:alert(1)`, `/auth/callback`).
+  - Executed deterministic async race simulations verifying `INITIALIZATION STARTED → SIGNED_OUT → OLD RESULT`, `INITIALIZATION STARTED → SIGNED_IN → OLD NULL RESULT`, `TOKEN_REFRESHED` during initialization, and React StrictMode `setup → cleanup → setup` subscription lifecycle.
+- **All 6 Quality Gates (Phase 5.1):**
+  - `npm run typecheck --prefix apps/hub`: **PASS** (0 errors)
+  - `npm run lint --prefix apps/hub`: **PASS** (0 errors, 0 warnings)
+  - `npm run build --prefix apps/hub`: **PASS** (static export generated `/`, `/login`, `/auth/callback`)
+  - `npm run typecheck`: **PASS** (0 errors)
+  - `npm run lint`: **PASS** (0 errors, 1 pre-existing warning in `src/app/contact/page.tsx`)
+  - `npm run build`: **PASS** (root static export succeeded)
+
+### 21.5 Phase 5.1 Remaining Limitations & Remote Non-Modification Confirmation
+- **No Remote or Production Changes:** Zero changes were made to Supabase Dashboard configuration, Auth providers, user accounts, email templates, database schema, RLS policies, `.env.local`, Cloudflare, or DNS.
+- **Untested Live End-to-End Email Delivery:** Because remote Supabase Auth settings and user provisioning were not modified in Phase 5 or Phase 5.1, live end-to-end Magic Link / OTP email delivery against `dpicdhjaabfjbvppmsxk.supabase.co` remains pending manual Owner verification of the Supabase Dashboard checklist in Section 13.
+- **Phase 6 Dependency Unchanged:** Workspace membership (`public.workspace_members`) and database role authorization (`Owner` / `Admin` / `Collaborator` / `Viewer`) remain unverified until Phase 6 schema and RLS deployment.

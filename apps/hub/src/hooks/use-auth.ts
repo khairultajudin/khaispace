@@ -71,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [lastAuthEvent, setLastAuthEvent] = useState<AuthChangeEvent | null>(null);
 
   const isMountedRef = useRef<boolean>(true);
-  const subscriptionActiveRef = useRef<boolean>(false);
+  const authEventRevisionRef = useRef<number>(0);
 
   const applySessionState = useCallback((nextSession: Session | null) => {
     if (!isMountedRef.current) {
@@ -92,51 +92,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     isMountedRef.current = true;
+    let isEffectActive = true;
 
     let unsubscribe: (() => void) | null = null;
+    const initSnapshotRevision = authEventRevisionRef.current;
 
     const initializeAuth = async () => {
       try {
         const supabase = getSupabaseBrowserClient();
 
-        // Guard against duplicate subscriptions in React StrictMode
-        if (!subscriptionActiveRef.current) {
-          subscriptionActiveRef.current = true;
-          const {
-            data: { subscription },
-          } = supabase.auth.onAuthStateChange((event, nextSession) => {
-            if (!isMountedRef.current) {
-              return;
-            }
+        const {
+          data: { subscription },
+        } = supabase.auth.onAuthStateChange((event, nextSession) => {
+          if (!isEffectActive || !isMountedRef.current) {
+            return;
+          }
 
-            setLastAuthEvent(event);
+          authEventRevisionRef.current += 1;
+          setLastAuthEvent(event);
 
-            if (event === 'SIGNED_OUT') {
-              setSession(null);
-              setUser(null);
-              setIsLoading(false);
-              return;
-            }
+          if (event === 'SIGNED_OUT') {
+            setSession(null);
+            setUser(null);
+            setIsLoading(false);
+            return;
+          }
 
-            if (
-              event === 'INITIAL_SESSION' ||
-              event === 'SIGNED_IN' ||
-              event === 'TOKEN_REFRESHED' ||
-              event === 'USER_UPDATED'
-            ) {
-              applySessionState(nextSession);
-              setIsLoading(false);
-            }
-          });
+          if (
+            event === 'INITIAL_SESSION' ||
+            event === 'SIGNED_IN' ||
+            event === 'TOKEN_REFRESHED' ||
+            event === 'USER_UPDATED'
+          ) {
+            applySessionState(nextSession);
+            setIsLoading(false);
+          }
+        });
 
-          unsubscribe = () => {
-            subscription.unsubscribe();
-            subscriptionActiveRef.current = false;
-          };
-        }
+        unsubscribe = () => {
+          subscription.unsubscribe();
+        };
 
         const initialResult = await getCurrentSession();
-        if (!isMountedRef.current) {
+        if (!isEffectActive || !isMountedRef.current) {
+          return;
+        }
+
+        // Ignore stale initial session result if any newer auth event or action occurred
+        if (authEventRevisionRef.current !== initSnapshotRevision) {
           return;
         }
 
@@ -148,13 +151,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           applySessionState(initialResult.data?.session ?? null);
         }
       } catch (err) {
-        if (isMountedRef.current) {
+        if (
+          isEffectActive &&
+          isMountedRef.current &&
+          authEventRevisionRef.current === initSnapshotRevision
+        ) {
           setError(normalizeSupabaseAuthError(err));
           setSession(null);
           setUser(null);
         }
       } finally {
-        if (isMountedRef.current) {
+        if (isEffectActive && isMountedRef.current) {
           setIsLoading(false);
         }
       }
@@ -163,9 +170,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     void initializeAuth();
 
     return () => {
+      isEffectActive = false;
       isMountedRef.current = false;
       if (unsubscribe) {
         unsubscribe();
+        unsubscribe = null;
       }
     };
   }, [applySessionState]);
@@ -228,6 +237,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (isMountedRef.current) {
+        authEventRevisionRef.current += 1;
         setUser(userSummary);
         setSession(sessionSummary);
       }
@@ -246,9 +256,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async (): Promise<AuthOperationResult<void>> => {
     setError(null);
+    authEventRevisionRef.current += 1;
     const result = await signOutCurrentUser();
 
     if (isMountedRef.current) {
+      authEventRevisionRef.current += 1;
       if (!result.success && result.error) {
         setError(result.error);
       } else {

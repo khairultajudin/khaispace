@@ -145,15 +145,17 @@ export function validateAuthEmail(rawEmail: string): {
 
 /**
  * Validates a 6-digit numeric Email OTP code.
+ * Enforces exactly 6 numeric digits after trimming surrounding whitespace,
+ * preserving leading zeroes and rejecting internal whitespace or non-digits.
  */
 export function validateOtpToken(rawToken: string): {
   isValid: boolean;
   normalizedToken: string;
   error: NormalizedAuthError | null;
 } {
-  const normalizedToken = rawToken.replace(/\s+/g, '').trim();
+  const normalizedToken = rawToken.trim();
 
-  if (!/^\d{6,8}$/.test(normalizedToken)) {
+  if (!/^\d{6}$/.test(normalizedToken)) {
     return {
       isValid: false,
       normalizedToken,
