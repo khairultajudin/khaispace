@@ -63,20 +63,24 @@ flowchart LR
 ---
 
 ### Phase 6 — Database Schema & Row Level Security Deployment
-- **Status:** **COMPLETED** (Verified & Live on Supabase `dpicdhjaabfjbvppmsxk`).
+- **Status:** **DEPLOYED — PHASE 6.1 REMEDIATION APPROVAL PENDING** (Live on Supabase `dpicdhjaabfjbvppmsxk`).
 - **Objective:** Deploy reviewed PostgreSQL relational foundation, composite integrity triggers, anti-escalation policies, security-invoker accounting views, invitation acceptance procedures, and updated-at triggers to the dedicated Supabase project.
 - **Dependencies:** Phase 5.
 - **Completed Deliverables:**
-  - Deployed versioned migration `20261113000001_phase6_initial_schema_and_rls.sql` (`20261113024551`) via `supabase_mcp.apply_migration`.
+  - Deployed migration `20261113000001_phase6_initial_schema_and_rls.sql` (remote `schema_migrations` version `20261113024551`) via `supabase_mcp.apply_migration`.
   - Confirmed 12 tables in `public` with RLS enabled across 100% of tables.
   - Confirmed 11 custom PostgreSQL enums.
-  - Confirmed 17 database functions (15 `SECURITY DEFINER` + 2 `SECURITY INVOKER`) with search-path safety and least-privilege grants (0 anonymous-executable functions).
+  - Confirmed 17 database functions (15 `SECURITY DEFINER` + 2 `SECURITY INVOKER`) with search-path safety and `anon` execute revoked (0 anonymous-executable functions).
   - Confirmed 20 triggers (including Supabase Auth Hook `on_auth_user_created`, workspace deletion authorization, and membership protection).
-  - Confirmed 45 Row Level Security policies with strict multi-tenant tenant isolation and RBAC (Owner, Administrator, Member, Viewer, Suspended).
+  - Confirmed 45 Row Level Security policies with strict multi-tenant isolation and RBAC (Owner, Administrator, Member, Viewer, Suspended).
   - Confirmed 3 accounting views with `security_invoker = true`.
-  - Created automated test suites in `apps/hub/supabase/tests/` (`01_schema_catalog_validation.sql` and `02_rls_and_isolation_test.sql`) executing transactional verification with 0 persistent production rows.
+  - Strengthened automated test suites in `apps/hub/supabase/tests/` (`01_schema_catalog_validation.sql` and `02_rls_and_isolation_test.sql`) in Phase 6.1 to execute under `authenticated`/`anon` roles with transactional rollback and 0 persistent production rows.
   - Live introspected TypeScript database definitions in `apps/hub/src/types/database.types.ts`.
-- **Exit Criteria:** Passed all tests with zero cross-workspace data leakage; Owner protection and anti-privilege escalation verified; all 6 quality gates passed.
+- **Open Phase 6.1 Findings (Awaiting Owner Approval Before Phase 7):**
+  - Excess `authenticated` default table privileges (including `TRUNCATE` on all 12 tables).
+  - `public.profiles.email` mutability by authenticated users via `Users update own profile`.
+  - Migration version mismatch (`20261113000001` local vs `20261113024551` remote `schema_migrations`).
+- **Exit Criteria:** Passed strengthened catalog and `authenticated`/`anon` RLS isolation tests (with 3 raw `DELETE` assertions documented for `psql`/CLI execution outside MCP); all 6 quality gates passed; pending owner approval for corrective privilege/profile/migration-version remediation.
 
 ---
 
