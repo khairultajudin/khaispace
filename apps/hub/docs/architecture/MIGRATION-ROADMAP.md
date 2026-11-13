@@ -63,24 +63,22 @@ flowchart LR
 ---
 
 ### Phase 6 — Database Schema & Row Level Security Deployment
-- **Status:** **DEPLOYED — PHASE 6.1 REMEDIATION APPROVAL PENDING** (Live on Supabase `dpicdhjaabfjbvppmsxk`).
+- **Status:** **NOT CLOSED — PHASE 6.1.1 REMEDIATION PENDING APPROVAL** (Live on Supabase `dpicdhjaabfjbvppmsxk`).
 - **Objective:** Deploy reviewed PostgreSQL relational foundation, composite integrity triggers, anti-escalation policies, security-invoker accounting views, invitation acceptance procedures, and updated-at triggers to the dedicated Supabase project.
 - **Dependencies:** Phase 5.
 - **Completed Deliverables:**
   - Deployed migration `20261113000001_phase6_initial_schema_and_rls.sql` (remote `schema_migrations` version `20261113024551`) via `supabase_mcp.apply_migration`.
-  - Confirmed 12 tables in `public` with RLS enabled across 100% of tables.
-  - Confirmed 11 custom PostgreSQL enums.
-  - Confirmed 17 database functions (15 `SECURITY DEFINER` + 2 `SECURITY INVOKER`) with search-path safety and `anon` execute revoked (0 anonymous-executable functions).
-  - Confirmed 20 triggers (including Supabase Auth Hook `on_auth_user_created`, workspace deletion authorization, and membership protection).
-  - Confirmed 45 Row Level Security policies with strict multi-tenant isolation and RBAC (Owner, Administrator, Member, Viewer, Suspended).
-  - Confirmed 3 accounting views with `security_invoker = true`.
-  - Strengthened automated test suites in `apps/hub/supabase/tests/` (`01_schema_catalog_validation.sql` and `02_rls_and_isolation_test.sql`) in Phase 6.1 to execute under `authenticated`/`anon` roles with transactional rollback and 0 persistent production rows.
+  - Confirmed 12 tables in `public` with RLS enabled across 100% of tables, 11 enums, 45 RLS policies, 17 functions, 20 triggers, and 3 `security_invoker = true` views (`01_schema_catalog_validation.sql` B1–B3, B5–B7 = **PASS**).
+  - Strengthened automated test suites in `apps/hub/supabase/tests/` (`01_schema_catalog_validation.sql`, `02_rls_and_isolation_test.sql`, `03_privilege_assertions_test.sql`) in Phases 6.1 / 6.1.1 with expanded Owner authorization coverage, `profiles.email` mutability proof, and transactional rollback (0 persistent production rows).
+  - Prepared review-only remediation SQL in `apps/hub/supabase/proposed-remediations/phase6_privilege_and_profile_remediation_proposal.sql` (**NOT DEPLOYED — PENDING APPROVAL**).
   - Live introspected TypeScript database definitions in `apps/hub/src/types/database.types.ts`.
-- **Open Phase 6.1 Findings (Awaiting Owner Approval Before Phase 7):**
-  - Excess `authenticated` default table privileges (including `TRUNCATE` on all 12 tables).
-  - `public.profiles.email` mutability by authenticated users via `Users update own profile`.
+- **Open Phase 6.1.1 Findings (PENDING APPROVAL Before Phase 7):**
+  - **FAIL** in `03_privilege_assertions_test.sql`: `authenticated` retains default table privileges (including `TRUNCATE`) on all 12 tables and 3 views.
+  - **FAIL** in `01_schema_catalog_validation.sql` (B4): `authenticated` retains `EXECUTE` on `handle_updated_at()` and `prevent_note_type_change()`.
+  - `public.profiles.email` mutability by `authenticated` users via `Users update own profile`.
   - Migration version mismatch (`20261113000001` local vs `20261113024551` remote `schema_migrations`).
-- **Exit Criteria:** Passed strengthened catalog and `authenticated`/`anon` RLS isolation tests (with 3 raw `DELETE` assertions documented for `psql`/CLI execution outside MCP); all 6 quality gates passed; pending owner approval for corrective privilege/profile/migration-version remediation.
+  - Raw `DELETE` assertions in `02_rls_and_isolation_test.sql`: **NOT EXECUTED** (MCP client auto-cancels raw `DELETE`; no local `psql`/`supabase`/`docker` available).
+- **Exit Criteria:** All 6 quality gates passed; Phase 6 remains **NOT CLOSED** pending owner approval of the remediation proposal and execution of the remaining `DELETE` tests in an unrestricted PostgreSQL runner.
 
 ---
 

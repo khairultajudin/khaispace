@@ -1,7 +1,7 @@
 # Khai Space Hub — Phase 6 Database Schema & Row Level Security Deployment Report
 
-**Document Version:** 1.1.0 (Updated with Phase 6.1 RLS Test Integrity & Migration Verification)  
-**Phase:** Phase 6 — Database Schema & Row Level Security Deployment (incl. Phase 6.1 Audit & Test Hardening)  
+**Document Version:** 1.2.0 (Updated with Phase 6.1.1 Privilege Assertions & Verification Closure)  
+**Phase:** Phase 6 — Deployment | Phase 6.1 — Test Hardening | Phase 6.1.1 — Privilege & Verification Audit  
 **Application Target:** `apps/hub/`  
 **Working Branch:** `feature/khai-space-hub`  
 **Repository:** `https://github.com/khairultajudin/khaispace`  
@@ -265,8 +265,8 @@ The following exact corrections were applied to [`apps/hub/docs/architecture/sch
   - Verified anon table/view grants in `information_schema.role_table_grants`: **0** (`anon` receives `42501 insufficient_privilege` when querying `public.projects`).
 - **Authenticated Role (`authenticated`):**
   - **Table Grants (Phase 6.1 Finding):** Live inspection of `information_schema.role_table_grants` revealed that `authenticated` still retains Supabase default privileges (`DELETE`, `INSERT`, `REFERENCES`, `SELECT`, `TRIGGER`, `TRUNCATE`, `UPDATE`) on all 12 `public` tables and 3 views, because the Phase 6 migration did not execute `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM authenticated;` prior to selective `GRANT` statements. While RLS blocks unauthorized `SELECT`/`INSERT`/`UPDATE`/`DELETE` operations, PostgreSQL `TRUNCATE` bypasses RLS. Restricting `authenticated` grants via a follow-up migration is queued for owner approval (see Section 18).
-  - **Function Grants:** Permitted to execute only the 7 public RPC functions (`create_workspace_with_owner`, `accept_workspace_invitation`, `delete_workspace_by_owner`, `is_workspace_member`, `get_user_workspace_role`, `is_workspace_admin_or_owner`, `log_workspace_activity`).
-  - **Trigger Functions:** `REVOKE ALL` from `PUBLIC`, `anon`, and `authenticated` on all 8 `SECURITY DEFINER` trigger functions and 2 `SECURITY INVOKER` trigger functions (`handle_updated_at`, `prevent_note_type_change`).
+  - **Function Grants (Phase 6.1.1 Finding):** Permitted to execute the 7 public RPC functions (`create_workspace_with_owner`, `accept_workspace_invitation`, `delete_workspace_by_owner`, `is_workspace_member`, `get_user_workspace_role`, `is_workspace_admin_or_owner`, `log_workspace_activity`). However, Phase 6.1.1 catalog validation (`01_schema_catalog_validation.sql` B4) detected that `authenticated` also retains `EXECUTE` on the two `SECURITY INVOKER` trigger functions (`handle_updated_at`, `prevent_note_type_change`) because `REVOKE EXECUTE` only targeted `PUBLIC` and `anon`.
+  - **Trigger Functions:** `REVOKE ALL` from `PUBLIC`, `anon`, and `authenticated` confirmed on all 8 `SECURITY DEFINER` trigger functions; revoking `authenticated` `EXECUTE` on the 2 `SECURITY INVOKER` trigger functions is included in the Phase 6.1.1 remediation proposal (**PENDING APPROVAL**).
 
 ---
 
@@ -295,36 +295,42 @@ The database types in [`apps/hub/src/types/database.types.ts`](file:///e:/KhaiSp
 
 ---
 
-## 16. Database Test Results (Phase 6 & Phase 6.1)
+## 16. Database Test Results (Phase 6, Phase 6.1 & Phase 6.1.1)
 
-The test suite in [`apps/hub/supabase/tests/`](file:///e:/KhaiSpace/apps/hub/supabase/tests/) was strengthened and executed against `dpicdhjaabfjbvppmsxk` using `supabase_mcp.execute_sql`:
+The test suite in [`apps/hub/supabase/tests/`](file:///e:/KhaiSpace/apps/hub/supabase/tests/) was expanded in Phase 6.1.1 and executed against `dpicdhjaabfjbvppmsxk` using `supabase_mcp.execute_sql`:
 
-> **Execution Context Distinction:** Initial Phase 6 smoke tests executed primarily under the privileged `postgres` role (which bypasses RLS). In Phase 6.1, `01_schema_catalog_validation.sql` was expanded with exact object/privilege/search_path/policy assertions, and `02_rls_and_isolation_test.sql` was rewritten to switch explicitly into `SET LOCAL ROLE authenticated` (with `request.jwt.claim.sub`) and `SET LOCAL ROLE anon` for all security, RLS, RPC, and view assertions.
+> **Phase Distinction:**
+> - **Phase 6:** Initial DDL deployment and `postgres`-role smoke tests.
+> - **Phase 6.1:** Rewrote tests to switch into `SET LOCAL ROLE authenticated` / `anon` with atomic rollback.
+> - **Phase 6.1.1:** Added per-object catalog validation (`B1`–`B7`), strict privilege failure assertions (`03_privilege_assertions_test.sql`), expanded Owner authorization coverage, `profiles.email` mutability proof, and a review-only remediation proposal ([`phase6_privilege_and_profile_remediation_proposal.sql`](file:///e:/KhaiSpace/apps/hub/supabase/proposed-remediations/phase6_privilege_and_profile_remediation_proposal.sql) — **NOT DEPLOYED**).
 
 ### 16.1 `01_schema_catalog_validation.sql`
-- Exact 12 tables with `relrowsecurity = true`: **PASS**
-- Exact 11 enums with expected label sets: **PASS**
-- Exact 3 financial views with `security_invoker=true`: **PASS**
-- All 15 `SECURITY DEFINER` functions with expected `proconfig` `search_path`: **PASS**
-- Function `EXECUTE` grants (`PUBLIC` & `anon` = 0; `authenticated` = exact 7 RPCs): **PASS**
-- `anon` table/view grants = 0: **PASS**
-- Exact 45 RLS policies across 12 tables (including `workspace_invitations` = 7): **PASS**
-- Partial unique index `idx_workspace_single_owner`, composite FK `fk_task_milestone_ws`, and 20 triggers: **PASS**
-- Result: **PASS**
+- **B1** (12 tables + RLS enabled + 0 unexpected tables): **PASS**
+- **B2** (11 enums + exact ordered label sets): **PASS**
+- **B3** (45 RLS policies individually validated by name, table, cmd, roles, `USING`, `WITH CHECK`): **PASS**
+- **B4** (17 functions: signature, return type, security mode, `search_path`, `EXECUTE` grants): **FAIL** — `authenticated` retains `EXECUTE` on `handle_updated_at()` and `prevent_note_type_change()` (trigger functions); 8 `SECURITY DEFINER` trigger functions and 7 RPCs match expected grants.
+- **B5** (3 financial views + `security_invoker=true` + definitions + grants): **PASS**
+- **B6** (20 triggers individually validated by schema, table, timing/event, enabled `'O'`, function): **PASS**
+- **B7** (Primary keys, composite FKs, unique/check constraints, `idx_workspace_single_owner`, 16 indexes): **PASS**
 
-### 16.2 `02_rls_and_isolation_test.sql`
+### 16.2 `03_privilege_assertions_test.sql`
+- **Result:** **FAIL** — `SECURITY FAILURE: authenticated has TRUNCATE on public.workspaces` (and live `has_table_privilege` inspection confirms `authenticated` has `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`, `REFERENCES`, `TRIGGER` on all 12 tables and 3 views, plus `has_column_privilege('authenticated', 'public.profiles', 'email', 'UPDATE') = true`). `PUBLIC` and `anon` have 0 privileges across all 12 tables and 3 views (**PASS**).
+
+### 16.3 `02_rls_and_isolation_test.sql`
 - `anon` rejection on `create_workspace_with_owner` (`42501`) and `public.projects` `SELECT` (`42501`): **PASS**
 - `authenticated` NULL `auth.uid()` rejection on `create_workspace_with_owner` (`P0001`): **PASS**
 - Authenticated Workspace A & Workspace B creation via RPC: **PASS**
 - Cross-workspace `SELECT`, `INSERT` (`42501`), and `UPDATE` (0 rows) isolation (`User A` vs `User B` vs `Non-member`): **PASS**
 - Cross-workspace relational integrity trigger check (`financial_transactions.project_id` across workspaces): **PASS**
 - Direct `INSERT` blocks on `workspaces`, `workspace_members`, and `activity_logs` under `authenticated`: **PASS**
+- Expanded Owner authorization coverage (read workspace/members, create/update projects, milestones, tasks, financial transactions, manage settings, create/update invitations, promote/demote Member <-> Administrator, prevent second Owner, reject deleting Workspace B): **PASS**
 - Role boundary checks (`Administrator`, `Member`, `Viewer`, `Suspended`) under `authenticated`: **PASS**
 - Invitation token SHA-256 verification and identity-mismatch rejection under `authenticated`: **PASS**
+- `profiles.email` mutability proof test (`UPDATE public.profiles SET email = ...` succeeds with `ROW_COUNT = 1`): **PASS** (reproduces open finding)
 - Financial KPI & ROI calculations (`25.0%`) and 3-view tenant isolation under `authenticated`: **PASS**
-- Non-swallowing `delete_workspace_by_owner()` authorization check (non-owner rejected with `Only the verified workspace Owner` + workspace preserved; owner deletion cascades): **PASS**
-- Transactional rollback (`PHASE_6_1_ALL_TESTS_PASSED_INTENTIONAL_ROLLBACK`): **PASS** (Zero rows committed)
-- **MCP Execution Note:** The 3 raw `DELETE FROM public.projects` RLS assertions present in [`02_rls_and_isolation_test.sql`](file:///e:/KhaiSpace/apps/hub/supabase/tests/02_rls_and_isolation_test.sql) were omitted from the `supabase_mcp.execute_sql` execution because the MCP client automatically cancels queries containing raw `DELETE` keywords. Those 3 statements remain in the committed SQL file for full `psql`/CLI execution.
+- Non-swallowing `delete_workspace_by_owner()` authorization check (non-owner rejected + workspace preserved; owner deletion cascades): **PASS**
+- Transactional rollback (`PHASE_6_1_1_NON_DELETE_TESTS_PASSED_INTENTIONAL_ROLLBACK`): **PASS** (Zero rows committed)
+- **Raw `DELETE` Assertions (3 cross-workspace/member + 2 Owner `DELETE` statements):** **NOT EXECUTED** (MCP client auto-cancels queries containing raw `DELETE`, and no local `psql`, `supabase` CLI, or `docker` environment is installed on this host for isolated local execution).
 
 ---
 
@@ -349,8 +355,11 @@ A comprehensive catalog audit of the remote database `dpicdhjaabfjbvppmsxk` afte
 
 ## 18. Security Findings and Residual Risks
 
-1. **Open Finding (High) — Excess `authenticated` Default Table Privileges (`TRUNCATE` Risk):** `information_schema.role_table_grants` confirms `authenticated` retains `{DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE}` on all 12 `public` tables and 3 views because `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM authenticated;` was omitted before selective `GRANT`s. While RLS enforces row-level access for `SELECT`/`INSERT`/`UPDATE`/`DELETE`, PostgreSQL `TRUNCATE` bypasses RLS. **Proposed Remediation (Awaiting Approval):** Deploy a corrective migration executing `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM authenticated;` followed by minimal table/view `GRANT`s matching the RLS model (no `TRUNCATE`, `REFERENCES`, or `TRIGGER`, and no `INSERT` on `workspaces`/`workspace_members`/`activity_logs`).
-2. **Open Finding (Medium) — `public.profiles.email` Mutability:** The `Users update own profile` RLS policy permits an authenticated user to `UPDATE public.profiles SET email = ... WHERE id = auth.uid()` without column restriction. Although `accept_workspace_invitation()` safely verifies `auth.users.email`, `log_workspace_activity()` snapshots `profiles.email` into `activity_logs.actor_email`, enabling audit-log actor email spoofing and UI profile divergence. **Proposed Remediation (Awaiting Approval):** Add a `BEFORE UPDATE` trigger on `public.profiles` (or column-level `UPDATE` privilege restriction) preventing `authenticated` from modifying `email`.
+> **Proposed Remediation File (NOT DEPLOYED — PENDING APPROVAL):** [`apps/hub/supabase/proposed-remediations/phase6_privilege_and_profile_remediation_proposal.sql`](file:///e:/KhaiSpace/apps/hub/supabase/proposed-remediations/phase6_privilege_and_profile_remediation_proposal.sql)
+
+1. **Open Finding (High — `FAIL` in `03_privilege_assertions_test.sql`) — Excess `authenticated` Default Table Privileges (`TRUNCATE` Risk):** `has_table_privilege` and `information_schema.role_table_grants` confirm `authenticated` retains `{DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE}` on all 12 `public` tables and 3 views because `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM authenticated;` was omitted before selective `GRANT`s. While RLS enforces row-level access for `SELECT`/`INSERT`/`UPDATE`/`DELETE`, PostgreSQL `TRUNCATE` bypasses RLS. **Proposed Remediation (PENDING APPROVAL):** Execute `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM authenticated;` followed by minimal table/view `GRANT`s matching the RLS model.
+2. **Open Finding (Medium) — `public.profiles.email` Mutability:** `has_column_privilege('authenticated', 'public.profiles', 'email', 'UPDATE') = true` and `02_rls_and_isolation_test.sql` Section 5A proves an authenticated user can `UPDATE public.profiles SET email = ... WHERE id = auth.uid()`. Although `accept_workspace_invitation()` safely verifies `auth.users.email`, `log_workspace_activity()` snapshots `profiles.email` into `activity_logs.actor_email`, enabling audit-log actor email spoofing and UI profile divergence. **Proposed Remediation (PENDING APPROVAL):** Column-level `UPDATE` restriction excluding `email` combined with a `BEFORE UPDATE` trigger (`protect_profiles_email_immutability()`).
+3. **Open Finding (Low — `FAIL` in `01_schema_catalog_validation.sql` B4) — `authenticated` `EXECUTE` on 2 `SECURITY INVOKER` Trigger Functions:** `authenticated` retains `EXECUTE` on `handle_updated_at()` and `prevent_note_type_change()` (returning `trigger`, so direct SQL calls are blocked by PostgreSQL, but still violating least-privilege specification). **Proposed Remediation (PENDING APPROVAL):** `REVOKE EXECUTE` on both trigger functions from `authenticated`.
 3. **Search Path Safety:** All 15 `SECURITY DEFINER` functions have explicit, hardened `search_path` declarations, eliminating dynamic search-path injection vulnerabilities.
 4. **Invitation Secrecy:** Raw invitation tokens are never stored; only hexadecimal SHA-256 hashes (`token_hash`) are persisted.
 5. **Residual Risk (Phase 7+):** Client code must continue to respect the distinction between authenticated user and authorized workspace member. The frontend UI must handle empty workspaces and unverified memberships gracefully when CRUD services are implemented.
@@ -389,7 +398,12 @@ Before initiating **Phase 7 — Core Data Persistence (Projects, Tasks, Notes)**
 - [x] 45 RLS policies active (`workspace_invitations` = 7).
 - [x] 3 financial views deployed with `security_invoker = true` and verified under `authenticated`.
 - [x] Anonymous access revoked on all tables and functions.
-- [ ] **Pending Owner Approval (Phase 6.1 Findings):** Revoke excess `authenticated` table privileges (`TRUNCATE`), lock `profiles.email` mutability, and reconcile migration version `20261113000001` vs `20261113024551`.
+- [ ] **NOT CLOSED — PENDING APPROVAL (Phase 6.1.1 Findings):**
+  - Revoke excess `authenticated` table/view privileges (`TRUNCATE`, `REFERENCES`, `TRIGGER`, unauthorized `INSERT`/`DELETE`).
+  - Revoke `authenticated` `EXECUTE` on `handle_updated_at()` and `prevent_note_type_change()`.
+  - Lock `profiles.email` mutability (`BEFORE UPDATE` trigger + column-level `UPDATE` grant).
+  - Reconcile migration version `20261113000001` vs `20261113024551`.
+  - Execute the 5 raw `DELETE` assertions in `02_rls_and_isolation_test.sql` in an unrestricted `psql`/Supabase CLI runner.
 - [x] TypeScript definitions reconciled with live introspected schema.
 - [x] Zero test rows left in production database.
 - [x] All 6 quality gates passed.

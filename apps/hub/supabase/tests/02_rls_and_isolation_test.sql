@@ -1,10 +1,11 @@
 -- ==============================================================================
--- KHAI SPACE HUB — DATABASE TEST SUITE (PHASE 6.1)
--- Test 02: Strengthened Authenticated RLS, Role Matrix, View Isolation & RPC Tests
+-- KHAI SPACE HUB — DATABASE TEST SUITE (PHASE 6.1.1)
+-- Test 02: Authenticated RLS, Expanded Owner/RBAC Matrix, View Isolation,
+--          profiles.email Mutability Proof & RPC Tests
 -- Target: khai-space-hub (dpicdhjaabfjbvppmsxk)
 -- ==============================================================================
 -- NOTE: Executes in a single DO block ending with an intentional exception
--- ('PHASE_6_1_ALL_TESTS_PASSED_INTENTIONAL_ROLLBACK') to guarantee atomic rollback.
+-- ('PHASE_6_1_1_ALL_TESTS_PASSED_INTENTIONAL_ROLLBACK') to guarantee atomic rollback.
 -- Zero test fixtures, rows, or auth users persist in the remote database.
 -- All security and isolation assertions execute under `authenticated` or `anon`.
 -- ==============================================================================
@@ -25,13 +26,19 @@ DECLARE
   ws_b uuid;
   proj_a uuid;
   proj_b uuid;
+  proj_owner uuid;
+  ms_a uuid;
   task_a uuid;
+  task_owner uuid;
   tx_a uuid;
+  tx_owner uuid;
   inv_id uuid;
+  inv_owner uuid;
 
   v_count int;
   v_affected int;
   v_denied boolean;
+  v_email text;
   kpi_row record;
   plain_token text := 'phase61-secure-invite-token';
   v_token_hash text;
@@ -252,11 +259,111 @@ BEGIN
   EXCEPTION WHEN insufficient_privilege THEN v_denied := true; END;
   IF NOT v_denied THEN RAISE EXCEPTION 'RLS Failure: Direct INSERT on activity_logs succeeded!'; END IF;
 
-  -- 4b. Administrator boundaries: can update settings, CANNOT delete workspace, CANNOT promote to Owner
+  -- ----------------------------------------------------------------------------
+  -- 4A. EXPANDED OWNER AUTHORIZATION COVERAGE UNDER `authenticated` (user_a)
+  -- ----------------------------------------------------------------------------
+  PERFORM set_config('request.jwt.claim.sub', user_a::text, true);
+
+  -- Read own workspace & own workspace members
+  SELECT count(*) INTO v_count FROM public.workspaces WHERE id = ws_a;
+  IF v_count != 1 THEN RAISE EXCEPTION 'Owner Failure: Owner cannot read own workspace'; END IF;
+  SELECT count(*) INTO v_count FROM public.workspace_members WHERE workspace_id = ws_a;
+  IF v_count != 5 THEN RAISE EXCEPTION 'Owner Failure: Owner expected 5 members, got %', v_count; END IF;
+
+  -- Create & update project
+  INSERT INTO public.projects (workspace_id, slug, title, category, description)
+  VALUES (ws_a, 'owner-proj', 'Owner Project', 'Engineering', 'Created by Owner')
+  RETURNING id INTO proj_owner;
+  UPDATE public.projects SET title = 'Owner Project Updated' WHERE id = proj_owner;
+  GET DIAGNOSTICS v_affected = ROW_COUNT;
+  IF v_affected != 1 THEN RAISE EXCEPTION 'Owner Failure: Owner could not update project'; END IF;
+
+  -- Create & update milestone
+  INSERT INTO public.milestones (workspace_id, project_id, title, target_date)
+  VALUES (ws_a, proj_owner, 'Owner Milestone', current_date + 14)
+  RETURNING id INTO ms_a;
+  UPDATE public.milestones SET status = 'In Progress' WHERE id = ms_a;
+  GET DIAGNOSTICS v_affected = ROW_COUNT;
+  IF v_affected != 1 THEN RAISE EXCEPTION 'Owner Failure: Owner could not update milestone'; END IF;
+
+  -- Create & update task
+  INSERT INTO public.tasks (workspace_id, project_id, milestone_id, title, due_date)
+  VALUES (ws_a, proj_owner, ms_a, 'Owner Task', current_date + 7)
+  RETURNING id INTO task_owner;
+  UPDATE public.tasks SET status = 'Completed' WHERE id = task_owner;
+  GET DIAGNOSTICS v_affected = ROW_COUNT;
+  IF v_affected != 1 THEN RAISE EXCEPTION 'Owner Failure: Owner could not update task'; END IF;
+
+  -- Create & update financial transaction
+  INSERT INTO public.financial_transactions (workspace_id, project_id, transaction_date, type, category, amount, description)
+  VALUES (ws_a, proj_owner, current_date, 'Expense', 'Tooling', 250.00, 'Owner TX')
+  RETURNING id INTO tx_owner;
+  UPDATE public.financial_transactions SET amount = 300.00 WHERE id = tx_owner;
+  GET DIAGNOSTICS v_affected = ROW_COUNT;
+  IF v_affected != 1 THEN RAISE EXCEPTION 'Owner Failure: Owner could not update financial transaction'; END IF;
+
+  -- [DELETE_ASSERTION] Owner deletes own financial transaction & own project
+  DELETE FROM public.financial_transactions WHERE id = tx_owner;
+  GET DIAGNOSTICS v_affected = ROW_COUNT;
+  IF v_affected != 1 THEN RAISE EXCEPTION 'Owner Failure: Owner could not delete financial transaction'; END IF;
+
+  DELETE FROM public.projects WHERE id = proj_owner;
+  GET DIAGNOSTICS v_affected = ROW_COUNT;
+  IF v_affected != 1 THEN RAISE EXCEPTION 'Owner Failure: Owner could not delete project'; END IF;
+
+  -- Manage workspace settings
+  UPDATE public.workspace_settings SET notification_workspace_activity = false WHERE workspace_id = ws_a;
+  GET DIAGNOSTICS v_affected = ROW_COUNT;
+  IF v_affected != 1 THEN RAISE EXCEPTION 'Owner Failure: Owner could not update workspace_settings'; END IF;
+
+  -- Create & update invitation
+  INSERT INTO public.workspace_invitations (workspace_id, email, role, token_hash, invited_by)
+  VALUES (ws_a, 'owner-invitee@example.com', 'Administrator', encode(extensions.digest('owner-invite-token', 'sha256'), 'hex'), user_a)
+  RETURNING id INTO inv_owner;
+  UPDATE public.workspace_invitations SET status = 'revoked' WHERE id = inv_owner;
+  GET DIAGNOSTICS v_affected = ROW_COUNT;
+  IF v_affected != 1 THEN RAISE EXCEPTION 'Owner Failure: Owner could not update invitation'; END IF;
+
+  -- Manage permitted member roles (promote Member -> Administrator, then back to Member)
+  UPDATE public.workspace_members SET role = 'Administrator' WHERE workspace_id = ws_a AND user_id = user_member;
+  GET DIAGNOSTICS v_affected = ROW_COUNT;
+  IF v_affected != 1 THEN RAISE EXCEPTION 'Owner Failure: Owner could not promote Member to Administrator'; END IF;
+  UPDATE public.workspace_members SET role = 'Member' WHERE workspace_id = ws_a AND user_id = user_member;
+  GET DIAGNOSTICS v_affected = ROW_COUNT;
+  IF v_affected != 1 THEN RAISE EXCEPTION 'Owner Failure: Owner could not demote Administrator to Member'; END IF;
+
+  -- Prevent multiple Owners / unauthorized Owner transfer
+  v_denied := false;
+  BEGIN
+    UPDATE public.workspace_members SET role = 'Owner' WHERE workspace_id = ws_a AND user_id = user_admin;
+  EXCEPTION WHEN insufficient_privilege OR raise_exception OR unique_violation THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN RAISE EXCEPTION 'Security Failure: Second Owner was permitted via UPDATE!'; END IF;
+
+  -- Reject Owner A attempting to delete Workspace B
+  v_denied := false;
+  BEGIN
+    PERFORM public.delete_workspace_by_owner(ws_b);
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM LIKE '%Only the verified workspace Owner%' THEN v_denied := true; END IF;
+  END;
+  IF NOT v_denied THEN RAISE EXCEPTION 'Security Failure: Owner A deleted Workspace B!'; END IF;
+
+  -- 4b. Administrator boundaries: can update settings, CANNOT delete workspace, CANNOT promote to Owner, CANNOT invite Administrator
   PERFORM set_config('request.jwt.claim.sub', user_admin::text, true);
   UPDATE public.workspace_settings SET notification_workspace_activity = true WHERE workspace_id = ws_a;
   GET DIAGNOSTICS v_affected = ROW_COUNT;
   IF v_affected != 1 THEN RAISE EXCEPTION 'Role Failure: Admin could not update workspace_settings'; END IF;
+
+  v_denied := false;
+  BEGIN
+    INSERT INTO public.workspace_invitations (workspace_id, email, role, token_hash, invited_by)
+    VALUES (ws_a, 'admin-escalate@example.com', 'Administrator', encode(extensions.digest('admin-esc', 'sha256'), 'hex'), user_admin);
+  EXCEPTION WHEN insufficient_privilege THEN
+    v_denied := true;
+  END;
+  IF NOT v_denied THEN RAISE EXCEPTION 'Privilege Escalation: Admin created Administrator invitation!'; END IF;
 
   -- Admin cannot promote Member to Administrator
   v_denied := false;
@@ -292,8 +399,8 @@ BEGIN
 
   -- 4d. Viewer boundaries: can read, CANNOT insert/update/delete
   PERFORM set_config('request.jwt.claim.sub', user_viewer::text, true);
-  SELECT count(*) INTO v_count FROM public.projects WHERE workspace_id = ws_a;
-  IF v_count != 1 THEN RAISE EXCEPTION 'Role Failure: Viewer could not read projects'; END IF;
+  SELECT count(*) INTO v_count FROM public.projects WHERE id = proj_a;
+  IF v_count != 1 THEN RAISE EXCEPTION 'Role Failure: Viewer could not read project proj_a'; END IF;
 
   v_denied := false;
   BEGIN
@@ -341,6 +448,24 @@ BEGIN
 
   IF NOT EXISTS (SELECT 1 FROM public.workspace_members WHERE workspace_id = ws_a AND user_id = user_invited AND status = 'Active') THEN
     RAISE EXCEPTION 'RPC Failure: Invited user membership not created!';
+  END IF;
+
+  -- ----------------------------------------------------------------------------
+  -- 5A. PROFILES.EMAIL MUTABILITY PROOF TEST (OPEN FINDING — TASK E)
+  -- ----------------------------------------------------------------------------
+  -- Demonstrates that under the current `Users update own profile` policy and
+  -- table-level grants, an authenticated user can mutate public.profiles.email
+  -- independently of auth.users.email.
+  SET LOCAL ROLE authenticated;
+  PERFORM set_config('request.jwt.claim.sub', user_nonmember::text, true);
+  UPDATE public.profiles SET email = 'spoofed-actor@example.com' WHERE id = user_nonmember;
+  GET DIAGNOSTICS v_affected = ROW_COUNT;
+  RESET ROLE;
+
+  SELECT email INTO v_email FROM public.profiles WHERE id = user_nonmember;
+  IF v_affected != 1 OR v_email != 'spoofed-actor@example.com' THEN
+    RAISE EXCEPTION 'Unexpected Profile State: Expected profiles.email mutability finding to reproduce, got affected=%, email=%',
+      v_affected, v_email;
   END IF;
 
   -- ----------------------------------------------------------------------------
@@ -422,5 +547,5 @@ BEGIN
   END IF;
 
   -- Intentional rollback to leave zero fixtures in remote database
-  RAISE EXCEPTION 'PHASE_6_1_ALL_TESTS_PASSED_INTENTIONAL_ROLLBACK';
+  RAISE EXCEPTION 'PHASE_6_1_1_ALL_TESTS_PASSED_INTENTIONAL_ROLLBACK';
 END $$;
