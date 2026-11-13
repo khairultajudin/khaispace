@@ -1,5 +1,5 @@
 -- ==============================================================================
--- KHAI SPACE HUB — PROPOSED REMEDIATION SQL (PHASE 6.1.2)
+-- KHAI SPACE HUB — PROPOSED REMEDIATION SQL (PHASE 6.1.3)
 -- STATUS: NOT DEPLOYED — OWNER REVIEW REQUIRED
 -- ==============================================================================
 -- Target (when approved): khai-space-hub (dpicdhjaabfjbvppmsxk)
@@ -75,10 +75,14 @@ CREATE OR REPLACE FUNCTION public.protect_profiles_email_immutability()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY INVOKER
+SET search_path = public, pg_temp
 AS $$
 BEGIN
+  -- Block email mutations from client roles (authenticated, anon, or any non-privileged role),
+  -- while permitting trusted backend roles (postgres, supabase_admin, supabase_auth_admin, service_role)
+  -- including SECURITY DEFINER sync_profile_email_from_auth().
   IF NEW.email IS DISTINCT FROM OLD.email
-     AND current_user IN ('authenticated', 'anon') THEN
+     AND current_user NOT IN ('postgres', 'supabase_admin', 'supabase_auth_admin', 'service_role') THEN
     RAISE EXCEPTION 'Security Violation: profiles.email cannot be modified by client roles'
       USING ERRCODE = '42501';
   END IF;
@@ -100,14 +104,32 @@ SECURITY DEFINER
 SET search_path = public, auth, pg_temp
 AS $$
 DECLARE
-  v_clean_email varchar(255);
+  v_normalized_email text;
 BEGIN
-  IF NEW.email IS DISTINCT FROM OLD.email AND NEW.email IS NOT NULL AND TRIM(NEW.email) != '' THEN
-    v_clean_email := SUBSTRING(LOWER(TRIM(NEW.email)) FROM 1 FOR 255);
-    UPDATE public.profiles
-    SET email = v_clean_email
-    WHERE id = NEW.id;
+  -- No-op if email did not change
+  IF NEW.email IS NOT DISTINCT FROM OLD.email THEN
+    RETURN NEW;
   END IF;
+
+  -- Explicit policy: public.profiles.email is NOT NULL UNIQUE; ignore NULL or blank auth emails
+  -- rather than corrupting or violating profile uniqueness.
+  IF NEW.email IS NULL OR TRIM(NEW.email) = '' THEN
+    RETURN NEW;
+  END IF;
+
+  v_normalized_email := LOWER(TRIM(NEW.email));
+
+  -- Never silently truncate an email into a different identity
+  IF char_length(v_normalized_email) > 255 THEN
+    RAISE EXCEPTION 'Email exceeds maximum length of 255 characters'
+      USING ERRCODE = '22001';
+  END IF;
+
+  UPDATE public.profiles
+  SET email = v_normalized_email::varchar(255)
+  WHERE id = NEW.id
+    AND email IS DISTINCT FROM v_normalized_email::varchar(255);
+
   RETURN NEW;
 END;
 $$;
@@ -173,22 +195,35 @@ $$;
 COMMIT;
 
 -- ------------------------------------------------------------------------------
--- SECTION 3: MIGRATION HISTORY RECONCILIATION PROCEDURE (MANUAL CLI / GIT ONLY)
+-- SECTION 3: MIGRATION HISTORY RECONCILIATION PROCEDURE (OWNER DECISION REQUIRED)
 -- ------------------------------------------------------------------------------
 -- Local file:  apps/hub/supabase/migrations/20261113000001_phase6_initial_schema_and_rls.sql
 -- Remote DB:   supabase_migrations.schema_migrations (version = '20261113024551',
---              name = 'phase6_initial_schema_and_rls')
+--              name = 'phase6_initial_schema_and_rls', statements IS NOT NULL)
 --
--- Safest Option (Zero Remote Mutation):
---   git mv apps/hub/supabase/migrations/20261113000001_phase6_initial_schema_and_rls.sql \
---          apps/hub/supabase/migrations/20261113024551_phase6_initial_schema_and_rls.sql
---   Then commit & deploy this remediation as a new timestamped migration.
+-- WARNING: Do NOT blindly rename the local file or run `supabase db push` before
+-- confirming exact SQL equivalence. If un-reconciled, `supabase db push` will
+-- treat `20261113000001` as unapplied and attempt to re-run Phase 6 DDL.
+--
+-- Required Pre-Reconciliation Steps:
+--   1. Compare remote `supabase_migrations.schema_migrations.statements` for
+--      version '20261113024551' against `20261113000001_phase6_initial_schema_and_rls.sql`.
+--   2. Run `supabase migration list` to inspect local vs remote state.
+--   3. Choose ONE owner-approved path after confirming equivalence:
+--      - Option A (Remote Repair, preserves Git filename):
+--        `supabase migration repair --status reverted 20261113024551`
+--        `supabase migration repair --status applied 20261113000001`
+--      - Option B (Local Rename, zero remote mutation):
+--        `git mv apps/hub/supabase/migrations/20261113000001_phase6_initial_schema_and_rls.sql apps/hub/supabase/migrations/20261113024551_phase6_initial_schema_and_rls.sql`
+--   4. Re-run `supabase migration list` to confirm both Local and Remote match
+--      before creating/deploying any new remediation migration.
 
 -- ------------------------------------------------------------------------------
 -- SECTION 4: POST-REMEDIATION VERIFICATION QUERIES (RUN AFTER OWNER APPROVAL)
 -- ------------------------------------------------------------------------------
--- 1. Execute apps/hub/supabase/tests/01_schema_catalog_validation.sql (update expected function/trigger counts for new sync/protection functions if applied)
--- 2. Execute apps/hub/supabase/tests/03_privilege_assertions_test.sql (expect PASS)
--- 3. Verify `authenticated` UPDATE on `profiles.email` fails with 42501 (`insufficient_privilege`)
--- 4. Verify `authenticated` UPDATE on `profiles.full_name, display_name, bio` succeeds (`ROW_COUNT = 1`)
--- 5. Verify `auth.users.email` update propagates to `public.profiles.email`
+-- 1. Execute `apps/hub/supabase/tests/01_schema_catalog_validation.sql` with
+--    `v_expected_mode := 'POST_REMEDIATION'` (expects 19 functions & 22 triggers -> PASS)
+-- 2. Execute `apps/hub/supabase/tests/03_privilege_assertions_test.sql` (expects PASS:
+--    table-level profiles UPDATE = false, 6 column-level UPDATE grants = true)
+-- 3. Execute `apps/hub/supabase/tests/02_rls_and_isolation_test.sql` with
+--    `v_expected_mode := 'POST_REMEDIATION'` (in psql/CLI for full DELETE coverage)

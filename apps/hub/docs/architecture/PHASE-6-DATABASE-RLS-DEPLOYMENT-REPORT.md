@@ -295,37 +295,39 @@ The database types in [`apps/hub/src/types/database.types.ts`](file:///e:/KhaiSp
 
 ---
 
-## 16. Database Test Results (Phase 6, Phase 6.1, Phase 6.1.1 & Phase 6.1.2)
+## 16. Database Test Results (Phase 6, Phase 6.1, Phase 6.1.1, Phase 6.1.2 & Phase 6.1.3)
 
-The test suite in [`apps/hub/supabase/tests/`](file:///e:/KhaiSpace/apps/hub/supabase/tests/) was expanded in Phase 6.1.2 and executed against `dpicdhjaabfjbvppmsxk` using `supabase_mcp.execute_sql`:
+The test suite in [`apps/hub/supabase/tests/`](file:///e:/KhaiSpace/apps/hub/supabase/tests/) was aligned in Phase 6.1.3 and executed (in `PRE_REMEDIATION` mode) against `dpicdhjaabfjbvppmsxk` using `supabase_mcp.execute_sql`:
 
 > **Phase Distinction:**
 > - **Phase 6:** Initial DDL deployment and `postgres`-role smoke tests.
 > - **Phase 6.1:** Rewrote tests to switch into `SET LOCAL ROLE authenticated` / `anon` with atomic rollback.
 > - **Phase 6.1.1:** Added per-object catalog validation, strict privilege failure assertions (`03_privilege_assertions_test.sql`), expanded Owner authorization coverage, and initial remediation proposal.
-> - **Phase 6.1.2:** Upgraded `01_schema_catalog_validation.sql` (`B4` exact function signatures/overloads, `B5` view columns/dependencies/grouping/joins, `B7` all 52 `pg_get_constraintdef()` checks), expanded `02_rls_and_isolation_test.sql` (profile positive updates, cross-user profile denial, `log_workspace_activity()` actor-email spoofing proof, and exact `view_project_finance_summary`/`view_monthly_financial_trends` calculations), and corrected `phase6_privilege_and_profile_remediation_proposal.sql` to use `SECURITY INVOKER` + column-level `UPDATE` grants + `auth.users` sync (**NOT DEPLOYED — PENDING OWNER APPROVAL**).
+> - **Phase 6.1.2:** Upgraded `01_schema_catalog_validation.sql` (`B4`, `B5`, `B7`), expanded `02_rls_and_isolation_test.sql` (profile updates, `log_workspace_activity()` spoofing proof, view calculations), and switched the proposal to `SECURITY INVOKER` + column-level `UPDATE` grants + `auth.users` sync (**NOT DEPLOYED — PENDING OWNER APPROVAL**).
+> - **Phase 6.1.3:** Aligned `03_privilege_assertions_test.sql` (`profiles` table-level `UPDATE = false` + 6-column `UPDATE` matrix), added explicit `PRE_REMEDIATION` (17 functions, 20 triggers) vs `POST_REMEDIATION` (19 functions, 22 triggers) modes in `01_schema_catalog_validation.sql` and `02_rls_and_isolation_test.sql`, fixed `sync_profile_email_from_auth()` to reject >255-char emails (`22001`) instead of silently truncating, and replaced automatic `git mv` with an owner-decision migration reconciliation procedure (**NOT DEPLOYED — PENDING OWNER APPROVAL**).
 
-### 16.1 `01_schema_catalog_validation.sql`
+### 16.1 `01_schema_catalog_validation.sql` (`PRE_REMEDIATION` Mode)
 - **B1** (12 tables + RLS enabled + 0 unexpected tables): **PASS**
 - **B2** (11 enums + exact ordered label sets): **PASS**
 - **B3** (45 RLS policies individually validated by name, table, cmd, roles, `USING`, `WITH CHECK`): **PASS**
-- **B4** (17 functions: exact `pronargs`, `pg_get_function_identity_arguments`, `pg_get_function_result`, `prokind`, `prosecdef`, `proconfig`, overload count = 1, `EXECUTE` grants): **FAIL** — `authenticated` retains `EXECUTE` on `handle_updated_at()` and `prevent_note_type_change()` (trigger functions); all 17 signatures, overloads, `search_path`s, and `PUBLIC`/`anon` revocations match expectations.
+- **B4** (17 functions in `PRE_REMEDIATION` / 19 in `POST_REMEDIATION`): **FAIL** — `authenticated` retains `EXECUTE` on `handle_updated_at()` and `prevent_note_type_change()` (trigger functions); all 17 signatures, overloads, `search_path`s, and `PUBLIC`/`anon` revocations match expectations. (`POST_REMEDIATION` mode: **STATICALLY REVIEWED**, **NOT EXECUTED**).
 - **B5** (3 financial views: `security_invoker=true`, exact ordered columns, `pg_depend` source tables, grouping/join/ROI logic, grants): **PASS**
-- **B6** (20 triggers individually validated by schema, table, timing/event, enabled `'O'`, function): **PASS**
+- **B6** (20 triggers in `PRE_REMEDIATION` / 22 in `POST_REMEDIATION`): **PASS** (`PRE_REMEDIATION`; `POST_REMEDIATION`: **STATICALLY REVIEWED**, **NOT EXECUTED**).
 - **B7** (All 52 constraints validated via `pg_get_constraintdef()`, `convalidated`, `condeferrable` + `idx_workspace_single_owner` + 16 indexes): **PASS**
 
 ### 16.2 `03_privilege_assertions_test.sql`
-- **Result:** **FAIL** — `SECURITY FAILURE: authenticated has TRUNCATE on public.workspaces` (live `has_table_privilege` confirms `authenticated` has `SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER` on all 12 tables and 3 views, plus `has_column_privilege('authenticated', 'public.profiles', 'email', 'UPDATE') = true`). `PUBLIC` and `anon` have 0 privileges across all 12 tables and 3 views (**PASS**).
+- **Result:** **FAIL** — `SECURITY FAILURE: authenticated has TRUNCATE on public.workspaces` (live `has_table_privilege` confirms `authenticated` has `SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER` on all 12 tables and 3 views, table-level `UPDATE` on `profiles` is `true`, and `has_column_privilege('authenticated', 'public.profiles', 'email', 'UPDATE') = true`). `PUBLIC` and `anon` have 0 privileges across all 12 tables, 3 views, and `profiles` columns (**PASS**).
 
-### 16.3 `02_rls_and_isolation_test.sql`
+### 16.3 `02_rls_and_isolation_test.sql` (`PRE_REMEDIATION` Mode)
 - `anon` rejection (`42501`), `authenticated` NULL `auth.uid()` rejection (`P0001`), Workspace A/B RPC creation: **PASS**
 - Cross-workspace `SELECT`, `INSERT` (`42501`), `UPDATE` (0 rows) isolation & trigger integrity: **PASS**
 - Expanded Owner authorization & RBAC boundaries (`Administrator`, `Member`, `Viewer`, `Suspended`): **PASS**
-- Profile positive updates (`full_name`, `display_name`, `bio`) & cross-user profile update denial (0 rows): **PASS**
+- Profile positive updates across all 6 permitted fields (`full_name`, `display_name`, `bio`, `location`, `timezone`, `avatar_initials`) & cross-user profile update denial (0 rows): **PASS**
 - `profiles.email` mutability & `log_workspace_activity()` actor-email spoofing proof: **PASS** *(reproduces open finding)*
 - Exact calculation & tenant-isolation assertions across all 3 financial views: **PASS**
-- Non-swallowing `delete_workspace_by_owner()` & atomic rollback (`PHASE_6_1_2_PROFILE_AND_VIEWS_PASSED_INTENTIONAL_ROLLBACK`): **PASS** (0 rows committed)
+- Non-swallowing `delete_workspace_by_owner()` & intentional rollback marker (`PHASE_6_1_3_ALL_TESTS_PASSED_INTENTIONAL_ROLLBACK`): **PASS** (0 rows committed)
 - **5 Raw `DELETE` Assertions (3 cross-workspace/member + 2 Owner `DELETE` statements):** **NOT EXECUTED** (MCP client auto-cancels queries containing raw `DELETE`, and no local `psql`, `supabase` CLI, or `docker` environment is installed on this host).
+- `POST_REMEDIATION` profile/sync assertions (`42501` on `email`/`id`/`created_at`/`updated_at`, atomic combined-update failure, `auth.users` sync, `22001` no-truncation check): **STATICALLY REVIEWED**, **NOT EXECUTED** (**NOT DEPLOYED**).
 
 ---
 

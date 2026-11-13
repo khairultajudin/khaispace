@@ -1,17 +1,21 @@
 -- ==============================================================================
--- KHAI SPACE HUB — DATABASE TEST SUITE (PHASE 6.1.2)
+-- KHAI SPACE HUB — DATABASE TEST SUITE (PHASE 6.1.3)
 -- Test 02: Authenticated RLS, Expanded Owner/RBAC Matrix, View Isolation,
---          Profile Update & Email Mutability Proof, and RPC Tests
+--          Profile Column/Email Protection, Auth Sync & RPC Tests
 -- Target: khai-space-hub (dpicdhjaabfjbvppmsxk)
 -- ==============================================================================
--- NOTE: Executes in a single DO block ending with an intentional exception
--- ('PHASE_6_1_2_ALL_TESTS_PASSED_INTENTIONAL_ROLLBACK') to guarantee atomic rollback.
--- Zero test fixtures, rows, or auth users persist in the remote database.
--- All security and isolation assertions execute under `authenticated` or `anon`.
+-- NOTE: Executes in a single DO block ending with an intentional rollback marker
+-- ('PHASE_6_1_3_ALL_TESTS_PASSED_INTENTIONAL_ROLLBACK') to guarantee atomic
+-- rollback. Zero test fixtures, rows, or auth users persist in the remote DB.
+-- Supports explicit mode:
+--   - 'PRE_REMEDIATION'  (default): reproduces open profiles.email finding
+--   - 'POST_REMEDIATION' : enforces 42501 on email/id/created_at/updated_at,
+--                          atomic combined-update failure, and auth.users sync
 -- ==============================================================================
 
 DO $$
 DECLARE
+  v_expected_mode text := 'PRE_REMEDIATION'; -- Valid: 'PRE_REMEDIATION' | 'POST_REMEDIATION'
   -- Distinct test user identities
   user_a uuid := '11111111-1111-1111-1111-111111111111'::uuid;
   user_b uuid := '22222222-2222-2222-2222-222222222222'::uuid;
@@ -39,7 +43,10 @@ DECLARE
   v_affected int;
   v_denied boolean;
   v_email text;
+  v_full_name text;
   v_log_id uuid;
+  v_log_count_before int;
+  v_log_count_after int;
   v_actor_email text;
   kpi_row record;
   proj_kpi_row record;
@@ -47,6 +54,10 @@ DECLARE
   plain_token text := 'phase61-secure-invite-token';
   v_token_hash text;
 BEGIN
+  IF v_expected_mode NOT IN ('PRE_REMEDIATION', 'POST_REMEDIATION') THEN
+    RAISE EXCEPTION 'Invalid test mode: %', v_expected_mode;
+  END IF;
+
   -- ----------------------------------------------------------------------------
   -- PRIVILEGED SETUP: Create auth.users identities (triggers handle_new_user)
   -- ----------------------------------------------------------------------------
@@ -86,6 +97,8 @@ BEGIN
   EXCEPTION WHEN raise_exception THEN
     IF SQLERRM LIKE '%Authentication required%' THEN
       v_denied := true;
+    ELSE
+      RAISE;
     END IF;
   END;
   RESET ROLE;
@@ -207,6 +220,8 @@ BEGIN
   EXCEPTION WHEN raise_exception THEN
     IF SQLERRM LIKE '%Cross-Workspace Integrity Violation%' THEN
       v_denied := true;
+    ELSE
+      RAISE;
     END IF;
   END;
   IF NOT v_denied THEN RAISE EXCEPTION 'Trigger Failure: Cross-workspace project_id was not blocked!'; END IF;
@@ -350,7 +365,7 @@ BEGIN
   BEGIN
     PERFORM public.delete_workspace_by_owner(ws_b);
   EXCEPTION WHEN raise_exception THEN
-    IF SQLERRM LIKE '%Only the verified workspace Owner%' THEN v_denied := true; END IF;
+    IF SQLERRM LIKE '%Only the verified workspace Owner%' THEN v_denied := true; ELSE RAISE; END IF;
   END;
   IF NOT v_denied THEN RAISE EXCEPTION 'Security Failure: Owner A deleted Workspace B!'; END IF;
 
@@ -383,7 +398,7 @@ BEGIN
   BEGIN
     PERFORM public.delete_workspace_by_owner(ws_a);
   EXCEPTION WHEN raise_exception THEN
-    IF SQLERRM LIKE '%Only the verified workspace Owner%' THEN v_denied := true; END IF;
+    IF SQLERRM LIKE '%Only the verified workspace Owner%' THEN v_denied := true; ELSE RAISE; END IF;
   END;
   IF NOT v_denied THEN RAISE EXCEPTION 'Security Failure: Admin deleted workspace!'; END IF;
 
@@ -441,7 +456,7 @@ BEGIN
   BEGIN
     PERFORM public.accept_workspace_invitation(plain_token);
   EXCEPTION WHEN raise_exception THEN
-    IF SQLERRM LIKE '%Identity mismatch%' THEN v_denied := true; END IF;
+    IF SQLERRM LIKE '%Identity mismatch%' THEN v_denied := true; ELSE RAISE; END IF;
   END;
   IF NOT v_denied THEN RAISE EXCEPTION 'Security Failure: Wrong user accepted invitation!'; END IF;
 
@@ -455,46 +470,146 @@ BEGIN
   END IF;
 
   -- ----------------------------------------------------------------------------
-  -- 5A. PROFILE POSITIVE UPDATES, CROSS-USER DENIAL & EMAIL MUTABILITY PROOF
+  -- 5A. PROFILE POSITIVE UPDATES, CROSS-USER DENIAL & EMAIL PROTECTION
   -- ----------------------------------------------------------------------------
   SET LOCAL ROLE authenticated;
 
-  -- Positive 1-3: Authenticated user updates own full_name, display_name, and bio
+  -- Positive 1-4: Authenticated user updates all 6 permitted profile fields
   PERFORM set_config('request.jwt.claim.sub', user_nonmember::text, true);
   UPDATE public.profiles
-  SET full_name = 'Updated Non Member', display_name = 'NonMember2', bio = 'Verified profile bio'
+  SET full_name = 'Updated Non Member',
+      display_name = 'NonMember2',
+      bio = 'Verified profile bio',
+      location = 'Kuala Lumpur, MY',
+      timezone = 'Asia/Kuala_Lumpur',
+      avatar_initials = 'NM'
   WHERE id = user_nonmember;
   GET DIAGNOSTICS v_affected = ROW_COUNT;
   IF v_affected != 1 THEN
-    RAISE EXCEPTION 'Profile Failure: Authenticated user could not update own allowed profile fields';
+    RAISE EXCEPTION 'Profile Failure: Authenticated user could not update own 6 permitted profile fields';
   END IF;
 
-  -- Negative 5: User A cannot update User B's profile email (0 rows affected; RLS filters)
+  -- Negative 7 (RLS filtering): User A cannot update User B's allowed profile fields (0 rows affected)
   PERFORM set_config('request.jwt.claim.sub', user_a::text, true);
-  UPDATE public.profiles SET email = 'hijacked-b@example.com' WHERE id = user_b;
+  UPDATE public.profiles SET full_name = 'Hijacked B' WHERE id = user_b;
   GET DIAGNOSTICS v_affected = ROW_COUNT;
   IF v_affected != 0 THEN
     RAISE EXCEPTION 'RLS Leak: User A updated % rows on User B profile!', v_affected;
   END IF;
-
-  -- Open Finding Proof (Unremediated Live DB): User Member mutates own profiles.email
-  -- and log_workspace_activity() snapshots the spoofed email into activity_logs.actor_email
-  PERFORM set_config('request.jwt.claim.sub', user_member::text, true);
-  UPDATE public.profiles SET email = 'spoofed-actor@example.com' WHERE id = user_member;
-  GET DIAGNOSTICS v_affected = ROW_COUNT;
-  v_log_id := public.log_workspace_activity(ws_a, 'project.viewed', 'project', proj_a, 'audit', '{}'::jsonb);
   RESET ROLE;
 
-  SELECT email INTO v_email FROM public.profiles WHERE id = user_b;
-  IF v_email != 'owner-b@example.com' THEN
-    RAISE EXCEPTION 'RLS Leak: User B profile email was altered to %!', v_email;
+  SELECT full_name INTO v_full_name FROM public.profiles WHERE id = user_b;
+  IF v_full_name != 'Owner B' THEN
+    RAISE EXCEPTION 'RLS Leak: User B full_name was altered to %!', v_full_name;
   END IF;
 
-  SELECT email INTO v_email FROM public.profiles WHERE id = user_member;
-  SELECT actor_email INTO v_actor_email FROM public.activity_logs WHERE id = v_log_id;
-  IF v_affected != 1 OR v_email != 'spoofed-actor@example.com' OR v_actor_email != 'spoofed-actor@example.com' THEN
-    RAISE EXCEPTION 'Unexpected Profile State: Expected profiles.email mutability & log spoofing to reproduce, got affected=%, email=%, actor_email=%',
-      v_affected, v_email, v_actor_email;
+  IF v_expected_mode = 'PRE_REMEDIATION' THEN
+    -- Open Finding Proof (Unremediated Live DB): User Member mutates own profiles.email
+    -- and log_workspace_activity() snapshots the spoofed email into activity_logs.actor_email
+    SET LOCAL ROLE authenticated;
+    PERFORM set_config('request.jwt.claim.sub', user_member::text, true);
+    UPDATE public.profiles SET email = 'spoofed-actor@example.com' WHERE id = user_member;
+    GET DIAGNOSTICS v_affected = ROW_COUNT;
+    v_log_id := public.log_workspace_activity(ws_a, 'project.viewed', 'project', proj_a, 'audit', '{}'::jsonb);
+    RESET ROLE;
+
+    SELECT email INTO v_email FROM public.profiles WHERE id = user_member;
+    SELECT actor_email INTO v_actor_email FROM public.activity_logs WHERE id = v_log_id;
+    IF v_affected != 1 OR v_email != 'spoofed-actor@example.com' OR v_actor_email != 'spoofed-actor@example.com' THEN
+      RAISE EXCEPTION '[PRE_REMEDIATION] Expected profiles.email mutability & log spoofing to reproduce, got affected=%, email=%, actor_email=%',
+        v_affected, v_email, v_actor_email;
+    END IF;
+  ELSE
+    -- POST_REMEDIATION Assertions (Tasks A.5 - A.10)
+    SELECT count(*) INTO v_log_count_before FROM public.activity_logs WHERE user_id = user_member;
+
+    SET LOCAL ROLE authenticated;
+    PERFORM set_config('request.jwt.claim.sub', user_member::text, true);
+
+    -- A.5: Cannot update own email (42501 insufficient_privilege)
+    v_denied := false;
+    BEGIN
+      UPDATE public.profiles SET email = 'spoofed-actor@example.com' WHERE id = user_member;
+    EXCEPTION WHEN insufficient_privilege THEN
+      v_denied := true;
+    END;
+    IF NOT v_denied THEN
+      RAISE EXCEPTION '[POST_REMEDIATION] Security Failure: authenticated modified profiles.email!';
+    END IF;
+
+    -- A.6: Cannot update id, created_at, or updated_at (42501 insufficient_privilege)
+    v_denied := false;
+    BEGIN
+      UPDATE public.profiles SET id = user_nonmember WHERE id = user_member;
+    EXCEPTION WHEN insufficient_privilege THEN v_denied := true; END;
+    IF NOT v_denied THEN RAISE EXCEPTION '[POST_REMEDIATION] Security Failure: authenticated modified profiles.id!'; END IF;
+
+    v_denied := false;
+    BEGIN
+      UPDATE public.profiles SET created_at = now() - interval '10 days' WHERE id = user_member;
+    EXCEPTION WHEN insufficient_privilege THEN v_denied := true; END;
+    IF NOT v_denied THEN RAISE EXCEPTION '[POST_REMEDIATION] Security Failure: authenticated modified profiles.created_at!'; END IF;
+
+    v_denied := false;
+    BEGIN
+      UPDATE public.profiles SET updated_at = now() - interval '10 days' WHERE id = user_member;
+    EXCEPTION WHEN insufficient_privilege THEN v_denied := true; END;
+    IF NOT v_denied THEN RAISE EXCEPTION '[POST_REMEDIATION] Security Failure: authenticated modified profiles.updated_at!'; END IF;
+
+    -- A.8: Combined update (allowed full_name + forbidden email) must fail atomically (42501)
+    v_denied := false;
+    BEGIN
+      UPDATE public.profiles
+      SET full_name = 'Atomic Rollback Name', email = 'spoofed-combo@example.com'
+      WHERE id = user_member;
+    EXCEPTION WHEN insufficient_privilege THEN
+      v_denied := true;
+    END;
+    IF NOT v_denied THEN
+      RAISE EXCEPTION '[POST_REMEDIATION] Security Failure: Combined allowed+email update succeeded!';
+    END IF;
+    RESET ROLE;
+
+    SELECT full_name, email INTO v_full_name, v_email FROM public.profiles WHERE id = user_member;
+    IF v_full_name = 'Atomic Rollback Name' OR v_email != 'member-a@example.com' THEN
+      RAISE EXCEPTION '[POST_REMEDIATION] Atomicity Failure: Partial update persisted (full_name=%, email=%)',
+        v_full_name, v_email;
+    END IF;
+
+    -- A.10: Failed email modification produces no audit entry
+    SELECT count(*) INTO v_log_count_after FROM public.activity_logs WHERE user_id = user_member;
+    IF v_log_count_after != v_log_count_before THEN
+      RAISE EXCEPTION '[POST_REMEDIATION] Audit Failure: Failed email update produced % audit log(s)',
+        v_log_count_after - v_log_count_before;
+    END IF;
+
+    -- A.9: Trusted auth.users update propagates to public.profiles and log_workspace_activity()
+    UPDATE auth.users SET email = 'synced-member@example.com' WHERE id = user_member;
+    SELECT email INTO v_email FROM public.profiles WHERE id = user_member;
+    IF v_email != 'synced-member@example.com' THEN
+      RAISE EXCEPTION '[POST_REMEDIATION] Sync Failure: auth.users email did not sync to profiles (got %)', v_email;
+    END IF;
+
+    -- Overlong email (>255 chars) must fail with 22001 rather than silently truncating
+    v_denied := false;
+    BEGIN
+      UPDATE auth.users SET email = repeat('a', 250) || '@example.com' WHERE id = user_member;
+    EXCEPTION WHEN string_data_right_truncation THEN
+      v_denied := true;
+    END;
+    IF NOT v_denied THEN
+      RAISE EXCEPTION '[POST_REMEDIATION] Sync Failure: Overlong email was silently truncated instead of raising 22001!';
+    END IF;
+
+    SET LOCAL ROLE authenticated;
+    PERFORM set_config('request.jwt.claim.sub', user_member::text, true);
+    v_log_id := public.log_workspace_activity(ws_a, 'project.viewed', 'project', proj_a, 'audit', '{}'::jsonb);
+    RESET ROLE;
+
+    SELECT actor_email INTO v_actor_email FROM public.activity_logs WHERE id = v_log_id;
+    IF v_actor_email != 'synced-member@example.com' THEN
+      RAISE EXCEPTION '[POST_REMEDIATION] Audit Failure: log_workspace_activity used %, expected synced-member@example.com', v_actor_email;
+    END IF;
   END IF;
 
   -- ----------------------------------------------------------------------------
@@ -606,6 +721,6 @@ BEGIN
     RAISE EXCEPTION 'Cascade Failure: Workspace A projects still exist!';
   END IF;
 
-  -- Intentional rollback to leave zero fixtures in remote database
-  RAISE EXCEPTION 'PHASE_6_1_2_ALL_TESTS_PASSED_INTENTIONAL_ROLLBACK';
+  -- Intentional rollback marker (distinguishable from SQL test failures)
+  RAISE EXCEPTION 'PHASE_6_1_3_ALL_TESTS_PASSED_INTENTIONAL_ROLLBACK [MODE: %]', v_expected_mode;
 END $$;

@@ -1,12 +1,18 @@
 -- ==============================================================================
--- KHAI SPACE HUB — DATABASE TEST SUITE (PHASE 6.1.1)
+-- KHAI SPACE HUB — DATABASE TEST SUITE (PHASE 6.1.3)
 -- Test 03: Strict Table, View & Column Privilege Matrix Assertions (Read-Only)
 -- Target: khai-space-hub (dpicdhjaabfjbvppmsxk)
 -- ==============================================================================
 -- Validates effective privileges for PUBLIC, anon, and authenticated across all
--- 12 public tables and 3 public financial views using has_table_privilege(),
--- has_any_column_privilege(), aclexplode(pg_class.relacl), and
--- information_schema.role_table_grants.
+-- 12 public tables, 3 public financial views, and public.profiles columns using
+-- has_table_privilege(), has_column_privilege(), has_any_column_privilege(),
+-- aclexplode(pg_class.relacl), information_schema.role_table_grants, and
+-- information_schema.column_privileges.
+--
+-- Note on `public.profiles`:
+--   Table-level UPDATE is expected to be FALSE after remediation; UPDATE is
+--   granted ONLY at column level on (full_name, display_name, bio, location,
+--   timezone, avatar_initials) and denied on (id, email, created_at, updated_at).
 -- Fails immediately with EXCEPTION on any unauthorized privilege (e.g. TRUNCATE).
 -- ==============================================================================
 
@@ -15,6 +21,7 @@ DECLARE
   v_priv text;
   v_all_privs text[] := ARRAY['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER'];
   v_tbl_spec record;
+  v_col_spec record;
   v_view_name text;
   v_views text[] := ARRAY[
     'view_overall_finance_kpis', 'view_project_finance_summary', 'view_monthly_financial_trends'
@@ -23,6 +30,7 @@ DECLARE
   v_actual boolean;
   v_acl_leak text;
   v_info_leak text;
+  v_col_grants text[];
 BEGIN
   -- 1. Verify PUBLIC and anon have ZERO privileges on all 12 tables and 3 views
   FOR v_tbl_spec IN
@@ -57,7 +65,7 @@ BEGIN
   FOR v_tbl_spec IN
     SELECT * FROM (VALUES
       ('workspaces',             true,  false, true,  true),
-      ('profiles',               true,  true,  true,  false),
+      ('profiles',               true,  true,  false, false),
       ('workspace_members',      true,  false, true,  true),
       ('workspace_invitations',  true,  true,  true,  true),
       ('workspace_settings',     true,  false, true,  false),
@@ -119,13 +127,46 @@ BEGIN
     END LOOP;
   END LOOP;
 
-  -- 4. Cross-check column-level UPDATE on public.profiles.email & information_schema
-  IF has_column_privilege('authenticated', 'public.profiles', 'email', 'UPDATE') THEN
-    RAISE EXCEPTION 'SECURITY FAILURE: authenticated has UPDATE privilege on public.profiles.email';
+  -- 4. Verify column-level UPDATE matrix on public.profiles (table-level UPDATE is false)
+  IF NOT has_any_column_privilege('authenticated', 'public.profiles', 'UPDATE') THEN
+    RAISE EXCEPTION 'SECURITY FAILURE: authenticated lacks column-level UPDATE on public.profiles';
   END IF;
 
-  IF has_any_column_privilege('anon', 'public.profiles', 'SELECT') THEN
-    RAISE EXCEPTION 'SECURITY FAILURE: anon has column SELECT privilege on public.profiles';
+  FOR v_col_spec IN
+    SELECT * FROM (VALUES
+      ('id',              false),
+      ('email',           false),
+      ('created_at',      false),
+      ('updated_at',      false),
+      ('full_name',       true),
+      ('display_name',    true),
+      ('bio',             true),
+      ('location',        true),
+      ('timezone',        true),
+      ('avatar_initials', true)
+    ) AS c(col_name, exp_upd)
+  LOOP
+    v_actual := has_column_privilege('authenticated', 'public.profiles', v_col_spec.col_name, 'UPDATE');
+    IF v_actual != v_col_spec.exp_upd THEN
+      RAISE EXCEPTION 'SECURITY FAILURE: authenticated UPDATE on public.profiles.% is %, expected %',
+        v_col_spec.col_name, v_actual, v_col_spec.exp_upd;
+    END IF;
+  END LOOP;
+
+  SELECT array_agg(column_name::text ORDER BY column_name) INTO v_col_grants
+  FROM information_schema.column_privileges
+  WHERE table_schema = 'public' AND table_name = 'profiles'
+    AND grantee = 'authenticated' AND privilege_type = 'UPDATE';
+  IF v_col_grants IS DISTINCT FROM ARRAY['avatar_initials', 'bio', 'display_name', 'full_name', 'location', 'timezone'] THEN
+    RAISE EXCEPTION 'SECURITY FAILURE: authenticated column UPDATE grants on public.profiles = %, expected exact 6 allowed columns',
+      v_col_grants;
+  END IF;
+
+  IF has_any_column_privilege('anon', 'public.profiles', 'SELECT')
+     OR has_any_column_privilege('anon', 'public.profiles', 'UPDATE')
+     OR has_any_column_privilege('public', 'public.profiles', 'SELECT')
+     OR has_any_column_privilege('public', 'public.profiles', 'UPDATE') THEN
+    RAISE EXCEPTION 'SECURITY FAILURE: anon or PUBLIC has column privileges on public.profiles';
   END IF;
 
   SELECT string_agg(table_name || ':' || privilege_type, ', ') INTO v_info_leak

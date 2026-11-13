@@ -1,21 +1,29 @@
 -- ==============================================================================
--- KHAI SPACE HUB — DATABASE TEST SUITE (PHASE 6.1.2)
+-- KHAI SPACE HUB — DATABASE TEST SUITE (PHASE 6.1.3)
 -- Test 01: Complete Schema, Catalog, Policy, Signature, View, Trigger & Constraint Validation
 -- Target: khai-space-hub (dpicdhjaabfjbvppmsxk)
 -- ==============================================================================
--- Read-only catalog assertions. Validates every expected object individually:
+-- Read-only catalog assertions. Supports two explicit validation modes:
+--   - 'PRE_REMEDIATION'  (default): 17 functions, 20 triggers (Phase 6 baseline)
+--   - 'POST_REMEDIATION' : 19 functions, 22 triggers (after owner-approved remediation)
+-- Never guesses or mixes states. Fails on partial remediation.
+-- Validates every expected object individually:
 --   B1: 12 tables + RLS enabled + 0 unexpected tables
 --   B2: 11 enums + exact ordered labels
 --   B3: 45 RLS policies (name, table, cmd, roles, USING, WITH CHECK)
---   B4: 17 functions (exact identity args, nargs, return type, kind, secdef, search_path, overloads, grants)
+--   B4: 17 (PRE) / 19 (POST) functions (exact identity args, nargs, return type, kind, secdef, search_path, overloads, grants)
 --   B5: 3 financial views (security_invoker=true, columns, source tables, grouping/join/ROI logic, grants)
---   B6: 20 triggers (table, timing/event, enabled 'O', function)
+--   B6: 20 (PRE) / 22 (POST) triggers (table, timing/event, enabled 'O', function)
 --   B7: All 52 constraints (pg_get_constraintdef, convalidated, condeferrable) & 16 indexes
--- Note: Table/view privilege assertions are in 03_privilege_assertions_test.sql.
+-- Note: Table/view/column privilege assertions are in 03_privilege_assertions_test.sql.
 -- ==============================================================================
 
 DO $$
 DECLARE
+  v_expected_mode text := 'PRE_REMEDIATION'; -- Valid: 'PRE_REMEDIATION' | 'POST_REMEDIATION'
+  v_expected_fn_count int;
+  v_expected_trg_count int;
+
   v_expected_tables text[] := ARRAY[
     'workspaces', 'profiles', 'workspace_members', 'workspace_invitations',
     'workspace_settings', 'projects', 'milestones', 'tasks',
@@ -63,6 +71,12 @@ DECLARE
     'idx_activity_ws', 'idx_invitations_token'
   ];
 BEGIN
+  IF v_expected_mode NOT IN ('PRE_REMEDIATION', 'POST_REMEDIATION') THEN
+    RAISE EXCEPTION 'Invalid test mode: %', v_expected_mode;
+  END IF;
+  v_expected_fn_count := CASE WHEN v_expected_mode = 'POST_REMEDIATION' THEN 19 ELSE 17 END;
+  v_expected_trg_count := CASE WHEN v_expected_mode = 'POST_REMEDIATION' THEN 22 ELSE 20 END;
+
   -- ----------------------------------------------------------------------------
   -- B1. TABLES & RLS ENABLEMENT (12 Expected, 0 Unexpected)
   -- ----------------------------------------------------------------------------
@@ -211,35 +225,39 @@ BEGIN
   END LOOP;
 
   -- ----------------------------------------------------------------------------
-  -- B4. ALL 17 FUNCTIONS INDIVIDUALLY (EXACT SIGNATURE, OVERLOADS, MODE, SEARCH_PATH, GRANTS)
+  -- B4. FUNCTIONS INDIVIDUALLY (17 PRE_REMEDIATION / 19 POST_REMEDIATION)
   -- ----------------------------------------------------------------------------
   SELECT count(*) INTO v_fn_total
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
   WHERE n.nspname = 'public' AND p.prokind = 'f';
-  IF v_fn_total != 17 THEN
-    RAISE EXCEPTION 'B4 Function Failure: Expected 17 functions in public, found %', v_fn_total;
+  IF v_fn_total != v_expected_fn_count THEN
+    RAISE EXCEPTION '[MODE: %] B4 Function Failure: Expected % functions in public, found %',
+      v_expected_mode, v_expected_fn_count, v_fn_total;
   END IF;
 
   FOR v_fn_spec IN
     SELECT * FROM (VALUES
-      ('accept_workspace_invitation', 1, 'p_token text', 'uuid', true, 'search_path=public, auth, extensions, pg_temp', true),
-      ('create_workspace_with_owner', 3, 'ws_name character varying, ws_description text, ws_timezone character varying', 'uuid', true, 'search_path=public, auth, pg_temp', true),
-      ('delete_workspace_by_owner', 1, 'p_workspace_id uuid', 'void', true, 'search_path=public, auth, pg_temp', true),
-      ('get_user_workspace_role', 1, 'ws_id uuid', 'member_role', true, 'search_path=public, auth, pg_temp', true),
-      ('is_workspace_admin_or_owner', 1, 'ws_id uuid', 'boolean', true, 'search_path=public, auth, pg_temp', true),
-      ('is_workspace_member', 1, 'ws_id uuid', 'boolean', true, 'search_path=public, auth, pg_temp', true),
-      ('log_workspace_activity', 6, 'p_workspace_id uuid, p_action character varying, p_entity_type character varying, p_entity_id uuid, p_category character varying, p_metadata jsonb', 'uuid', true, 'search_path=public, auth, pg_temp', true),
-      ('handle_new_user', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
-      ('handle_workspace_deletion_authorization', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
-      ('protect_workspace_members_immutability', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
-      ('protect_workspace_members_deletion', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
-      ('handle_project_deletion_cleanup', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
-      ('handle_milestone_deletion_cleanup', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
-      ('validate_project_workspace_integrity', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
-      ('validate_subscription_project_workspace_integrity', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
-      ('handle_updated_at', 0, '', 'trigger', false, NULL::text, false),
-      ('prevent_note_type_change', 0, '', 'trigger', false, NULL::text, false)
-    ) AS f(fn_name, expected_nargs, expected_id_args, ret_type, is_secdef, expected_sp, is_rpc)
+      ('PRE_REMEDIATION',  'accept_workspace_invitation', 1, 'p_token text', 'uuid', true, 'search_path=public, auth, extensions, pg_temp', true),
+      ('PRE_REMEDIATION',  'create_workspace_with_owner', 3, 'ws_name character varying, ws_description text, ws_timezone character varying', 'uuid', true, 'search_path=public, auth, pg_temp', true),
+      ('PRE_REMEDIATION',  'delete_workspace_by_owner', 1, 'p_workspace_id uuid', 'void', true, 'search_path=public, auth, pg_temp', true),
+      ('PRE_REMEDIATION',  'get_user_workspace_role', 1, 'ws_id uuid', 'member_role', true, 'search_path=public, auth, pg_temp', true),
+      ('PRE_REMEDIATION',  'is_workspace_admin_or_owner', 1, 'ws_id uuid', 'boolean', true, 'search_path=public, auth, pg_temp', true),
+      ('PRE_REMEDIATION',  'is_workspace_member', 1, 'ws_id uuid', 'boolean', true, 'search_path=public, auth, pg_temp', true),
+      ('PRE_REMEDIATION',  'log_workspace_activity', 6, 'p_workspace_id uuid, p_action character varying, p_entity_type character varying, p_entity_id uuid, p_category character varying, p_metadata jsonb', 'uuid', true, 'search_path=public, auth, pg_temp', true),
+      ('PRE_REMEDIATION',  'handle_new_user', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
+      ('PRE_REMEDIATION',  'handle_workspace_deletion_authorization', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
+      ('PRE_REMEDIATION',  'protect_workspace_members_immutability', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
+      ('PRE_REMEDIATION',  'protect_workspace_members_deletion', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
+      ('PRE_REMEDIATION',  'handle_project_deletion_cleanup', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
+      ('PRE_REMEDIATION',  'handle_milestone_deletion_cleanup', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
+      ('PRE_REMEDIATION',  'validate_project_workspace_integrity', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
+      ('PRE_REMEDIATION',  'validate_subscription_project_workspace_integrity', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
+      ('PRE_REMEDIATION',  'handle_updated_at', 0, '', 'trigger', false, NULL::text, false),
+      ('PRE_REMEDIATION',  'prevent_note_type_change', 0, '', 'trigger', false, NULL::text, false),
+      ('POST_REMEDIATION', 'protect_profiles_email_immutability', 0, '', 'trigger', false, 'search_path=public, pg_temp', false),
+      ('POST_REMEDIATION', 'sync_profile_email_from_auth', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false)
+    ) AS f(min_mode, fn_name, expected_nargs, expected_id_args, ret_type, is_secdef, expected_sp, is_rpc)
+    WHERE f.min_mode = 'PRE_REMEDIATION' OR v_expected_mode = 'POST_REMEDIATION'
   LOOP
     SELECT count(*) INTO v_fn_count
     FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
@@ -280,14 +298,14 @@ BEGIN
       RAISE EXCEPTION 'B4 Function Failure: public.% prosecdef is %, expected %',
         v_fn_spec.fn_name, v_fn_row.prosecdef, v_fn_spec.is_secdef;
     END IF;
-    IF v_fn_spec.is_secdef THEN
+    IF v_fn_spec.expected_sp IS NOT NULL THEN
       IF v_fn_row.proconfig IS NULL OR NOT (v_fn_spec.expected_sp = ANY(v_fn_row.proconfig)) THEN
-        RAISE EXCEPTION 'B4 Function Failure: SECURITY DEFINER public.% missing expected % (got %)',
+        RAISE EXCEPTION 'B4 Function Failure: public.% missing expected % (got %)',
           v_fn_spec.fn_name, v_fn_spec.expected_sp, v_fn_row.proconfig;
       END IF;
     ELSE
       IF v_fn_row.proconfig IS NOT NULL THEN
-        RAISE EXCEPTION 'B4 Function Failure: SECURITY INVOKER public.% has unexpected proconfig %',
+        RAISE EXCEPTION 'B4 Function Failure: public.% has unexpected proconfig %',
           v_fn_spec.fn_name, v_fn_row.proconfig;
       END IF;
     END IF;
@@ -399,7 +417,7 @@ BEGIN
   END LOOP;
 
   -- ----------------------------------------------------------------------------
-  -- B6. ALL 20 TRIGGERS INDIVIDUALLY (TABLE, TIMING, EVENT, ENABLED, FUNCTION)
+  -- B6. TRIGGERS INDIVIDUALLY (20 PRE_REMEDIATION / 22 POST_REMEDIATION)
   -- ----------------------------------------------------------------------------
   SELECT count(*) INTO v_trg_total
   FROM pg_trigger t
@@ -407,33 +425,37 @@ BEGIN
   JOIN pg_namespace n ON n.oid = c.relnamespace
   WHERE NOT t.tgisinternal
     AND (n.nspname = 'public' OR (n.nspname = 'auth' AND c.relname = 'users'));
-  IF v_trg_total != 20 THEN
-    RAISE EXCEPTION 'B6 Trigger Failure: Expected 20 triggers, found %', v_trg_total;
+  IF v_trg_total != v_expected_trg_count THEN
+    RAISE EXCEPTION '[MODE: %] B6 Trigger Failure: Expected % triggers, found %',
+      v_expected_mode, v_expected_trg_count, v_trg_total;
   END IF;
 
   FOR v_trg_spec IN
     SELECT * FROM (VALUES
-      ('auth', 'users', 'on_auth_user_created', 'AFTER INSERT', 'handle_new_user'),
-      ('public', 'ai_subscriptions', 'trg_subs_project_ws_integrity', 'BEFORE INSERT OR UPDATE', 'validate_subscription_project_workspace_integrity'),
-      ('public', 'ai_subscriptions', 'trg_subs_updated_at', 'BEFORE UPDATE', 'handle_updated_at'),
-      ('public', 'financial_transactions', 'trg_tx_project_ws_integrity', 'BEFORE INSERT OR UPDATE', 'validate_project_workspace_integrity'),
-      ('public', 'financial_transactions', 'trg_tx_updated_at', 'BEFORE UPDATE', 'handle_updated_at'),
-      ('public', 'milestones', 'trg_milestone_deletion_cleanup', 'BEFORE DELETE', 'handle_milestone_deletion_cleanup'),
-      ('public', 'milestones', 'trg_milestones_updated_at', 'BEFORE UPDATE', 'handle_updated_at'),
-      ('public', 'profiles', 'trg_profiles_updated_at', 'BEFORE UPDATE', 'handle_updated_at'),
-      ('public', 'projects', 'trg_project_deletion_cleanup', 'BEFORE DELETE', 'handle_project_deletion_cleanup'),
-      ('public', 'projects', 'trg_projects_updated_at', 'BEFORE UPDATE', 'handle_updated_at'),
-      ('public', 'tasks', 'trg_tasks_updated_at', 'BEFORE UPDATE', 'handle_updated_at'),
-      ('public', 'workspace_members', 'trg_members_updated_at', 'BEFORE UPDATE', 'handle_updated_at'),
-      ('public', 'workspace_members', 'trg_protect_members_deletion', 'BEFORE DELETE', 'protect_workspace_members_deletion'),
-      ('public', 'workspace_members', 'trg_protect_members_immutability', 'BEFORE UPDATE', 'protect_workspace_members_immutability'),
-      ('public', 'workspace_notes', 'trg_note_type_immutability', 'BEFORE UPDATE', 'prevent_note_type_change'),
-      ('public', 'workspace_notes', 'trg_notes_project_ws_integrity', 'BEFORE INSERT OR UPDATE', 'validate_project_workspace_integrity'),
-      ('public', 'workspace_notes', 'trg_notes_updated_at', 'BEFORE UPDATE', 'handle_updated_at'),
-      ('public', 'workspace_settings', 'trg_settings_updated_at', 'BEFORE UPDATE', 'handle_updated_at'),
-      ('public', 'workspaces', 'trg_workspace_deletion_auth', 'BEFORE DELETE', 'handle_workspace_deletion_authorization'),
-      ('public', 'workspaces', 'trg_workspaces_updated_at', 'BEFORE UPDATE', 'handle_updated_at')
-    ) AS tr(tbl_schema, tbl_name, trg_name, timing_event, fn_name)
+      ('PRE_REMEDIATION',  'auth', 'users', 'on_auth_user_created', 'AFTER INSERT', 'handle_new_user'),
+      ('PRE_REMEDIATION',  'public', 'ai_subscriptions', 'trg_subs_project_ws_integrity', 'BEFORE INSERT OR UPDATE', 'validate_subscription_project_workspace_integrity'),
+      ('PRE_REMEDIATION',  'public', 'ai_subscriptions', 'trg_subs_updated_at', 'BEFORE UPDATE', 'handle_updated_at'),
+      ('PRE_REMEDIATION',  'public', 'financial_transactions', 'trg_tx_project_ws_integrity', 'BEFORE INSERT OR UPDATE', 'validate_project_workspace_integrity'),
+      ('PRE_REMEDIATION',  'public', 'financial_transactions', 'trg_tx_updated_at', 'BEFORE UPDATE', 'handle_updated_at'),
+      ('PRE_REMEDIATION',  'public', 'milestones', 'trg_milestone_deletion_cleanup', 'BEFORE DELETE', 'handle_milestone_deletion_cleanup'),
+      ('PRE_REMEDIATION',  'public', 'milestones', 'trg_milestones_updated_at', 'BEFORE UPDATE', 'handle_updated_at'),
+      ('PRE_REMEDIATION',  'public', 'profiles', 'trg_profiles_updated_at', 'BEFORE UPDATE', 'handle_updated_at'),
+      ('PRE_REMEDIATION',  'public', 'projects', 'trg_project_deletion_cleanup', 'BEFORE DELETE', 'handle_project_deletion_cleanup'),
+      ('PRE_REMEDIATION',  'public', 'projects', 'trg_projects_updated_at', 'BEFORE UPDATE', 'handle_updated_at'),
+      ('PRE_REMEDIATION',  'public', 'tasks', 'trg_tasks_updated_at', 'BEFORE UPDATE', 'handle_updated_at'),
+      ('PRE_REMEDIATION',  'public', 'workspace_members', 'trg_members_updated_at', 'BEFORE UPDATE', 'handle_updated_at'),
+      ('PRE_REMEDIATION',  'public', 'workspace_members', 'trg_protect_members_deletion', 'BEFORE DELETE', 'protect_workspace_members_deletion'),
+      ('PRE_REMEDIATION',  'public', 'workspace_members', 'trg_protect_members_immutability', 'BEFORE UPDATE', 'protect_workspace_members_immutability'),
+      ('PRE_REMEDIATION',  'public', 'workspace_notes', 'trg_note_type_immutability', 'BEFORE UPDATE', 'prevent_note_type_change'),
+      ('PRE_REMEDIATION',  'public', 'workspace_notes', 'trg_notes_project_ws_integrity', 'BEFORE INSERT OR UPDATE', 'validate_project_workspace_integrity'),
+      ('PRE_REMEDIATION',  'public', 'workspace_notes', 'trg_notes_updated_at', 'BEFORE UPDATE', 'handle_updated_at'),
+      ('PRE_REMEDIATION',  'public', 'workspace_settings', 'trg_settings_updated_at', 'BEFORE UPDATE', 'handle_updated_at'),
+      ('PRE_REMEDIATION',  'public', 'workspaces', 'trg_workspace_deletion_auth', 'BEFORE DELETE', 'handle_workspace_deletion_authorization'),
+      ('PRE_REMEDIATION',  'public', 'workspaces', 'trg_workspaces_updated_at', 'BEFORE UPDATE', 'handle_updated_at'),
+      ('POST_REMEDIATION', 'public', 'profiles', 'trg_protect_profiles_email', 'BEFORE UPDATE', 'protect_profiles_email_immutability'),
+      ('POST_REMEDIATION', 'auth', 'users', 'on_auth_user_email_updated', 'AFTER UPDATE OF email', 'sync_profile_email_from_auth')
+    ) AS tr(min_mode, tbl_schema, tbl_name, trg_name, timing_event, fn_name)
+    WHERE tr.min_mode = 'PRE_REMEDIATION' OR v_expected_mode = 'POST_REMEDIATION'
   LOOP
     SELECT t.tgenabled, p.proname, pg_get_triggerdef(t.oid)
     INTO v_trg_enabled, v_trg_fn, v_trg_def
@@ -576,5 +598,6 @@ BEGIN
     END IF;
   END LOOP;
 
-  RAISE NOTICE '[PASS] All Phase 6.1.1 catalog assertions passed (12 tables, 11 enums, 45 policies, 17 functions, 3 views, 20 triggers, constraints & indexes).';
+  RAISE NOTICE '[PASS] [MODE: %] Catalog assertions passed (12 tables, 11 enums, 45 policies, % functions, 3 views, % triggers, 52 constraints & 16 indexes).',
+    v_expected_mode, v_expected_fn_count, v_expected_trg_count;
 END $$;

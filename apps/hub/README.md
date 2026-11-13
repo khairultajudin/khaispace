@@ -51,9 +51,9 @@ When connecting Khai Space Hub to Cloudflare Pages:
 
 Environment variables for Hub should be configured strictly within the Cloudflare Pages project settings for this application.
 
-## Current Persistence Status (Phase 6.1.2)
+## Current Persistence Status (Phase 6.1.3)
 
 - **Branch:** `feature/khai-space-hub`
 - **Database Target:** `khai-space-hub` (`dpicdhjaabfjbvppmsxk`, `ap-southeast-1`)
-- **Phase Status:** Phase 6 schema deployed (`20261113000001_phase6_initial_schema_and_rls.sql`, remote version `20261113024551`), currently **NOT CLOSED** pending owner approval of the Phase 6.1.2 remediation proposal ([`phase6_privilege_and_profile_remediation_proposal.sql`](file:///e:/KhaiSpace/apps/hub/supabase/proposed-remediations/phase6_privilege_and_profile_remediation_proposal.sql)).
-- **Frontend Mode:** Remains in local demo mode; **Phase 7 remains unauthorized** until database remediations and migration version reconciliation are approved.
+- **Phase Status:** Phase 6 schema deployed (`20261113000001_phase6_initial_schema_and_rls.sql`, remote version `20261113024551`), currently **NOT CLOSED**. Privilege remediation, `profiles.email` remediation, and migration version reconciliation are **NOT DEPLOYED** and remain **PENDING OWNER APPROVAL** ([`phase6_privilege_and_profile_remediation_proposal.sql`](file:///e:/KhaiSpace/apps/hub/supabase/proposed-remediations/phase6_privilege_and_profile_remediation_proposal.sql)); 5 raw `DELETE` tests remain **NOT EXECUTED**.
+- **Frontend Mode:** Remains in local demo mode; **Phase 7 remains UNAUTHORIZED** until database remediations, migration reconciliation, and owner review are approved.
