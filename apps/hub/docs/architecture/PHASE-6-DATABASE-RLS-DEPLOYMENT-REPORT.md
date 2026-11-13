@@ -1,7 +1,7 @@
 # Khai Space Hub — Phase 6 Database Schema & Row Level Security Deployment Report
 
-**Document Version:** 1.3.0 (Updated with Phase 6.1.2 Remediation Design & Verification Corrections)  
-**Phase:** Phase 6 — Deployment | Phase 6.1 — Test Hardening | Phase 6.1.1 — Privilege Audit | Phase 6.1.2 — Verification Closure  
+**Document Version:** 1.4.0 (Updated with Phase 6.1.4 Default Privileges & Final Remediation Audit)  
+**Phase:** Phase 6 — Deployment | Phase 6.1–6.1.4 — Verification, Remediation Design & Default Privileges Audit  
 **Application Target:** `apps/hub/`  
 **Working Branch:** `feature/khai-space-hub`  
 **Repository:** `https://github.com/khairultajudin/khaispace`  
@@ -317,6 +317,7 @@ The test suite in [`apps/hub/supabase/tests/`](file:///e:/KhaiSpace/apps/hub/sup
 
 ### 16.2 `03_privilege_assertions_test.sql`
 - **Result:** **FAIL** — `SECURITY FAILURE: authenticated has TRUNCATE on public.workspaces` (live `has_table_privilege` confirms `authenticated` has `SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER` on all 12 tables and 3 views, table-level `UPDATE` on `profiles` is `true`, and `has_column_privilege('authenticated', 'public.profiles', 'email', 'UPDATE') = true`). `PUBLIC` and `anon` have 0 privileges across all 12 tables, 3 views, and `profiles` columns (**PASS**).
+- **Default Privileges & Role Inheritance (Phase 6.1.4):** `pg_auth_members` confirms `anon` and `authenticated` do not inherit from `postgres`, `supabase_admin`, `service_role`, or `supabase_privileged_role` (**PASS**). `pg_default_acl` inspection for `postgres` in `public` **FAIL**s because Supabase's default ACLs currently grant `anon` and `authenticated` `arwdDxtm` on tables/views, `rwU` on sequences, and `X` (`EXECUTE`) on functions. Isolated local future-object simulation: **NOT EXECUTED** (`psql`/`supabase`/`docker` unavailable on host).
 
 ### 16.3 `02_rls_and_isolation_test.sql` (`PRE_REMEDIATION` Mode)
 - `anon` rejection (`42501`), `authenticated` NULL `auth.uid()` rejection (`P0001`), Workspace A/B RPC creation: **PASS**
@@ -357,9 +358,10 @@ A comprehensive catalog audit of the remote database `dpicdhjaabfjbvppmsxk` afte
 1. **Open Finding (High — `FAIL` in `03_privilege_assertions_test.sql`) — Excess `authenticated` Default Table Privileges (`TRUNCATE` Risk):** `has_table_privilege` and `information_schema.role_table_grants` confirm `authenticated` retains `{DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, UPDATE}` on all 12 `public` tables and 3 views because `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM authenticated;` was omitted before selective `GRANT`s. While RLS enforces row-level access for `SELECT`/`INSERT`/`UPDATE`/`DELETE`, PostgreSQL `TRUNCATE` bypasses RLS. **Proposed Remediation (PENDING APPROVAL):** Execute `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM authenticated;` followed by minimal table/view `GRANT`s matching the RLS model.
 2. **Open Finding (Medium) — `public.profiles.email` Mutability:** `has_column_privilege('authenticated', 'public.profiles', 'email', 'UPDATE') = true` and `02_rls_and_isolation_test.sql` Section 5A proves an authenticated user can `UPDATE public.profiles SET email = ... WHERE id = auth.uid()`. Although `accept_workspace_invitation()` safely verifies `auth.users.email`, `log_workspace_activity()` snapshots `profiles.email` into `activity_logs.actor_email`, enabling audit-log actor email spoofing and UI profile divergence. **Proposed Remediation (PENDING APPROVAL):** Column-level `UPDATE` restriction excluding `email` combined with a `BEFORE UPDATE` trigger (`protect_profiles_email_immutability()`).
 3. **Open Finding (Low — `FAIL` in `01_schema_catalog_validation.sql` B4) — `authenticated` `EXECUTE` on 2 `SECURITY INVOKER` Trigger Functions:** `authenticated` retains `EXECUTE` on `handle_updated_at()` and `prevent_note_type_change()` (returning `trigger`, so direct SQL calls are blocked by PostgreSQL, but still violating least-privilege specification). **Proposed Remediation (PENDING APPROVAL):** `REVOKE EXECUTE` on both trigger functions from `authenticated`.
-3. **Search Path Safety:** All 15 `SECURITY DEFINER` functions have explicit, hardened `search_path` declarations, eliminating dynamic search-path injection vulnerabilities.
-4. **Invitation Secrecy:** Raw invitation tokens are never stored; only hexadecimal SHA-256 hashes (`token_hash`) are persisted.
-5. **Residual Risk (Phase 7+):** Client code must continue to respect the distinction between authenticated user and authorized workspace member. The frontend UI must handle empty workspaces and unverified memberships gracefully when CRUD services are implemented.
+4. **Open Finding (Medium — `FAIL` in `03_privilege_assertions_test.sql` Section 5b) — Permissive `pg_default_acl` for `postgres` in `public`:** All 15 existing `public` tables/views and 17 `public` functions are owned by `postgres`. Live `pg_default_acl` for `postgres` in schema `public` grants `anon` and `authenticated` `ALL` (`arwdDxtm`) on future tables/views, `rwU` on future sequences, and `EXECUTE` on future functions. **Proposed Remediation (PENDING APPROVAL):** Add `ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON TABLES/SEQUENCES` and `REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC, anon, authenticated`. *Limitation:* `supabase_admin` also holds `pg_default_acl` entries in `public`, which `postgres` cannot alter (`postgres` is not a member of `supabase_admin`).
+5. **Search Path Safety:** All 15 `SECURITY DEFINER` functions have explicit, hardened `search_path` declarations, eliminating dynamic search-path injection vulnerabilities.
+6. **Invitation Secrecy:** Raw invitation tokens are never stored; only hexadecimal SHA-256 hashes (`token_hash`) are persisted.
+7. **Residual Risk (Phase 7+):** Client code must continue to respect the distinction between authenticated user and authorized workspace member. The frontend UI must handle empty workspaces and unverified memberships gracefully when CRUD services are implemented.
 
 ---
 

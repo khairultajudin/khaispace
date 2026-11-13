@@ -1,5 +1,5 @@
 -- ==============================================================================
--- KHAI SPACE HUB — PROPOSED REMEDIATION SQL (PHASE 6.1.3)
+-- KHAI SPACE HUB — PROPOSED REMEDIATION SQL (PHASE 6.1.4)
 -- STATUS: NOT DEPLOYED — OWNER REVIEW REQUIRED
 -- ==============================================================================
 -- Target (when approved): khai-space-hub (dpicdhjaabfjbvppmsxk)
@@ -11,12 +11,13 @@
 BEGIN;
 
 -- ------------------------------------------------------------------------------
--- SECTION 1: REVOKE EXCESSIVE `authenticated` DEFAULT PRIVILEGES & REAPPLY MINIMAL GRANTS
+-- SECTION 1A: EXISTING-OBJECT PRIVILEGES (REVOKE EXCESSIVE GRANTS & REAPPLY MINIMAL GRANTS)
 -- ------------------------------------------------------------------------------
+-- Scope: Existing 12 public tables, 3 public financial views, and 2 trigger functions.
 -- Expected Impact:
 --   1. Revokes Supabase default ALL privileges (specifically TRUNCATE, REFERENCES,
 --      TRIGGER, and unauthorized INSERT/UPDATE/DELETE) from `authenticated`, `anon`,
---      and `PUBLIC` across all 12 public tables and 3 public financial views.
+--      and `PUBLIC` across all 12 existing public tables and 3 existing financial views.
 --   2. Revokes unnecessary EXECUTE on the two SECURITY INVOKER trigger functions
 --      (`handle_updated_at()`, `prevent_note_type_change()`).
 --   3. Reapplies minimal table/view grants matching the RLS & RPC security model.
@@ -48,6 +49,43 @@ GRANT SELECT ON public.activity_logs TO authenticated;
 GRANT SELECT ON public.view_overall_finance_kpis TO authenticated;
 GRANT SELECT ON public.view_project_finance_summary TO authenticated;
 GRANT SELECT ON public.view_monthly_financial_trends TO authenticated;
+
+-- ------------------------------------------------------------------------------
+-- SECTION 1B: FUTURE-OBJECT DEFAULT PRIVILEGES (`ALTER DEFAULT PRIVILEGES`)
+-- ------------------------------------------------------------------------------
+-- Verified Object-Creating Role Evidence (`dpicdhjaabfjbvppmsxk`):
+--   - All 15 existing public tables/views (`pg_class.relowner`) and 17 public
+--     functions (`pg_proc.proowner`) are owned by `postgres`.
+--   - Migrations run as `current_user = 'postgres'`, `session_user = 'postgres'`.
+--   - `pg_default_acl` currently grants `arwdDxtm` (ALL, including TRUNCATE,
+--     REFERENCES, TRIGGER) on tables/views, `rwU` on sequences, and `X` (EXECUTE)
+--     on functions in schema `public` to `anon`, `authenticated`, and `service_role`
+--     for objects created by `postgres`.
+--
+-- Global vs Schema-Specific Default ACLs:
+--   - PostgreSQL evaluates both global (`defaclnamespace = 0`) and schema-specific
+--     (`defaclnamespace = 'public'`) entries in `pg_default_acl`.
+--   - Altering global defaults alone does NOT remove Supabase's existing
+--     `IN SCHEMA public` entries; therefore `FOR ROLE postgres IN SCHEMA public`
+--     is required to override the `public` schema defaults.
+--   - Note on functions: PostgreSQL's built-in default grants `EXECUTE` on new
+--     functions to `PUBLIC` unless overridden via `ALTER DEFAULT PRIVILEGES ...
+--     REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC`.
+--   - `service_role` is intentionally preserved for trusted server-side access.
+--   - Limitation: `supabase_admin` also has `pg_default_acl` entries in `public`,
+--     which `postgres` cannot alter (`postgres` is not a member of `supabase_admin`).
+--     Any future Hub migration must still explicitly declare minimal `GRANT`s and
+--     enable RLS for every new object, and any object created by `supabase_admin`
+--     must be explicitly hardened after creation.
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  REVOKE ALL ON TABLES FROM PUBLIC, anon, authenticated;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  REVOKE ALL ON SEQUENCES FROM PUBLIC, anon, authenticated;
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
+  REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC, anon, authenticated;
 
 -- ------------------------------------------------------------------------------
 -- SECTION 2: PROTECT `public.profiles.email` & AUTHORITATIVE LOG IDENTITY

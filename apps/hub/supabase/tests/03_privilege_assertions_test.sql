@@ -1,19 +1,19 @@
 -- ==============================================================================
--- KHAI SPACE HUB — DATABASE TEST SUITE (PHASE 6.1.3)
--- Test 03: Strict Table, View & Column Privilege Matrix Assertions (Read-Only)
+-- KHAI SPACE HUB — DATABASE TEST SUITE (PHASE 6.1.4)
+-- Test 03: Strict Table, View, Column & Default Privilege Assertions (Read-Only)
 -- Target: khai-space-hub (dpicdhjaabfjbvppmsxk)
 -- ==============================================================================
--- Validates effective privileges for PUBLIC, anon, and authenticated across all
--- 12 public tables, 3 public financial views, and public.profiles columns using
--- has_table_privilege(), has_column_privilege(), has_any_column_privilege(),
--- aclexplode(pg_class.relacl), information_schema.role_table_grants, and
--- information_schema.column_privileges.
---
--- Note on `public.profiles`:
---   Table-level UPDATE is expected to be FALSE after remediation; UPDATE is
---   granted ONLY at column level on (full_name, display_name, bio, location,
---   timezone, avatar_initials) and denied on (id, email, created_at, updated_at).
--- Fails immediately with EXCEPTION on any unauthorized privilege (e.g. TRUNCATE).
+-- Validates:
+--   1-4: Existing effective privileges for PUBLIC, anon, and authenticated across
+--        all 12 public tables, 3 public financial views, and public.profiles
+--        columns using has_table_privilege(), has_column_privilege(),
+--        has_any_column_privilege(), aclexplode(pg_class.relacl),
+--        information_schema.role_table_grants, and information_schema.column_privileges.
+--   5:   Role inheritance boundaries (pg_auth_members) and default privileges
+--        (pg_default_acl) for the verified object-creating role (`postgres`) in
+--        schema `public` and globally across tables/views, sequences, and functions.
+--        Note: Inspecting pg_default_acl does not replace an isolated local
+--        future-object creation simulation (NOT EXECUTED remotely).
 -- ==============================================================================
 
 DO $$
@@ -31,6 +31,9 @@ DECLARE
   v_acl_leak text;
   v_info_leak text;
   v_col_grants text[];
+  v_defacl_leak text;
+  v_fn_defacl_count int;
+  v_role_leak text;
 BEGIN
   -- 1. Verify PUBLIC and anon have ZERO privileges on all 12 tables and 3 views
   FOR v_tbl_spec IN
@@ -177,5 +180,45 @@ BEGIN
     RAISE EXCEPTION 'SECURITY FAILURE: information_schema reports disallowed authenticated grants: %', v_info_leak;
   END IF;
 
-  RAISE NOTICE '[PASS] All strict table, view, and column privilege assertions passed.';
+  -- 5. Verify role inheritance & default privileges (`pg_default_acl`) for `postgres`
+  -- 5a. Ensure anon and authenticated do not inherit from privileged roles
+  SELECT string_agg(pg_get_userbyid(m.member) || '->' || pg_get_userbyid(m.roleid), ', ')
+  INTO v_role_leak
+  FROM pg_auth_members m
+  WHERE pg_get_userbyid(m.member) IN ('anon', 'authenticated')
+    AND pg_get_userbyid(m.roleid) IN ('postgres', 'supabase_admin', 'service_role', 'supabase_privileged_role');
+  IF v_role_leak IS NOT NULL THEN
+    RAISE EXCEPTION 'SECURITY FAILURE: Client role inherits privileged membership: %', v_role_leak;
+  END IF;
+
+  -- 5b. Check pg_default_acl for `postgres` (both `public` and `<GLOBAL>`) on tables, sequences, functions
+  SELECT string_agg(
+    COALESCE(n.nspname, '<GLOBAL>') || ':' || d.defaclobjtype::text || ':' ||
+    COALESCE(pg_get_userbyid(a.grantee), 'PUBLIC') || ':' || a.privilege_type, ', '
+  )
+  INTO v_defacl_leak
+  FROM pg_default_acl d
+  LEFT JOIN pg_namespace n ON n.oid = d.defaclnamespace
+  CROSS JOIN LATERAL aclexplode(d.defaclacl) a
+  WHERE d.defaclrole = 'postgres'::regrole
+    AND (d.defaclnamespace = 0 OR n.nspname = 'public')
+    AND d.defaclobjtype IN ('r', 'S', 'f')
+    AND (a.grantee = 0 OR pg_get_userbyid(a.grantee) IN ('anon', 'authenticated'));
+  IF v_defacl_leak IS NOT NULL THEN
+    RAISE EXCEPTION 'SECURITY FAILURE: pg_default_acl for postgres grants unintended default privileges: %', v_defacl_leak;
+  END IF;
+
+  -- 5c. Require an explicit pg_default_acl entry for `postgres` functions in `public`
+  -- (Without an explicit entry, PostgreSQL's built-in default grants EXECUTE to PUBLIC)
+  SELECT count(*) INTO v_fn_defacl_count
+  FROM pg_default_acl d
+  JOIN pg_namespace n ON n.oid = d.defaclnamespace
+  WHERE d.defaclrole = 'postgres'::regrole
+    AND n.nspname = 'public'
+    AND d.defaclobjtype = 'f';
+  IF v_fn_defacl_count = 0 THEN
+    RAISE EXCEPTION 'SECURITY FAILURE: Missing explicit pg_default_acl function override for postgres in public (PUBLIC would inherit EXECUTE)';
+  END IF;
+
+  RAISE NOTICE '[PASS] All strict table, view, column, and default privilege assertions passed.';
 END $$;

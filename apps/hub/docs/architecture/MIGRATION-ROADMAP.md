@@ -1,6 +1,6 @@
 # Khai Space Hub — Persistence Implementation & Migration Roadmap
-**Document Version:** 1.3.0 (Updated through Phase 6.1.3 Consistency Review)
-**Phase:** Phase 6 / 6.1 / 6.1.1 / 6.1.2 / 6.1.3 — Schema, RLS & Security Verification (Remediation Pending Owner Approval)
+**Document Version:** 1.4.0 (Updated through Phase 6.1.4 Default Privileges Audit)
+**Phase:** Phase 6 / 6.1 / 6.1.1 / 6.1.2 / 6.1.3 / 6.1.4 — Schema, RLS & Security Verification (Remediation Pending Owner Approval)
 **Application Target:** `apps/hub/`
 **Working Branch:** `feature/khai-space-hub`
 **Repository:** `khairultajudin/khaispace`
@@ -21,7 +21,7 @@ Moving Khai Space Hub from in-memory React session state to a persistent, produc
 flowchart LR
     P3["Phase 3: Architecture Planning (Completed)"] --> P4["Phase 4 & 4.1: Supabase Foundation & Types (Completed)"]
     P4 --> P5["Phase 5: Auth & Workspace Access (Completed)"]
-    P5 --> P6["Phase 6 / 6.1.3: Schema & RLS (NOT CLOSED — Remediation Pending Owner Approval)"]
+    P5 --> P6["Phase 6 / 6.1.4: Schema & RLS (NOT CLOSED — Remediation Pending Owner Approval)"]
     P6 --> P7["Phase 7: Core Persistence (Projects, Tasks, Notes)"]
     P7 --> P8["Phase 8: Finance & Subscriptions"]
     P8 --> P9["Phase 9: Members & Settings"]
@@ -69,7 +69,7 @@ flowchart LR
 - **Deliverables & Status:**
   - Deployed migration `20261113000001_phase6_initial_schema_and_rls.sql` (remote `schema_migrations` version `20261113024551`) via `supabase_mcp.apply_migration`.
   - `01_schema_catalog_validation.sql` (`PRE_REMEDIATION` mode): `B1`, `B2`, `B3`, `B5`, `B6`, `B7` = **PASS**; `B4` = **FAIL** (`authenticated` retains `EXECUTE` on `handle_updated_at()` and `prevent_note_type_change()`). `POST_REMEDIATION` mode (19 functions, 22 triggers): **STATICALLY REVIEWED**, **NOT EXECUTED**.
-  - `03_privilege_assertions_test.sql`: **FAIL** (`authenticated` retains `TRUNCATE`, `REFERENCES`, `TRIGGER`, and excess DML grants on all 12 tables and 3 views; `profiles` table-level `UPDATE` and `profiles.email` `UPDATE` remain granted).
+  - `03_privilege_assertions_test.sql`: **FAIL** (`authenticated` retains `TRUNCATE`, `REFERENCES`, `TRIGGER`, and excess DML grants on all 12 tables and 3 views; `profiles` table-level `UPDATE` and `profiles.email` `UPDATE` remain granted; `pg_default_acl` for `postgres` in `public` grants `anon` and `authenticated` default privileges on future tables, sequences, and functions). Isolated future-object simulation: **NOT EXECUTED**.
   - `02_rls_and_isolation_test.sql`: Non-`DELETE` `PRE_REMEDIATION` assertions (including all 6 allowed `profiles` fields) = **PASS**; 5 raw `DELETE` assertions = **NOT EXECUTED** (MCP client auto-cancels raw `DELETE`; no local `psql`/`supabase`/`docker` available); `POST_REMEDIATION` assertions = **STATICALLY REVIEWED**, **NOT EXECUTED**.
   - Review-only remediation proposal [`phase6_privilege_and_profile_remediation_proposal.sql`](file:///e:/KhaiSpace/apps/hub/supabase/proposed-remediations/phase6_privilege_and_profile_remediation_proposal.sql): **PENDING OWNER APPROVAL** (**NOT DEPLOYED**).
   - Live introspected TypeScript database definitions in `apps/hub/src/types/database.types.ts`.
