@@ -435,6 +435,11 @@ SECURITY DEFINER
 SET search_path = public, auth, pg_temp
 AS $$
 BEGIN
+  -- If the parent workspace is being deleted, allow cascade deletion without attempting child record updates
+  IF current_setting('app.deleting_workspace_id', true) = OLD.workspace_id::text THEN
+    RETURN OLD;
+  END IF;
+
   -- Reclassify financial transactions to General Operations (Shared / NULL project_id)
   UPDATE public.financial_transactions
   SET project_id = NULL
@@ -468,6 +473,11 @@ SECURITY DEFINER
 SET search_path = public, auth, pg_temp
 AS $$
 BEGIN
+  -- If the parent workspace is being deleted, allow cascade deletion without attempting child record updates
+  IF current_setting('app.deleting_workspace_id', true) = OLD.workspace_id::text THEN
+    RETURN OLD;
+  END IF;
+
   UPDATE public.tasks
   SET milestone_id = NULL
   WHERE workspace_id = OLD.workspace_id AND milestone_id = OLD.id;
@@ -690,7 +700,7 @@ CREATE OR REPLACE FUNCTION public.accept_workspace_invitation(p_token text)
 RETURNS uuid
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public, auth, pg_temp
+SET search_path = public, auth, extensions, pg_temp
 AS $$
 DECLARE
   caller_id uuid := auth.uid();
@@ -733,7 +743,7 @@ BEGIN
     RAISE EXCEPTION 'Invalid invitation token: token cannot be empty.';
   END IF;
 
-  hashed_input := encode(digest(TRIM(p_token), 'sha256'), 'hex');
+  hashed_input := encode(extensions.digest(TRIM(p_token)::text, 'sha256'), 'hex');
 
   -- 8. Locate active invitation with row locking (serializes concurrent acceptance requests)
   SELECT * INTO inv_record

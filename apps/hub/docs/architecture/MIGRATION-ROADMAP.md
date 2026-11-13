@@ -63,25 +63,20 @@ flowchart LR
 ---
 
 ### Phase 6 — Database Schema & Row Level Security Deployment
-- **Objective:** Apply reviewed PostgreSQL schema (v1.2.0 finalized), composite integrity triggers, anti-escalation policies, security-invoker views, invitation functions, and updated-at triggers to the dedicated Supabase project.
+- **Status:** **COMPLETED** (Verified & Live on Supabase `dpicdhjaabfjbvppmsxk`).
+- **Objective:** Deploy reviewed PostgreSQL relational foundation, composite integrity triggers, anti-escalation policies, security-invoker accounting views, invitation acceptance procedures, and updated-at triggers to the dedicated Supabase project.
 - **Dependencies:** Phase 5.
-- **Manual Stakeholder / Supabase Dashboard Actions:**
-  1. Open Supabase Dashboard -> SQL Editor (or link Supabase CLI).
-  2. Execute the finalized `schema-draft.sql`.
-  3. Confirm that:
-     - All 12 tables, custom enums, and indexes are created.
-     - Single-owner partial index `idx_workspace_single_owner` is active.
-     - Tasks milestone foreign key uses `ON DELETE SET NULL (milestone_id)` with `handle_milestone_deletion_cleanup()`.
-     - Optional project references across transactions, subscriptions, and notes are protected by integrity triggers.
-     - Workspace deletion authorization trigger (`handle_workspace_deletion_authorization()`) and Owner protection trigger (`protect_workspace_owner()`) are verified.
-     - Membership immutability trigger (`protect_workspace_members_immutability()`) is active.
-     - Direct client `INSERT` on `workspaces`, `workspace_members`, and `activity_logs` is disabled; trusted procedures are installed.
-     - All 10 `handle_updated_at()` triggers are active.
-     - The 3 financial views have `security_invoker = true`.
-- **Code Changes in `apps/hub/`:**
-  - Run `supabase gen types typescript` to refresh `database.types.ts`.
-  - Create automated integration tests verifying that RLS isolates workspaces, blocks suspended users, and prevents Administrators from self-promoting to Owner.
-- **Exit Criteria:** Zero cross-workspace data leakage; Owner protection and anti-privilege escalation triggers pass all test suites.
+- **Completed Deliverables:**
+  - Deployed versioned migration `20261113000001_phase6_initial_schema_and_rls.sql` (`20261113024551`) via `supabase_mcp.apply_migration`.
+  - Confirmed 12 tables in `public` with RLS enabled across 100% of tables.
+  - Confirmed 11 custom PostgreSQL enums.
+  - Confirmed 17 database functions (15 `SECURITY DEFINER` + 2 `SECURITY INVOKER`) with search-path safety and least-privilege grants (0 anonymous-executable functions).
+  - Confirmed 20 triggers (including Supabase Auth Hook `on_auth_user_created`, workspace deletion authorization, and membership protection).
+  - Confirmed 45 Row Level Security policies with strict multi-tenant tenant isolation and RBAC (Owner, Administrator, Member, Viewer, Suspended).
+  - Confirmed 3 accounting views with `security_invoker = true`.
+  - Created automated test suites in `apps/hub/supabase/tests/` (`01_schema_catalog_validation.sql` and `02_rls_and_isolation_test.sql`) executing transactional verification with 0 persistent production rows.
+  - Live introspected TypeScript database definitions in `apps/hub/src/types/database.types.ts`.
+- **Exit Criteria:** Passed all tests with zero cross-workspace data leakage; Owner protection and anti-privilege escalation verified; all 6 quality gates passed.
 
 ---
 

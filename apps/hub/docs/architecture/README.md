@@ -1,6 +1,6 @@
 # Khai Space Hub — Architecture & Persistence Documentation Index
-**Document Version:** 1.6.0 (Phase 5 Authentication Foundation Implemented)
-**Phase:** Phase 5 — Authentication Foundation & Private Workspace Access
+**Document Version:** 1.7.0 (Phase 6 Database Schema & RLS Deployed)
+**Phase:** Phase 6 — Database Schema & Row Level Security Deployment
 **Application Target:** `apps/hub/`
 **Working Branch:** `feature/khai-space-hub`
 **Repository:** `khairultajudin/khaispace`
@@ -26,10 +26,11 @@ The architecture transitions the Hub from in-memory React session state to a sec
 
 ## 2. Documentation Map & Navigation
 
-The architecture directory under [`apps/hub/docs/architecture/`](file:///e:/KhaiSpace/apps/hub/docs/architecture/) contains **21 Markdown and SQL documentation files (19 Markdown documents and 2 SQL scripts), including README.md**:
+The architecture directory under [`apps/hub/docs/architecture/`](file:///e:/KhaiSpace/apps/hub/docs/architecture/) contains **22 Markdown and SQL documentation files (20 Markdown documents and 2 SQL scripts), including README.md**:
 
 | Document | Primary Focus | Target Audience |
 |:---|:---|:---|
+| **[`PHASE-6-DATABASE-RLS-DEPLOYMENT-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-6-DATABASE-RLS-DEPLOYMENT-REPORT.md)** | Phase 6 live schema deployment, RLS verification, 17 database functions, 3 accounting views, test suite, and type reconciliation. | All Stakeholders, Security Auditors, Database & Security Engineers |
 | **[`PHASE-5-AUTHENTICATION-IMPLEMENTATION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-5-AUTHENTICATION-IMPLEMENTATION-REPORT.md)** | Phase 5 client authentication service, `useAuth` hook, private `LoginView`, static-export callback handler, `AuthGuard`, and manual Supabase Auth checklist. | All Stakeholders, Security Auditors, Frontend & Auth Engineers |
 | **[`PHASE-4.1-TYPE-INTEGRITY-CORRECTION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-4.1-TYPE-INTEGRITY-CORRECTION-REPORT.md)** | Phase 4.1 audit and 1:1 reconciliation of TypeScript database types, enums, views, relationships, and RPC signatures against `schema-draft.sql`. | All Stakeholders, Security Auditors, TypeScript & Database Engineers |
 | **[`PHASE-4-SUPABASE-FOUNDATION-REPORT.md`](file:///e:/KhaiSpace/apps/hub/docs/architecture/PHASE-4-SUPABASE-FOUNDATION-REPORT.md)** | Phase 4 Supabase foundation, project provisioning, SDK client singleton, planned database types, and safe verification report. | All Stakeholders, Security Auditors, Technical Lead |
@@ -78,11 +79,12 @@ The architecture directory under [`apps/hub/docs/architecture/`](file:///e:/Khai
 ## 4. Operational Boundaries & Current Project State
 
 > [!IMPORTANT]
-> **Historical Milestone Context & Current Phase 5 State:**
+> **Historical Milestone Context & Current Phase 6 State:**
 > - **Phase 3 Historical Boundary:** Phase 3 was strictly an architectural design, planning, and documentation milestone; no live database existed during Phase 3.
-> - **Phase 4 & 4.1 Foundation Completed:** Following explicit project-owner approval, Phase 4 provisioned the dedicated, isolated Supabase project **`khai-space-hub`** in region **`ap-southeast-1` (Singapore)**, installed the official `@supabase/supabase-js` SDK, and implemented the browser client singleton ([`apps/hub/src/lib/supabase/client.ts`](file:///e:/KhaiSpace/apps/hub/src/lib/supabase/client.ts)) and planned-schema TypeScript definitions ([`apps/hub/src/types/database.types.ts`](file:///e:/KhaiSpace/apps/hub/src/types/database.types.ts)), which were reconciled 1:1 with [`schema-draft.sql`](file:///e:/KhaiSpace/apps/hub/docs/architecture/schema-draft.sql) in Phase 4.1.
-> - **Phase 5 Authentication Foundation Completed:** Phase 5 implemented the client authentication service ([`apps/hub/src/lib/supabase/auth-service.ts`](file:///e:/KhaiSpace/apps/hub/src/lib/supabase/auth-service.ts)), `useAuth` hook and `AuthProvider` ([`apps/hub/src/hooks/use-auth.ts`](file:///e:/KhaiSpace/apps/hub/src/hooks/use-auth.ts)), private passwordless login screen ([`apps/hub/src/components/auth/login-view.tsx`](file:///e:/KhaiSpace/apps/hub/src/components/auth/login-view.tsx)), static-export callback route (`/auth/callback`), and application shell guard ([`apps/hub/src/components/auth/auth-guard.tsx`](file:///e:/KhaiSpace/apps/hub/src/components/auth/auth-guard.tsx)).
-> - **Planned-Schema Type Provenance:** The TypeScript definitions in `apps/hub/src/types/database.types.ts` are derived from the planned SQL blueprint (`schema-draft.sql`) and are **not** live-generated schema types.
-> - **Live Schema & Database Membership Verification Deferred to Phase 6:** No tables, enums, views, triggers, RLS policies, or seed data have been deployed to the remote Supabase database yet. Phase 5 verifies Supabase user authentication (`auth.users`); database-level workspace membership (`public.workspace_members`) and role authorization (`Owner` / `Admin` / `Collaborator` / `Viewer`) will be enforced in Phase 6.
-> - **Current Frontend Execution Mode:** Once authenticated through `AuthGuard`, all 7 Khai Space Hub modules continue to operate in local in-memory React session/demo mode until Phases 7–9.
-> - **Future Phase Authorization Required:** Execution of **Phase 6 (Database Schema & RLS Deployment)** and subsequent persistence phases remains strictly gated pending separate explicit authorization from the project owner.
+> - **Phase 4 & 4.1 Foundation Completed:** Provisioned the dedicated, isolated Supabase project **`khai-space-hub`** in region **`ap-southeast-1` (Singapore)**, installed the official `@supabase/supabase-js` SDK, and implemented the browser client singleton ([`apps/hub/src/lib/supabase/client.ts`](file:///e:/KhaiSpace/apps/hub/src/lib/supabase/client.ts)).
+> - **Phase 5 Authentication Foundation Completed:** Implemented client authentication ([`apps/hub/src/lib/supabase/auth-service.ts`](file:///e:/KhaiSpace/apps/hub/src/lib/supabase/auth-service.ts)), `useAuth` hook and `AuthProvider` ([`apps/hub/src/hooks/use-auth.ts`](file:///e:/KhaiSpace/apps/hub/src/hooks/use-auth.ts)), private login screen, static callback route, and `AuthGuard`.
+> - **Phase 6 Database Schema & RLS Deployed:** Deployed all 12 relational tables, 11 enums, 17 database functions (15 `SECURITY DEFINER` + 2 `SECURITY INVOKER`), 20 triggers, 45 RLS policies, and 3 accounting views (`security_invoker = true`) via versioned migration `20261113000001_phase6_initial_schema_and_rls.sql` (`20261113024551`).
+> - **Live Introspected TypeScript Types:** [`apps/hub/src/types/database.types.ts`](file:///e:/KhaiSpace/apps/hub/src/types/database.types.ts) is fully reconciled directly from the live PostgreSQL 17.11 catalog via Supabase introspection.
+> - **Zero Production Test Pollution:** All test suites in `apps/hub/supabase/tests/` ran with full transactional rollbacks; 0 fixture rows persist in production.
+> - **Current Frontend Execution Mode:** Frontend modules continue to operate in local demo mode until Phase 7 connects the persistence service layer.
+> - **Future Phase Authorization Required:** Execution of **Phase 7 (Core Data Persistence)** remains strictly gated pending separate explicit authorization from the project owner.
