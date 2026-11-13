@@ -1,11 +1,11 @@
 -- ==============================================================================
--- KHAI SPACE HUB — DATABASE TEST SUITE (PHASE 6.1.1)
+-- KHAI SPACE HUB — DATABASE TEST SUITE (PHASE 6.1.2)
 -- Test 02: Authenticated RLS, Expanded Owner/RBAC Matrix, View Isolation,
---          profiles.email Mutability Proof & RPC Tests
+--          Profile Update & Email Mutability Proof, and RPC Tests
 -- Target: khai-space-hub (dpicdhjaabfjbvppmsxk)
 -- ==============================================================================
 -- NOTE: Executes in a single DO block ending with an intentional exception
--- ('PHASE_6_1_1_ALL_TESTS_PASSED_INTENTIONAL_ROLLBACK') to guarantee atomic rollback.
+-- ('PHASE_6_1_2_ALL_TESTS_PASSED_INTENTIONAL_ROLLBACK') to guarantee atomic rollback.
 -- Zero test fixtures, rows, or auth users persist in the remote database.
 -- All security and isolation assertions execute under `authenticated` or `anon`.
 -- ==============================================================================
@@ -39,7 +39,11 @@ DECLARE
   v_affected int;
   v_denied boolean;
   v_email text;
+  v_log_id uuid;
+  v_actor_email text;
   kpi_row record;
+  proj_kpi_row record;
+  trend_row record;
   plain_token text := 'phase61-secure-invite-token';
   v_token_hash text;
 BEGIN
@@ -451,33 +455,73 @@ BEGIN
   END IF;
 
   -- ----------------------------------------------------------------------------
-  -- 5A. PROFILES.EMAIL MUTABILITY PROOF TEST (OPEN FINDING — TASK E)
+  -- 5A. PROFILE POSITIVE UPDATES, CROSS-USER DENIAL & EMAIL MUTABILITY PROOF
   -- ----------------------------------------------------------------------------
-  -- Demonstrates that under the current `Users update own profile` policy and
-  -- table-level grants, an authenticated user can mutate public.profiles.email
-  -- independently of auth.users.email.
   SET LOCAL ROLE authenticated;
+
+  -- Positive 1-3: Authenticated user updates own full_name, display_name, and bio
   PERFORM set_config('request.jwt.claim.sub', user_nonmember::text, true);
-  UPDATE public.profiles SET email = 'spoofed-actor@example.com' WHERE id = user_nonmember;
+  UPDATE public.profiles
+  SET full_name = 'Updated Non Member', display_name = 'NonMember2', bio = 'Verified profile bio'
+  WHERE id = user_nonmember;
   GET DIAGNOSTICS v_affected = ROW_COUNT;
+  IF v_affected != 1 THEN
+    RAISE EXCEPTION 'Profile Failure: Authenticated user could not update own allowed profile fields';
+  END IF;
+
+  -- Negative 5: User A cannot update User B's profile email (0 rows affected; RLS filters)
+  PERFORM set_config('request.jwt.claim.sub', user_a::text, true);
+  UPDATE public.profiles SET email = 'hijacked-b@example.com' WHERE id = user_b;
+  GET DIAGNOSTICS v_affected = ROW_COUNT;
+  IF v_affected != 0 THEN
+    RAISE EXCEPTION 'RLS Leak: User A updated % rows on User B profile!', v_affected;
+  END IF;
+
+  -- Open Finding Proof (Unremediated Live DB): User Member mutates own profiles.email
+  -- and log_workspace_activity() snapshots the spoofed email into activity_logs.actor_email
+  PERFORM set_config('request.jwt.claim.sub', user_member::text, true);
+  UPDATE public.profiles SET email = 'spoofed-actor@example.com' WHERE id = user_member;
+  GET DIAGNOSTICS v_affected = ROW_COUNT;
+  v_log_id := public.log_workspace_activity(ws_a, 'project.viewed', 'project', proj_a, 'audit', '{}'::jsonb);
   RESET ROLE;
 
-  SELECT email INTO v_email FROM public.profiles WHERE id = user_nonmember;
-  IF v_affected != 1 OR v_email != 'spoofed-actor@example.com' THEN
-    RAISE EXCEPTION 'Unexpected Profile State: Expected profiles.email mutability finding to reproduce, got affected=%, email=%',
-      v_affected, v_email;
+  SELECT email INTO v_email FROM public.profiles WHERE id = user_b;
+  IF v_email != 'owner-b@example.com' THEN
+    RAISE EXCEPTION 'RLS Leak: User B profile email was altered to %!', v_email;
+  END IF;
+
+  SELECT email INTO v_email FROM public.profiles WHERE id = user_member;
+  SELECT actor_email INTO v_actor_email FROM public.activity_logs WHERE id = v_log_id;
+  IF v_affected != 1 OR v_email != 'spoofed-actor@example.com' OR v_actor_email != 'spoofed-actor@example.com' THEN
+    RAISE EXCEPTION 'Unexpected Profile State: Expected profiles.email mutability & log spoofing to reproduce, got affected=%, email=%, actor_email=%',
+      v_affected, v_email, v_actor_email;
   END IF;
 
   -- ----------------------------------------------------------------------------
-  -- 6. FINANCIAL VIEWS ISOLATION UNDER `authenticated`
+  -- 6. FINANCIAL VIEWS ISOLATION & CALCULATION ACCURACY UNDER `authenticated`
   -- ----------------------------------------------------------------------------
   SET LOCAL ROLE authenticated;
 
   -- User A sees ONLY Workspace A KPIs, project summary, and trends
   PERFORM set_config('request.jwt.claim.sub', user_a::text, true);
   SELECT * INTO kpi_row FROM public.view_overall_finance_kpis WHERE workspace_id = ws_a;
-  IF kpi_row.total_income != 27500.00 OR kpi_row.roi_percent != 25.0 THEN
-    RAISE EXCEPTION 'View Failure: Workspace A KPI mismatch';
+  IF kpi_row.total_income != 27500.00 OR kpi_row.total_expenses != 3000.00
+     OR kpi_row.net_cashflow != 24500.00 OR kpi_row.total_investment != 10000.00
+     OR kpi_row.realized_investment_return != 12500.00 OR kpi_row.roi_percent != 25.0 THEN
+    RAISE EXCEPTION 'View Failure: Workspace A overall KPI mismatch';
+  END IF;
+
+  SELECT * INTO proj_kpi_row FROM public.view_project_finance_summary WHERE workspace_id = ws_a AND project_id = proj_a;
+  IF proj_kpi_row.income != 27500.00 OR proj_kpi_row.expenses != 3000.00
+     OR proj_kpi_row.investment != 10000.00 OR proj_kpi_row.net_cashflow != 24500.00
+     OR proj_kpi_row.tracked_return != 12500.00 OR proj_kpi_row.roi_percent != 25.0 THEN
+    RAISE EXCEPTION 'View Failure: Workspace A project finance summary mismatch';
+  END IF;
+
+  SELECT * INTO trend_row FROM public.view_monthly_financial_trends WHERE workspace_id = ws_a;
+  IF trend_row.income != 27500.00 OR trend_row.expenses != 3000.00
+     OR trend_row.investment != 10000.00 OR trend_row.net_cashflow != 24500.00 THEN
+    RAISE EXCEPTION 'View Failure: Workspace A monthly trend mismatch';
   END IF;
 
   SELECT count(*) INTO v_count FROM public.view_overall_finance_kpis WHERE workspace_id = ws_b;
@@ -489,13 +533,29 @@ BEGIN
   SELECT count(*) INTO v_count FROM public.view_monthly_financial_trends WHERE workspace_id = ws_b;
   IF v_count != 0 THEN RAISE EXCEPTION 'View Leak: User A saw Workspace B monthly trends!'; END IF;
 
-  -- User B sees ONLY Workspace B KPIs
+  -- User B sees ONLY Workspace B KPIs, project summary, and trends
   PERFORM set_config('request.jwt.claim.sub', user_b::text, true);
   SELECT * INTO kpi_row FROM public.view_overall_finance_kpis WHERE workspace_id = ws_b;
-  IF kpi_row.total_income != 5000.00 THEN RAISE EXCEPTION 'View Failure: Workspace B KPI mismatch'; END IF;
+  IF kpi_row.total_income != 5000.00 OR kpi_row.total_expenses != 1000.00 OR kpi_row.net_cashflow != 4000.00 THEN
+    RAISE EXCEPTION 'View Failure: Workspace B overall KPI mismatch';
+  END IF;
+
+  SELECT * INTO proj_kpi_row FROM public.view_project_finance_summary WHERE workspace_id = ws_b AND project_id = proj_b;
+  IF proj_kpi_row.income != 5000.00 OR proj_kpi_row.expenses != 1000.00 OR proj_kpi_row.net_cashflow != 4000.00 THEN
+    RAISE EXCEPTION 'View Failure: Workspace B project finance summary mismatch';
+  END IF;
+
+  SELECT * INTO trend_row FROM public.view_monthly_financial_trends WHERE workspace_id = ws_b;
+  IF trend_row.income != 5000.00 OR trend_row.expenses != 1000.00 OR trend_row.net_cashflow != 4000.00 THEN
+    RAISE EXCEPTION 'View Failure: Workspace B monthly trend mismatch';
+  END IF;
 
   SELECT count(*) INTO v_count FROM public.view_overall_finance_kpis WHERE workspace_id = ws_a;
   IF v_count != 0 THEN RAISE EXCEPTION 'View Leak: User B saw Workspace A KPIs!'; END IF;
+  SELECT count(*) INTO v_count FROM public.view_project_finance_summary WHERE workspace_id = ws_a;
+  IF v_count != 0 THEN RAISE EXCEPTION 'View Leak: User B saw Workspace A project finance!'; END IF;
+  SELECT count(*) INTO v_count FROM public.view_monthly_financial_trends WHERE workspace_id = ws_a;
+  IF v_count != 0 THEN RAISE EXCEPTION 'View Leak: User B saw Workspace A monthly trends!'; END IF;
 
   -- Non-member sees 0 rows across all 3 views
   PERFORM set_config('request.jwt.claim.sub', user_nonmember::text, true);
@@ -547,5 +607,5 @@ BEGIN
   END IF;
 
   -- Intentional rollback to leave zero fixtures in remote database
-  RAISE EXCEPTION 'PHASE_6_1_1_ALL_TESTS_PASSED_INTENTIONAL_ROLLBACK';
+  RAISE EXCEPTION 'PHASE_6_1_2_ALL_TESTS_PASSED_INTENTIONAL_ROLLBACK';
 END $$;

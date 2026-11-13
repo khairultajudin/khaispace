@@ -1,7 +1,7 @@
 # Khai Space Hub — Phase 6 Database Schema & Row Level Security Deployment Report
 
-**Document Version:** 1.2.0 (Updated with Phase 6.1.1 Privilege Assertions & Verification Closure)  
-**Phase:** Phase 6 — Deployment | Phase 6.1 — Test Hardening | Phase 6.1.1 — Privilege & Verification Audit  
+**Document Version:** 1.3.0 (Updated with Phase 6.1.2 Remediation Design & Verification Corrections)  
+**Phase:** Phase 6 — Deployment | Phase 6.1 — Test Hardening | Phase 6.1.1 — Privilege Audit | Phase 6.1.2 — Verification Closure  
 **Application Target:** `apps/hub/`  
 **Working Branch:** `feature/khai-space-hub`  
 **Repository:** `https://github.com/khairultajudin/khaispace`  
@@ -266,7 +266,7 @@ The following exact corrections were applied to [`apps/hub/docs/architecture/sch
 - **Authenticated Role (`authenticated`):**
   - **Table Grants (Phase 6.1 Finding):** Live inspection of `information_schema.role_table_grants` revealed that `authenticated` still retains Supabase default privileges (`DELETE`, `INSERT`, `REFERENCES`, `SELECT`, `TRIGGER`, `TRUNCATE`, `UPDATE`) on all 12 `public` tables and 3 views, because the Phase 6 migration did not execute `REVOKE ALL ON ALL TABLES IN SCHEMA public FROM authenticated;` prior to selective `GRANT` statements. While RLS blocks unauthorized `SELECT`/`INSERT`/`UPDATE`/`DELETE` operations, PostgreSQL `TRUNCATE` bypasses RLS. Restricting `authenticated` grants via a follow-up migration is queued for owner approval (see Section 18).
   - **Function Grants (Phase 6.1.1 Finding):** Permitted to execute the 7 public RPC functions (`create_workspace_with_owner`, `accept_workspace_invitation`, `delete_workspace_by_owner`, `is_workspace_member`, `get_user_workspace_role`, `is_workspace_admin_or_owner`, `log_workspace_activity`). However, Phase 6.1.1 catalog validation (`01_schema_catalog_validation.sql` B4) detected that `authenticated` also retains `EXECUTE` on the two `SECURITY INVOKER` trigger functions (`handle_updated_at`, `prevent_note_type_change`) because `REVOKE EXECUTE` only targeted `PUBLIC` and `anon`.
-  - **Trigger Functions:** `REVOKE ALL` from `PUBLIC`, `anon`, and `authenticated` confirmed on all 8 `SECURITY DEFINER` trigger functions; revoking `authenticated` `EXECUTE` on the 2 `SECURITY INVOKER` trigger functions is included in the Phase 6.1.1 remediation proposal (**PENDING APPROVAL**).
+  - **Trigger Functions:** `REVOKE ALL` from `PUBLIC`, `anon`, and `authenticated` confirmed on all 8 `SECURITY DEFINER` trigger functions; revoking `authenticated` `EXECUTE` on the 2 `SECURITY INVOKER` trigger functions is included in the Phase 6.1.2 remediation proposal (**PENDING OWNER APPROVAL**).
 
 ---
 
@@ -295,42 +295,37 @@ The database types in [`apps/hub/src/types/database.types.ts`](file:///e:/KhaiSp
 
 ---
 
-## 16. Database Test Results (Phase 6, Phase 6.1 & Phase 6.1.1)
+## 16. Database Test Results (Phase 6, Phase 6.1, Phase 6.1.1 & Phase 6.1.2)
 
-The test suite in [`apps/hub/supabase/tests/`](file:///e:/KhaiSpace/apps/hub/supabase/tests/) was expanded in Phase 6.1.1 and executed against `dpicdhjaabfjbvppmsxk` using `supabase_mcp.execute_sql`:
+The test suite in [`apps/hub/supabase/tests/`](file:///e:/KhaiSpace/apps/hub/supabase/tests/) was expanded in Phase 6.1.2 and executed against `dpicdhjaabfjbvppmsxk` using `supabase_mcp.execute_sql`:
 
 > **Phase Distinction:**
 > - **Phase 6:** Initial DDL deployment and `postgres`-role smoke tests.
 > - **Phase 6.1:** Rewrote tests to switch into `SET LOCAL ROLE authenticated` / `anon` with atomic rollback.
-> - **Phase 6.1.1:** Added per-object catalog validation (`B1`–`B7`), strict privilege failure assertions (`03_privilege_assertions_test.sql`), expanded Owner authorization coverage, `profiles.email` mutability proof, and a review-only remediation proposal ([`phase6_privilege_and_profile_remediation_proposal.sql`](file:///e:/KhaiSpace/apps/hub/supabase/proposed-remediations/phase6_privilege_and_profile_remediation_proposal.sql) — **NOT DEPLOYED**).
+> - **Phase 6.1.1:** Added per-object catalog validation, strict privilege failure assertions (`03_privilege_assertions_test.sql`), expanded Owner authorization coverage, and initial remediation proposal.
+> - **Phase 6.1.2:** Upgraded `01_schema_catalog_validation.sql` (`B4` exact function signatures/overloads, `B5` view columns/dependencies/grouping/joins, `B7` all 52 `pg_get_constraintdef()` checks), expanded `02_rls_and_isolation_test.sql` (profile positive updates, cross-user profile denial, `log_workspace_activity()` actor-email spoofing proof, and exact `view_project_finance_summary`/`view_monthly_financial_trends` calculations), and corrected `phase6_privilege_and_profile_remediation_proposal.sql` to use `SECURITY INVOKER` + column-level `UPDATE` grants + `auth.users` sync (**NOT DEPLOYED — PENDING OWNER APPROVAL**).
 
 ### 16.1 `01_schema_catalog_validation.sql`
 - **B1** (12 tables + RLS enabled + 0 unexpected tables): **PASS**
 - **B2** (11 enums + exact ordered label sets): **PASS**
 - **B3** (45 RLS policies individually validated by name, table, cmd, roles, `USING`, `WITH CHECK`): **PASS**
-- **B4** (17 functions: signature, return type, security mode, `search_path`, `EXECUTE` grants): **FAIL** — `authenticated` retains `EXECUTE` on `handle_updated_at()` and `prevent_note_type_change()` (trigger functions); 8 `SECURITY DEFINER` trigger functions and 7 RPCs match expected grants.
-- **B5** (3 financial views + `security_invoker=true` + definitions + grants): **PASS**
+- **B4** (17 functions: exact `pronargs`, `pg_get_function_identity_arguments`, `pg_get_function_result`, `prokind`, `prosecdef`, `proconfig`, overload count = 1, `EXECUTE` grants): **FAIL** — `authenticated` retains `EXECUTE` on `handle_updated_at()` and `prevent_note_type_change()` (trigger functions); all 17 signatures, overloads, `search_path`s, and `PUBLIC`/`anon` revocations match expectations.
+- **B5** (3 financial views: `security_invoker=true`, exact ordered columns, `pg_depend` source tables, grouping/join/ROI logic, grants): **PASS**
 - **B6** (20 triggers individually validated by schema, table, timing/event, enabled `'O'`, function): **PASS**
-- **B7** (Primary keys, composite FKs, unique/check constraints, `idx_workspace_single_owner`, 16 indexes): **PASS**
+- **B7** (All 52 constraints validated via `pg_get_constraintdef()`, `convalidated`, `condeferrable` + `idx_workspace_single_owner` + 16 indexes): **PASS**
 
 ### 16.2 `03_privilege_assertions_test.sql`
-- **Result:** **FAIL** — `SECURITY FAILURE: authenticated has TRUNCATE on public.workspaces` (and live `has_table_privilege` inspection confirms `authenticated` has `SELECT`, `INSERT`, `UPDATE`, `DELETE`, `TRUNCATE`, `REFERENCES`, `TRIGGER` on all 12 tables and 3 views, plus `has_column_privilege('authenticated', 'public.profiles', 'email', 'UPDATE') = true`). `PUBLIC` and `anon` have 0 privileges across all 12 tables and 3 views (**PASS**).
+- **Result:** **FAIL** — `SECURITY FAILURE: authenticated has TRUNCATE on public.workspaces` (live `has_table_privilege` confirms `authenticated` has `SELECT, INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER` on all 12 tables and 3 views, plus `has_column_privilege('authenticated', 'public.profiles', 'email', 'UPDATE') = true`). `PUBLIC` and `anon` have 0 privileges across all 12 tables and 3 views (**PASS**).
 
 ### 16.3 `02_rls_and_isolation_test.sql`
-- `anon` rejection on `create_workspace_with_owner` (`42501`) and `public.projects` `SELECT` (`42501`): **PASS**
-- `authenticated` NULL `auth.uid()` rejection on `create_workspace_with_owner` (`P0001`): **PASS**
-- Authenticated Workspace A & Workspace B creation via RPC: **PASS**
-- Cross-workspace `SELECT`, `INSERT` (`42501`), and `UPDATE` (0 rows) isolation (`User A` vs `User B` vs `Non-member`): **PASS**
-- Cross-workspace relational integrity trigger check (`financial_transactions.project_id` across workspaces): **PASS**
-- Direct `INSERT` blocks on `workspaces`, `workspace_members`, and `activity_logs` under `authenticated`: **PASS**
-- Expanded Owner authorization coverage (read workspace/members, create/update projects, milestones, tasks, financial transactions, manage settings, create/update invitations, promote/demote Member <-> Administrator, prevent second Owner, reject deleting Workspace B): **PASS**
-- Role boundary checks (`Administrator`, `Member`, `Viewer`, `Suspended`) under `authenticated`: **PASS**
-- Invitation token SHA-256 verification and identity-mismatch rejection under `authenticated`: **PASS**
-- `profiles.email` mutability proof test (`UPDATE public.profiles SET email = ...` succeeds with `ROW_COUNT = 1`): **PASS** (reproduces open finding)
-- Financial KPI & ROI calculations (`25.0%`) and 3-view tenant isolation under `authenticated`: **PASS**
-- Non-swallowing `delete_workspace_by_owner()` authorization check (non-owner rejected + workspace preserved; owner deletion cascades): **PASS**
-- Transactional rollback (`PHASE_6_1_1_NON_DELETE_TESTS_PASSED_INTENTIONAL_ROLLBACK`): **PASS** (Zero rows committed)
-- **Raw `DELETE` Assertions (3 cross-workspace/member + 2 Owner `DELETE` statements):** **NOT EXECUTED** (MCP client auto-cancels queries containing raw `DELETE`, and no local `psql`, `supabase` CLI, or `docker` environment is installed on this host for isolated local execution).
+- `anon` rejection (`42501`), `authenticated` NULL `auth.uid()` rejection (`P0001`), Workspace A/B RPC creation: **PASS**
+- Cross-workspace `SELECT`, `INSERT` (`42501`), `UPDATE` (0 rows) isolation & trigger integrity: **PASS**
+- Expanded Owner authorization & RBAC boundaries (`Administrator`, `Member`, `Viewer`, `Suspended`): **PASS**
+- Profile positive updates (`full_name`, `display_name`, `bio`) & cross-user profile update denial (0 rows): **PASS**
+- `profiles.email` mutability & `log_workspace_activity()` actor-email spoofing proof: **PASS** *(reproduces open finding)*
+- Exact calculation & tenant-isolation assertions across all 3 financial views: **PASS**
+- Non-swallowing `delete_workspace_by_owner()` & atomic rollback (`PHASE_6_1_2_PROFILE_AND_VIEWS_PASSED_INTENTIONAL_ROLLBACK`): **PASS** (0 rows committed)
+- **5 Raw `DELETE` Assertions (3 cross-workspace/member + 2 Owner `DELETE` statements):** **NOT EXECUTED** (MCP client auto-cancels queries containing raw `DELETE`, and no local `psql`, `supabase` CLI, or `docker` environment is installed on this host).
 
 ---
 

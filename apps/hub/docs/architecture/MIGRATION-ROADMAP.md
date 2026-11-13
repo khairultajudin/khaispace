@@ -1,6 +1,6 @@
 # Khai Space Hub — Persistence Implementation & Migration Roadmap
-**Document Version:** 1.1.0 (Updated through Phase 5 Completion)
-**Phase:** Phase 5 — Authentication Foundation & Private Workspace Access
+**Document Version:** 1.2.0 (Updated through Phase 6.1.2 Verification)
+**Phase:** Phase 6 / 6.1 / 6.1.1 / 6.1.2 — Schema, RLS & Security Verification (Remediation Pending Owner Approval)
 **Application Target:** `apps/hub/`
 **Working Branch:** `feature/khai-space-hub`
 **Repository:** `khairultajudin/khaispace`
@@ -21,7 +21,7 @@ Moving Khai Space Hub from in-memory React session state to a persistent, produc
 flowchart LR
     P3["Phase 3: Architecture Planning (Completed)"] --> P4["Phase 4 & 4.1: Supabase Foundation & Types (Completed)"]
     P4 --> P5["Phase 5: Auth & Workspace Access (Completed)"]
-    P5 --> P6["Phase 6: Schema & RLS Deployment (Next)"]
+    P5 --> P6["Phase 6 / 6.1.2: Schema & RLS (Remediation Pending Owner Approval)"]
     P6 --> P7["Phase 7: Core Persistence (Projects, Tasks, Notes)"]
     P7 --> P8["Phase 8: Finance & Subscriptions"]
     P8 --> P9["Phase 9: Members & Settings"]
@@ -63,22 +63,17 @@ flowchart LR
 ---
 
 ### Phase 6 — Database Schema & Row Level Security Deployment
-- **Status:** **NOT CLOSED — PHASE 6.1.1 REMEDIATION PENDING APPROVAL** (Live on Supabase `dpicdhjaabfjbvppmsxk`).
+- **Status:** **NOT CLOSED — PENDING OWNER APPROVAL** (Live on Supabase `dpicdhjaabfjbvppmsxk`).
 - **Objective:** Deploy reviewed PostgreSQL relational foundation, composite integrity triggers, anti-escalation policies, security-invoker accounting views, invitation acceptance procedures, and updated-at triggers to the dedicated Supabase project.
 - **Dependencies:** Phase 5.
-- **Completed Deliverables:**
+- **Deliverables & Status:**
   - Deployed migration `20261113000001_phase6_initial_schema_and_rls.sql` (remote `schema_migrations` version `20261113024551`) via `supabase_mcp.apply_migration`.
-  - Confirmed 12 tables in `public` with RLS enabled across 100% of tables, 11 enums, 45 RLS policies, 17 functions, 20 triggers, and 3 `security_invoker = true` views (`01_schema_catalog_validation.sql` B1–B3, B5–B7 = **PASS**).
-  - Strengthened automated test suites in `apps/hub/supabase/tests/` (`01_schema_catalog_validation.sql`, `02_rls_and_isolation_test.sql`, `03_privilege_assertions_test.sql`) in Phases 6.1 / 6.1.1 with expanded Owner authorization coverage, `profiles.email` mutability proof, and transactional rollback (0 persistent production rows).
-  - Prepared review-only remediation SQL in `apps/hub/supabase/proposed-remediations/phase6_privilege_and_profile_remediation_proposal.sql` (**NOT DEPLOYED — PENDING APPROVAL**).
+  - `01_schema_catalog_validation.sql`: `B1`, `B2`, `B3`, `B5`, `B6`, `B7` = **PASS**; `B4` = **FAIL** (`authenticated` retains `EXECUTE` on `handle_updated_at()` and `prevent_note_type_change()`).
+  - `03_privilege_assertions_test.sql`: **FAIL** (`authenticated` retains `TRUNCATE`, `REFERENCES`, `TRIGGER`, and excess DML grants on all 12 tables and 3 views; `profiles.email` `UPDATE` granted).
+  - `02_rls_and_isolation_test.sql`: Non-`DELETE` assertions = **PASS**; 5 raw `DELETE` assertions = **NOT EXECUTED** (MCP client auto-cancels raw `DELETE`; no local `psql`/`supabase`/`docker` available).
+  - Review-only remediation proposal [`phase6_privilege_and_profile_remediation_proposal.sql`](file:///e:/KhaiSpace/apps/hub/supabase/proposed-remediations/phase6_privilege_and_profile_remediation_proposal.sql): **PENDING OWNER APPROVAL** (**NOT DEPLOYED**).
   - Live introspected TypeScript database definitions in `apps/hub/src/types/database.types.ts`.
-- **Open Phase 6.1.1 Findings (PENDING APPROVAL Before Phase 7):**
-  - **FAIL** in `03_privilege_assertions_test.sql`: `authenticated` retains default table privileges (including `TRUNCATE`) on all 12 tables and 3 views.
-  - **FAIL** in `01_schema_catalog_validation.sql` (B4): `authenticated` retains `EXECUTE` on `handle_updated_at()` and `prevent_note_type_change()`.
-  - `public.profiles.email` mutability by `authenticated` users via `Users update own profile`.
-  - Migration version mismatch (`20261113000001` local vs `20261113024551` remote `schema_migrations`).
-  - Raw `DELETE` assertions in `02_rls_and_isolation_test.sql`: **NOT EXECUTED** (MCP client auto-cancels raw `DELETE`; no local `psql`/`supabase`/`docker` available).
-- **Exit Criteria:** All 6 quality gates passed; Phase 6 remains **NOT CLOSED** pending owner approval of the remediation proposal and execution of the remaining `DELETE` tests in an unrestricted PostgreSQL runner.
+- **Exit Criteria:** Phase 6 remains **NOT CLOSED** and Phase 7 remains **UNAUTHORIZED** pending owner approval of the remediation proposal, migration version reconciliation (`20261113000001` vs `20261113024551`), and execution of the 5 `DELETE` assertions in an isolated `psql`/Supabase CLI environment.
 
 ---
 

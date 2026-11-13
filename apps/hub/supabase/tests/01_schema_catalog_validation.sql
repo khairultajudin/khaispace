@@ -1,11 +1,16 @@
 -- ==============================================================================
--- KHAI SPACE HUB — DATABASE TEST SUITE (PHASE 6.1.1)
--- Test 01: Complete Schema, Catalog, Policy, Trigger & Constraint Validation
+-- KHAI SPACE HUB — DATABASE TEST SUITE (PHASE 6.1.2)
+-- Test 01: Complete Schema, Catalog, Policy, Signature, View, Trigger & Constraint Validation
 -- Target: khai-space-hub (dpicdhjaabfjbvppmsxk)
 -- ==============================================================================
--- Read-only catalog assertions. Validates every expected object individually
--- (12 tables, 11 enums, 45 RLS policies, 17 functions, 3 views, 20 triggers,
--- constraints, and indexes). Raises EXCEPTION on any mismatch.
+-- Read-only catalog assertions. Validates every expected object individually:
+--   B1: 12 tables + RLS enabled + 0 unexpected tables
+--   B2: 11 enums + exact ordered labels
+--   B3: 45 RLS policies (name, table, cmd, roles, USING, WITH CHECK)
+--   B4: 17 functions (exact identity args, nargs, return type, kind, secdef, search_path, overloads, grants)
+--   B5: 3 financial views (security_invoker=true, columns, source tables, grouping/join/ROI logic, grants)
+--   B6: 20 triggers (table, timing/event, enabled 'O', function)
+--   B7: All 52 constraints (pg_get_constraintdef, convalidated, condeferrable) & 16 indexes
 -- Note: Table/view privilege assertions are in 03_privilege_assertions_test.sql.
 -- ==============================================================================
 
@@ -30,10 +35,15 @@ DECLARE
   v_fn_spec record;
   v_fn_row record;
   v_fn_total int;
+  v_fn_count int;
+  v_fn_acl_leak text;
 
   v_view_spec record;
+  v_view_oid oid;
   v_view_def text;
+  v_view_cols text[];
   v_reloptions text[];
+  v_view_total int;
 
   v_trg_spec record;
   v_trg_def text;
@@ -42,6 +52,8 @@ DECLARE
   v_trg_total int;
 
   v_con_spec record;
+  v_con_row record;
+  v_con_total int;
   v_idx_name text;
   v_expected_indexes text[] := ARRAY[
     'idx_workspace_single_owner', 'idx_members_user', 'idx_members_lookup',
@@ -199,7 +211,7 @@ BEGIN
   END LOOP;
 
   -- ----------------------------------------------------------------------------
-  -- B4. ALL 17 FUNCTIONS INDIVIDUALLY (SIGNATURE, RETURN, MODE, SEARCH_PATH, GRANTS)
+  -- B4. ALL 17 FUNCTIONS INDIVIDUALLY (EXACT SIGNATURE, OVERLOADS, MODE, SEARCH_PATH, GRANTS)
   -- ----------------------------------------------------------------------------
   SELECT count(*) INTO v_fn_total
   FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
@@ -210,37 +222,59 @@ BEGIN
 
   FOR v_fn_spec IN
     SELECT * FROM (VALUES
-      ('accept_workspace_invitation', 'uuid', true, 'search_path=public, auth, extensions, pg_temp', true),
-      ('create_workspace_with_owner', 'uuid', true, 'search_path=public, auth, pg_temp', true),
-      ('delete_workspace_by_owner', 'void', true, 'search_path=public, auth, pg_temp', true),
-      ('get_user_workspace_role', 'member_role', true, 'search_path=public, auth, pg_temp', true),
-      ('is_workspace_admin_or_owner', 'boolean', true, 'search_path=public, auth, pg_temp', true),
-      ('is_workspace_member', 'boolean', true, 'search_path=public, auth, pg_temp', true),
-      ('log_workspace_activity', 'uuid', true, 'search_path=public, auth, pg_temp', true),
-      ('handle_new_user', 'trigger', true, 'search_path=public, auth, pg_temp', false),
-      ('handle_workspace_deletion_authorization', 'trigger', true, 'search_path=public, auth, pg_temp', false),
-      ('protect_workspace_members_immutability', 'trigger', true, 'search_path=public, auth, pg_temp', false),
-      ('protect_workspace_members_deletion', 'trigger', true, 'search_path=public, auth, pg_temp', false),
-      ('handle_project_deletion_cleanup', 'trigger', true, 'search_path=public, auth, pg_temp', false),
-      ('handle_milestone_deletion_cleanup', 'trigger', true, 'search_path=public, auth, pg_temp', false),
-      ('validate_project_workspace_integrity', 'trigger', true, 'search_path=public, auth, pg_temp', false),
-      ('validate_subscription_project_workspace_integrity', 'trigger', true, 'search_path=public, auth, pg_temp', false),
-      ('handle_updated_at', 'trigger', false, NULL::text, false),
-      ('prevent_note_type_change', 'trigger', false, NULL::text, false)
-    ) AS f(fn_name, ret_type, is_secdef, expected_sp, is_rpc)
+      ('accept_workspace_invitation', 1, 'p_token text', 'uuid', true, 'search_path=public, auth, extensions, pg_temp', true),
+      ('create_workspace_with_owner', 3, 'ws_name character varying, ws_description text, ws_timezone character varying', 'uuid', true, 'search_path=public, auth, pg_temp', true),
+      ('delete_workspace_by_owner', 1, 'p_workspace_id uuid', 'void', true, 'search_path=public, auth, pg_temp', true),
+      ('get_user_workspace_role', 1, 'ws_id uuid', 'member_role', true, 'search_path=public, auth, pg_temp', true),
+      ('is_workspace_admin_or_owner', 1, 'ws_id uuid', 'boolean', true, 'search_path=public, auth, pg_temp', true),
+      ('is_workspace_member', 1, 'ws_id uuid', 'boolean', true, 'search_path=public, auth, pg_temp', true),
+      ('log_workspace_activity', 6, 'p_workspace_id uuid, p_action character varying, p_entity_type character varying, p_entity_id uuid, p_category character varying, p_metadata jsonb', 'uuid', true, 'search_path=public, auth, pg_temp', true),
+      ('handle_new_user', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
+      ('handle_workspace_deletion_authorization', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
+      ('protect_workspace_members_immutability', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
+      ('protect_workspace_members_deletion', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
+      ('handle_project_deletion_cleanup', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
+      ('handle_milestone_deletion_cleanup', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
+      ('validate_project_workspace_integrity', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
+      ('validate_subscription_project_workspace_integrity', 0, '', 'trigger', true, 'search_path=public, auth, pg_temp', false),
+      ('handle_updated_at', 0, '', 'trigger', false, NULL::text, false),
+      ('prevent_note_type_change', 0, '', 'trigger', false, NULL::text, false)
+    ) AS f(fn_name, expected_nargs, expected_id_args, ret_type, is_secdef, expected_sp, is_rpc)
   LOOP
-    SELECT p.oid, p.prorettype::regtype::text AS ret_type, p.prosecdef, p.proconfig
+    SELECT count(*) INTO v_fn_count
+    FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public' AND p.proname = v_fn_spec.fn_name;
+
+    IF v_fn_count = 0 THEN
+      RAISE EXCEPTION 'B4 Function Failure: Missing function public.%', v_fn_spec.fn_name;
+    END IF;
+    IF v_fn_count > 1 THEN
+      RAISE EXCEPTION 'B4 Overload Failure: Unexpected overload count % for public.%', v_fn_count, v_fn_spec.fn_name;
+    END IF;
+
+    SELECT p.oid, p.prokind, p.pronargs,
+           pg_get_function_identity_arguments(p.oid) AS id_args,
+           pg_get_function_result(p.oid) AS res_type,
+           p.prosecdef, p.proconfig, p.proacl
     INTO v_fn_row
     FROM pg_proc p
     JOIN pg_namespace n ON n.oid = p.pronamespace
     WHERE n.nspname = 'public' AND p.proname = v_fn_spec.fn_name;
 
-    IF NOT FOUND THEN
-      RAISE EXCEPTION 'B4 Function Failure: Missing function public.%', v_fn_spec.fn_name;
+    IF v_fn_row.prokind != 'f' THEN
+      RAISE EXCEPTION 'B4 Function Failure: public.% prokind is %, expected f', v_fn_spec.fn_name, v_fn_row.prokind;
     END IF;
-    IF v_fn_row.ret_type != v_fn_spec.ret_type THEN
+    IF v_fn_row.pronargs != v_fn_spec.expected_nargs THEN
+      RAISE EXCEPTION 'B4 Signature Failure: public.% pronargs is %, expected %',
+        v_fn_spec.fn_name, v_fn_row.pronargs, v_fn_spec.expected_nargs;
+    END IF;
+    IF v_fn_row.id_args != v_fn_spec.expected_id_args THEN
+      RAISE EXCEPTION 'B4 Signature Failure: public.% identity args "%" != expected "%"',
+        v_fn_spec.fn_name, v_fn_row.id_args, v_fn_spec.expected_id_args;
+    END IF;
+    IF v_fn_row.res_type != v_fn_spec.ret_type THEN
       RAISE EXCEPTION 'B4 Function Failure: public.% return type is %, expected %',
-        v_fn_spec.fn_name, v_fn_row.ret_type, v_fn_spec.ret_type;
+        v_fn_spec.fn_name, v_fn_row.res_type, v_fn_spec.ret_type;
     END IF;
     IF v_fn_row.prosecdef != v_fn_spec.is_secdef THEN
       RAISE EXCEPTION 'B4 Function Failure: public.% prosecdef is %, expected %',
@@ -251,10 +285,22 @@ BEGIN
         RAISE EXCEPTION 'B4 Function Failure: SECURITY DEFINER public.% missing expected % (got %)',
           v_fn_spec.fn_name, v_fn_spec.expected_sp, v_fn_row.proconfig;
       END IF;
+    ELSE
+      IF v_fn_row.proconfig IS NOT NULL THEN
+        RAISE EXCEPTION 'B4 Function Failure: SECURITY INVOKER public.% has unexpected proconfig %',
+          v_fn_spec.fn_name, v_fn_row.proconfig;
+      END IF;
     END IF;
     IF has_function_privilege('public', v_fn_row.oid, 'EXECUTE')
        OR has_function_privilege('anon', v_fn_row.oid, 'EXECUTE') THEN
       RAISE EXCEPTION 'B4 Privilege Failure: PUBLIC or anon can EXECUTE public.%', v_fn_spec.fn_name;
+    END IF;
+    SELECT string_agg(COALESCE(pg_get_userbyid(a.grantee), 'PUBLIC'), ', ')
+    INTO v_fn_acl_leak
+    FROM aclexplode(v_fn_row.proacl) a
+    WHERE a.grantee = 0 OR pg_get_userbyid(a.grantee) = 'anon';
+    IF v_fn_acl_leak IS NOT NULL THEN
+      RAISE EXCEPTION 'B4 ACL Failure: public.% proacl contains PUBLIC/anon: %', v_fn_spec.fn_name, v_fn_acl_leak;
     END IF;
     IF has_function_privilege('authenticated', v_fn_row.oid, 'EXECUTE') != v_fn_spec.is_rpc THEN
       RAISE EXCEPTION 'B4 Privilege Failure: authenticated EXECUTE on public.% is %, expected %',
@@ -263,31 +309,86 @@ BEGIN
   END LOOP;
 
   -- ----------------------------------------------------------------------------
-  -- B5. ALL 3 FINANCIAL VIEWS (EXISTENCE, SECURITY_INVOKER, DEFINITION, GRANTS)
+  -- B5. ALL 3 FINANCIAL VIEWS (EXISTENCE, COLUMNS, SOURCES, LOGIC, SECURITY_INVOKER, GRANTS)
   -- ----------------------------------------------------------------------------
+  SELECT count(*) INTO v_view_total
+  FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE n.nspname = 'public' AND c.relkind = 'v';
+  IF v_view_total != 3 THEN
+    RAISE EXCEPTION 'B5 View Failure: Expected exactly 3 views in public, found %', v_view_total;
+  END IF;
+
   FOR v_view_spec IN
     SELECT * FROM (VALUES
-      ('view_overall_finance_kpis', 'financial_transactions'),
-      ('view_project_finance_summary', 'financial_transactions'),
-      ('view_monthly_financial_trends', 'financial_transactions')
-    ) AS v(view_name, expected_source)
+      (
+        'view_overall_finance_kpis',
+        ARRAY['workspace_id','total_income','total_expenses','net_cashflow','total_investment','realized_investment_return','roi_percent','roi_note'],
+        ARRAY['financial_transactions'],
+        'GROUP BY workspace_id',
+        'is_investment_return = true'
+      ),
+      (
+        'view_project_finance_summary',
+        ARRAY['workspace_id','project_id','project_title','category','income','expenses','investment','net_cashflow','tracked_return','roi_percent','roi_note'],
+        ARRAY['projects','financial_transactions'],
+        'GROUP BY p.workspace_id, p.id, p.title, p.category',
+        'LEFT JOIN financial_transactions t ON p.id = t.project_id AND p.workspace_id = t.workspace_id'
+      ),
+      (
+        'view_monthly_financial_trends',
+        ARRAY['workspace_id','month_key','month_label','income','expenses','investment','net_cashflow'],
+        ARRAY['financial_transactions'],
+        'GROUP BY workspace_id',
+        'YYYY-MM'
+      )
+    ) AS v(view_name, expected_cols, expected_sources, expected_group, expected_semantic)
   LOOP
-    SELECT c.reloptions, pg_get_viewdef(c.oid, true)
-    INTO v_reloptions, v_view_def
+    SELECT c.oid, c.reloptions, pg_get_viewdef(c.oid, true)
+    INTO v_view_oid, v_reloptions, v_view_def
     FROM pg_class c
     JOIN pg_namespace n ON n.oid = c.relnamespace
     WHERE n.nspname = 'public' AND c.relname = v_view_spec.view_name AND c.relkind = 'v';
 
-    IF v_view_def IS NULL THEN
+    IF v_view_oid IS NULL THEN
       RAISE EXCEPTION 'B5 View Failure: Missing view public.%', v_view_spec.view_name;
     END IF;
     IF v_reloptions IS NULL OR NOT ('security_invoker=true' = ANY(v_reloptions)) THEN
       RAISE EXCEPTION 'B5 View Failure: public.% missing security_invoker=true', v_view_spec.view_name;
     END IF;
-    IF v_view_def NOT LIKE '%' || v_view_spec.expected_source || '%' THEN
-      RAISE EXCEPTION 'B5 View Failure: public.% definition does not reference %',
-        v_view_spec.view_name, v_view_spec.expected_source;
+
+    SELECT array_agg(a.attname::text ORDER BY a.attnum) INTO v_view_cols
+    FROM pg_attribute a
+    WHERE a.attrelid = v_view_oid AND a.attnum > 0 AND NOT a.attisdropped;
+    IF v_view_cols IS DISTINCT FROM v_view_spec.expected_cols THEN
+      RAISE EXCEPTION 'B5 View Column Failure: public.% columns % != expected %',
+        v_view_spec.view_name, v_view_cols, v_view_spec.expected_cols;
     END IF;
+
+    IF v_view_def NOT LIKE '%' || v_view_spec.expected_group || '%' THEN
+      RAISE EXCEPTION 'B5 View Logic Failure: public.% missing expected grouping "%"',
+        v_view_spec.view_name, v_view_spec.expected_group;
+    END IF;
+    IF v_view_def NOT LIKE '%' || v_view_spec.expected_semantic || '%' THEN
+      RAISE EXCEPTION 'B5 View Logic Failure: public.% missing expected semantic clause "%"',
+        v_view_spec.view_name, v_view_spec.expected_semantic;
+    END IF;
+
+    -- Verify underlying table dependencies via pg_depend + pg_rewrite
+    IF EXISTS (
+      SELECT 1 FROM unnest(v_view_spec.expected_sources) AS src_tbl
+      WHERE NOT EXISTS (
+        SELECT 1
+        FROM pg_rewrite rw
+        JOIN pg_depend d ON d.objid = rw.oid AND d.classid = 'pg_rewrite'::regclass
+        JOIN pg_class ref ON ref.oid = d.refobjid
+        JOIN pg_namespace rn ON rn.oid = ref.relnamespace
+        WHERE rw.ev_class = v_view_oid AND rn.nspname = 'public' AND ref.relname = src_tbl
+      )
+    ) THEN
+      RAISE EXCEPTION 'B5 View Dependency Failure: public.% missing expected source dependency in %',
+        v_view_spec.view_name, v_view_spec.expected_sources;
+    END IF;
+
     IF has_table_privilege('anon', 'public.' || v_view_spec.view_name, 'SELECT')
        OR has_table_privilege('public', 'public.' || v_view_spec.view_name, 'SELECT') THEN
       RAISE EXCEPTION 'B5 View Privilege Failure: anon or PUBLIC has SELECT on public.%', v_view_spec.view_name;
@@ -364,56 +465,98 @@ BEGIN
   END LOOP;
 
   -- ----------------------------------------------------------------------------
-  -- B7. CONSTRAINTS (PK, UNIQUE, COMPOSITE FK, FINANCIAL CHECK) & INDEXES
+  -- B7. ALL 52 CONSTRAINTS (DEFINITION, VALIDATION, DEFERRABILITY) & 16 INDEXES
   -- ----------------------------------------------------------------------------
+  SELECT count(*) INTO v_con_total
+  FROM pg_constraint con
+  JOIN pg_class c ON c.oid = con.conrelid
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  WHERE n.nspname = 'public';
+  IF v_con_total != 52 THEN
+    RAISE EXCEPTION 'B7 Constraint Failure: Expected 52 constraints in public, found %', v_con_total;
+  END IF;
+
   FOR v_con_spec IN
     SELECT * FROM (VALUES
-      ('workspaces', 'workspaces_pkey', 'p'),
-      ('profiles', 'profiles_pkey', 'p'),
-      ('profiles', 'profiles_email_key', 'u'),
-      ('workspace_members', 'workspace_members_pkey', 'p'),
-      ('workspace_members', 'uq_workspace_member', 'u'),
-      ('workspace_invitations', 'workspace_invitations_pkey', 'p'),
-      ('workspace_invitations', 'chk_invitation_role', 'c'),
-      ('workspace_invitations', 'chk_invitation_status', 'c'),
-      ('workspace_settings', 'workspace_settings_pkey', 'p'),
-      ('projects', 'projects_pkey', 'p'),
-      ('projects', 'uq_projects_ws_id', 'u'),
-      ('projects', 'uq_projects_ws_slug', 'u'),
-      ('milestones', 'milestones_pkey', 'p'),
-      ('milestones', 'uq_milestones_ws_id', 'u'),
-      ('milestones', 'fk_milestone_project_ws', 'f'),
-      ('tasks', 'tasks_pkey', 'p'),
-      ('tasks', 'fk_task_project_ws', 'f'),
-      ('tasks', 'fk_task_milestone_ws', 'f'),
-      ('financial_transactions', 'financial_transactions_pkey', 'p'),
-      ('financial_transactions', 'chk_positive_amount', 'c'),
-      ('financial_transactions', 'chk_investment_return_type', 'c'),
-      ('ai_subscriptions', 'ai_subscriptions_pkey', 'p'),
-      ('ai_subscriptions', 'chk_subscription_amount', 'c'),
-      ('ai_subscriptions', 'chk_subscription_currency', 'c'),
-      ('workspace_notes', 'workspace_notes_pkey', 'p'),
-      ('workspace_notes', 'chk_decision_fields', 'c'),
-      ('activity_logs', 'activity_logs_pkey', 'p')
-    ) AS cn(tbl_name, con_name, con_type)
+      ('activity_logs', 'activity_logs_pkey', 'p', 'PRIMARY KEY (id)'),
+      ('activity_logs', 'activity_logs_user_id_fkey', 'f', 'FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE SET NULL'),
+      ('activity_logs', 'activity_logs_workspace_id_fkey', 'f', 'FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE'),
+      ('ai_subscriptions', 'ai_subscriptions_pkey', 'p', 'PRIMARY KEY (id)'),
+      ('ai_subscriptions', 'chk_subscription_amount', 'c', 'CHECK ((amount >= (0)::numeric))'),
+      ('ai_subscriptions', 'chk_subscription_currency', 'c', 'CHECK (((currency)::text = ''MYR''::text))'),
+      ('ai_subscriptions', 'ai_subscriptions_assigned_project_id_fkey', 'f', 'FOREIGN KEY (assigned_project_id) REFERENCES projects(id) ON DELETE SET NULL'),
+      ('ai_subscriptions', 'ai_subscriptions_created_by_fkey', 'f', 'FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL'),
+      ('ai_subscriptions', 'ai_subscriptions_workspace_id_fkey', 'f', 'FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE'),
+      ('financial_transactions', 'financial_transactions_pkey', 'p', 'PRIMARY KEY (id)'),
+      ('financial_transactions', 'chk_investment_return_type', 'c', 'CHECK (((type = ''Income''::transaction_type) OR (is_investment_return = false)))'),
+      ('financial_transactions', 'chk_positive_amount', 'c', 'CHECK ((amount > (0)::numeric))'),
+      ('financial_transactions', 'financial_transactions_created_by_fkey', 'f', 'FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL'),
+      ('financial_transactions', 'financial_transactions_project_id_fkey', 'f', 'FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL'),
+      ('financial_transactions', 'financial_transactions_workspace_id_fkey', 'f', 'FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE'),
+      ('milestones', 'milestones_pkey', 'p', 'PRIMARY KEY (id)'),
+      ('milestones', 'uq_milestones_ws_id', 'u', 'UNIQUE (workspace_id, id)'),
+      ('milestones', 'fk_milestone_project_ws', 'f', 'FOREIGN KEY (workspace_id, project_id) REFERENCES projects(workspace_id, id) ON DELETE CASCADE'),
+      ('milestones', 'milestones_created_by_fkey', 'f', 'FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL'),
+      ('milestones', 'milestones_workspace_id_fkey', 'f', 'FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE'),
+      ('profiles', 'profiles_pkey', 'p', 'PRIMARY KEY (id)'),
+      ('profiles', 'profiles_email_key', 'u', 'UNIQUE (email)'),
+      ('profiles', 'profiles_id_fkey', 'f', 'FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE'),
+      ('projects', 'projects_pkey', 'p', 'PRIMARY KEY (id)'),
+      ('projects', 'uq_projects_ws_id', 'u', 'UNIQUE (workspace_id, id)'),
+      ('projects', 'uq_projects_ws_slug', 'u', 'UNIQUE (workspace_id, slug)'),
+      ('projects', 'projects_created_by_fkey', 'f', 'FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL'),
+      ('projects', 'projects_workspace_id_fkey', 'f', 'FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE'),
+      ('tasks', 'tasks_pkey', 'p', 'PRIMARY KEY (id)'),
+      ('tasks', 'fk_task_milestone_ws', 'f', 'FOREIGN KEY (workspace_id, milestone_id) REFERENCES milestones(workspace_id, id) ON DELETE SET NULL (milestone_id)'),
+      ('tasks', 'fk_task_project_ws', 'f', 'FOREIGN KEY (workspace_id, project_id) REFERENCES projects(workspace_id, id) ON DELETE CASCADE'),
+      ('tasks', 'tasks_created_by_fkey', 'f', 'FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL'),
+      ('tasks', 'tasks_workspace_id_fkey', 'f', 'FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE'),
+      ('workspace_invitations', 'workspace_invitations_pkey', 'p', 'PRIMARY KEY (id)'),
+      ('workspace_invitations', 'chk_invitation_role', 'c', 'CHECK ((role <> ''Owner''::member_role))'),
+      ('workspace_invitations', 'chk_invitation_status', 'c', 'CHECK (((status)::text = ANY ((ARRAY[''pending''::character varying, ''accepted''::character varying, ''revoked''::character varying, ''expired''::character varying])::text[])))'),
+      ('workspace_invitations', 'workspace_invitations_invited_by_fkey', 'f', 'FOREIGN KEY (invited_by) REFERENCES profiles(id) ON DELETE CASCADE'),
+      ('workspace_invitations', 'workspace_invitations_workspace_id_fkey', 'f', 'FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE'),
+      ('workspace_members', 'workspace_members_pkey', 'p', 'PRIMARY KEY (id)'),
+      ('workspace_members', 'uq_workspace_member', 'u', 'UNIQUE (workspace_id, user_id)'),
+      ('workspace_members', 'workspace_members_invited_by_fkey', 'f', 'FOREIGN KEY (invited_by) REFERENCES profiles(id) ON DELETE SET NULL'),
+      ('workspace_members', 'workspace_members_user_id_fkey', 'f', 'FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE'),
+      ('workspace_members', 'workspace_members_workspace_id_fkey', 'f', 'FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE'),
+      ('workspace_notes', 'workspace_notes_pkey', 'p', 'PRIMARY KEY (id)'),
+      ('workspace_notes', 'chk_decision_fields', 'c', 'CHECK ((((type = ''Decision''::note_record_type) AND (decision_status IS NOT NULL)) OR ((type = ''Note''::note_record_type) AND (decision_status IS NULL))))'),
+      ('workspace_notes', 'workspace_notes_created_by_fkey', 'f', 'FOREIGN KEY (created_by) REFERENCES profiles(id) ON DELETE SET NULL'),
+      ('workspace_notes', 'workspace_notes_project_id_fkey', 'f', 'FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL'),
+      ('workspace_notes', 'workspace_notes_workspace_id_fkey', 'f', 'FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE'),
+      ('workspace_settings', 'workspace_settings_pkey', 'p', 'PRIMARY KEY (workspace_id)'),
+      ('workspace_settings', 'workspace_settings_workspace_id_fkey', 'f', 'FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE CASCADE'),
+      ('workspaces', 'workspaces_pkey', 'p', 'PRIMARY KEY (id)'),
+      ('workspaces', 'workspaces_created_by_fkey', 'f', 'FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL')
+    ) AS cn(tbl_name, con_name, con_type, expected_def)
   LOOP
-    IF NOT EXISTS (
-      SELECT 1 FROM pg_constraint con
-      JOIN pg_class c ON c.oid = con.conrelid
-      JOIN pg_namespace n ON n.oid = c.relnamespace
-      WHERE n.nspname = 'public' AND c.relname = v_con_spec.tbl_name
-        AND con.conname = v_con_spec.con_name AND con.contype = v_con_spec.con_type
-    ) THEN
-      RAISE EXCEPTION 'B7 Constraint Failure: Missing constraint % (type %) on public.%',
-        v_con_spec.con_name, v_con_spec.con_type, v_con_spec.tbl_name;
+    SELECT con.contype, con.convalidated, con.condeferrable, pg_get_constraintdef(con.oid) AS def
+    INTO v_con_row
+    FROM pg_constraint con
+    JOIN pg_class c ON c.oid = con.conrelid
+    JOIN pg_namespace n ON n.oid = c.relnamespace
+    WHERE n.nspname = 'public' AND c.relname = v_con_spec.tbl_name AND con.conname = v_con_spec.con_name;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'B7 Constraint Failure: Missing constraint % on public.%', v_con_spec.con_name, v_con_spec.tbl_name;
+    END IF;
+    IF v_con_row.contype != v_con_spec.con_type THEN
+      RAISE EXCEPTION 'B7 Constraint Failure: % on public.% has contype %, expected %',
+        v_con_spec.con_name, v_con_spec.tbl_name, v_con_row.contype, v_con_spec.con_type;
+    END IF;
+    IF NOT v_con_row.convalidated THEN
+      RAISE EXCEPTION 'B7 Constraint Failure: % on public.% is NOT validated', v_con_spec.con_name, v_con_spec.tbl_name;
+    END IF;
+    IF v_con_row.condeferrable THEN
+      RAISE EXCEPTION 'B7 Constraint Failure: % on public.% is unexpectedly deferrable', v_con_spec.con_name, v_con_spec.tbl_name;
+    END IF;
+    IF v_con_row.def != v_con_spec.expected_def THEN
+      RAISE EXCEPTION 'B7 Constraint Definition Failure: % on public.% got "%", expected "%"',
+        v_con_spec.con_name, v_con_spec.tbl_name, v_con_row.def, v_con_spec.expected_def;
     END IF;
   END LOOP;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'fk_task_milestone_ws' AND confdeltype = 'n'
-  ) THEN
-    RAISE EXCEPTION 'B7 Constraint Failure: fk_task_milestone_ws must have ON DELETE SET NULL (confdeltype = n)';
-  END IF;
 
   IF NOT EXISTS (
     SELECT 1 FROM pg_indexes
