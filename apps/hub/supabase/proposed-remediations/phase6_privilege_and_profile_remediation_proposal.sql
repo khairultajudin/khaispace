@@ -1,5 +1,5 @@
 -- ==============================================================================
--- KHAI SPACE HUB — PROPOSED REMEDIATION SQL (PHASE 6.1.4)
+-- KHAI SPACE HUB — PROPOSED REMEDIATION SQL (PHASE 6.1.4.1)
 -- STATUS: NOT DEPLOYED — OWNER REVIEW REQUIRED
 -- ==============================================================================
 -- Target (when approved): khai-space-hub (dpicdhjaabfjbvppmsxk)
@@ -63,20 +63,27 @@ GRANT SELECT ON public.view_monthly_financial_trends TO authenticated;
 --     for objects created by `postgres`.
 --
 -- Global vs Schema-Specific Default ACLs:
---   - PostgreSQL evaluates both global (`defaclnamespace = 0`) and schema-specific
---     (`defaclnamespace = 'public'`) entries in `pg_default_acl`.
+--   - PostgreSQL evaluates effective default privileges as:
+--       (global pg_default_acl OR built-in PostgreSQL defaults) UNION (schema-specific pg_default_acl).
+--   - IMPORTANT: PostgreSQL's built-in global default grants `EXECUTE` on newly
+--     created functions to `PUBLIC`. Schema-specific `ALTER DEFAULT PRIVILEGES ...
+--     IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC` CANNOT revoke
+--     privileges granted by global defaults.
+--   - Therefore, global `ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVOKE EXECUTE
+--     ON FUNCTIONS FROM PUBLIC` is required separately from the schema-specific
+--     `IN SCHEMA public` revocations for `anon` and `authenticated`.
 --   - Altering global defaults alone does NOT remove Supabase's existing
---     `IN SCHEMA public` entries; therefore `FOR ROLE postgres IN SCHEMA public`
---     is required to override the `public` schema defaults.
---   - Note on functions: PostgreSQL's built-in default grants `EXECUTE` on new
---     functions to `PUBLIC` unless overridden via `ALTER DEFAULT PRIVILEGES ...
---     REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC`.
+--     `IN SCHEMA public` entries; therefore `IN SCHEMA public` revocations are
+--     also required for tables, sequences, and functions.
 --   - `service_role` is intentionally preserved for trusted server-side access.
 --   - Limitation: `supabase_admin` also has `pg_default_acl` entries in `public`,
 --     which `postgres` cannot alter (`postgres` is not a member of `supabase_admin`).
 --     Any future Hub migration must still explicitly declare minimal `GRANT`s and
 --     enable RLS for every new object, and any object created by `supabase_admin`
 --     must be explicitly hardened after creation.
+
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres
+  REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
 
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
   REVOKE ALL ON TABLES FROM PUBLIC, anon, authenticated;
@@ -85,7 +92,7 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
   REVOKE ALL ON SEQUENCES FROM PUBLIC, anon, authenticated;
 
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
-  REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC, anon, authenticated;
+  REVOKE EXECUTE ON FUNCTIONS FROM anon, authenticated;
 
 -- ------------------------------------------------------------------------------
 -- SECTION 2: PROTECT `public.profiles.email` & AUTHORITATIVE LOG IDENTITY

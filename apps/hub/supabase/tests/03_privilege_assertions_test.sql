@@ -1,5 +1,5 @@
 -- ==============================================================================
--- KHAI SPACE HUB — DATABASE TEST SUITE (PHASE 6.1.4)
+-- KHAI SPACE HUB — DATABASE TEST SUITE (PHASE 6.1.4.1)
 -- Test 03: Strict Table, View, Column & Default Privilege Assertions (Read-Only)
 -- Target: khai-space-hub (dpicdhjaabfjbvppmsxk)
 -- ==============================================================================
@@ -8,18 +8,21 @@
 --        all 12 public tables, 3 public financial views, and public.profiles
 --        columns using has_table_privilege(), has_column_privilege(),
 --        has_any_column_privilege(), aclexplode(pg_class.relacl),
---        information_schema.role_table_grants, and information_schema.column_privileges.
---   5:   Role inheritance boundaries (pg_auth_members) and default privileges
---        (pg_default_acl) for the verified object-creating role (`postgres`) in
---        schema `public` and globally across tables/views, sequences, and functions.
---        Note: Inspecting pg_default_acl does not replace an isolated local
---        future-object creation simulation (NOT EXECUTED remotely).
+--        information_schema.role_table_grants, and information_schema.column_privileges,
+--        including PostgreSQL 17 `MAINTAIN`.
+--   5:   Role inheritance boundaries (pg_auth_members) and BOTH global
+--        (defaclnamespace = 0) and schema-specific (`public`) default privileges
+--        (pg_default_acl) for `postgres` across tables/views, sequences, and
+--        functions (including explicit global PUBLIC EXECUTE revocation).
+--        Note: Catalog inspection of pg_default_acl is NOT equivalent to creating
+--        a future object and testing its actual privileges. Isolated local
+--        future-object simulation remains NOT EXECUTED without local PostgreSQL.
 -- ==============================================================================
 
 DO $$
 DECLARE
   v_priv text;
-  v_all_privs text[] := ARRAY['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER'];
+  v_all_privs text[] := ARRAY['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'TRUNCATE', 'REFERENCES', 'TRIGGER', 'MAINTAIN'];
   v_tbl_spec record;
   v_col_spec record;
   v_view_name text;
@@ -32,7 +35,8 @@ DECLARE
   v_info_leak text;
   v_col_grants text[];
   v_defacl_leak text;
-  v_fn_defacl_count int;
+  v_global_fn_acl aclitem[];
+  v_public_fn_acl aclitem[];
   v_role_leak text;
 BEGIN
   -- 1. Verify PUBLIC and anon have ZERO privileges on all 12 tables and 3 views
@@ -81,7 +85,7 @@ BEGIN
       ('activity_logs',          true,  false, false, false)
     ) AS m(tbl_name, exp_sel, exp_ins, exp_upd, exp_del)
   LOOP
-    -- TRUNCATE, REFERENCES, TRIGGER must ALWAYS be false for authenticated
+    -- TRUNCATE, REFERENCES, TRIGGER, MAINTAIN must ALWAYS be false for authenticated
     IF has_table_privilege('authenticated', 'public.' || v_tbl_spec.tbl_name, 'TRUNCATE') THEN
       RAISE EXCEPTION 'SECURITY FAILURE: authenticated has TRUNCATE on public.%', v_tbl_spec.tbl_name;
     END IF;
@@ -90,6 +94,9 @@ BEGIN
     END IF;
     IF has_table_privilege('authenticated', 'public.' || v_tbl_spec.tbl_name, 'TRIGGER') THEN
       RAISE EXCEPTION 'SECURITY FAILURE: authenticated has TRIGGER on public.%', v_tbl_spec.tbl_name;
+    END IF;
+    IF has_table_privilege('authenticated', 'public.' || v_tbl_spec.tbl_name, 'MAINTAIN') THEN
+      RAISE EXCEPTION 'SECURITY FAILURE: authenticated has MAINTAIN on public.%', v_tbl_spec.tbl_name;
     END IF;
 
     -- SELECT / INSERT / UPDATE / DELETE
@@ -175,7 +182,7 @@ BEGIN
   SELECT string_agg(table_name || ':' || privilege_type, ', ') INTO v_info_leak
   FROM information_schema.role_table_grants
   WHERE table_schema = 'public' AND grantee = 'authenticated'
-    AND privilege_type IN ('TRUNCATE', 'REFERENCES', 'TRIGGER');
+    AND privilege_type IN ('TRUNCATE', 'REFERENCES', 'TRIGGER', 'MAINTAIN');
   IF v_info_leak IS NOT NULL THEN
     RAISE EXCEPTION 'SECURITY FAILURE: information_schema reports disallowed authenticated grants: %', v_info_leak;
   END IF;
@@ -208,16 +215,36 @@ BEGIN
     RAISE EXCEPTION 'SECURITY FAILURE: pg_default_acl for postgres grants unintended default privileges: %', v_defacl_leak;
   END IF;
 
-  -- 5c. Require an explicit pg_default_acl entry for `postgres` functions in `public`
-  -- (Without an explicit entry, PostgreSQL's built-in default grants EXECUTE to PUBLIC)
-  SELECT count(*) INTO v_fn_defacl_count
+  -- 5c. Require an explicit GLOBAL pg_default_acl override for `postgres` functions
+  -- (PostgreSQL grants EXECUTE to PUBLIC globally by default; schema-level REVOKE cannot override global defaults)
+  SELECT d.defaclacl INTO v_global_fn_acl
+  FROM pg_default_acl d
+  WHERE d.defaclrole = 'postgres'::regrole
+    AND d.defaclnamespace = 0
+    AND d.defaclobjtype = 'f';
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'SECURITY FAILURE: Missing global pg_default_acl function override for postgres (PUBLIC inherits EXECUTE by default)';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM aclexplode(v_global_fn_acl) a
+    WHERE a.grantee = 0 AND a.privilege_type = 'EXECUTE'
+  ) THEN
+    RAISE EXCEPTION 'SECURITY FAILURE: Global pg_default_acl for postgres functions still grants EXECUTE to PUBLIC';
+  END IF;
+
+  -- 5d. Verify schema-specific `public` function default ACL also excludes PUBLIC, anon, authenticated
+  SELECT d.defaclacl INTO v_public_fn_acl
   FROM pg_default_acl d
   JOIN pg_namespace n ON n.oid = d.defaclnamespace
   WHERE d.defaclrole = 'postgres'::regrole
     AND n.nspname = 'public'
     AND d.defaclobjtype = 'f';
-  IF v_fn_defacl_count = 0 THEN
-    RAISE EXCEPTION 'SECURITY FAILURE: Missing explicit pg_default_acl function override for postgres in public (PUBLIC would inherit EXECUTE)';
+  IF FOUND AND EXISTS (
+    SELECT 1 FROM aclexplode(v_public_fn_acl) a
+    WHERE (a.grantee = 0 OR pg_get_userbyid(a.grantee) IN ('anon', 'authenticated'))
+      AND a.privilege_type = 'EXECUTE'
+  ) THEN
+    RAISE EXCEPTION 'SECURITY FAILURE: public pg_default_acl for postgres functions grants EXECUTE to PUBLIC/anon/authenticated';
   END IF;
 
   RAISE NOTICE '[PASS] All strict table, view, column, and default privilege assertions passed.';
