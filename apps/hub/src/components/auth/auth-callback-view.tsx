@@ -9,7 +9,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import {
-  completeAuthCallbackFromUrl,
+  runBrowserAuthCallback,
   sanitizeInternalRedirectPath,
 } from '@/lib/supabase/auth-service';
 
@@ -43,25 +43,23 @@ export function AuthCallbackView() {
 
     let redirectTimer: ReturnType<typeof setTimeout> | null = null;
 
-    // 1. Capture callback query and hash parameters in local variables
-    const currentSearch = window.location.search;
-    const currentHash = window.location.hash;
-
-    // 2. Immediately scrub sensitive callback tokens from the visible browser URL
-    //    synchronously before initiating any asynchronous verification operation.
-    try {
-      window.history.replaceState(
-        window.history.state,
-        document.title,
-        window.location.pathname
-      );
-    } catch {
-      // Ignore history API restrictions in embedded contexts
-    }
-
     const processCallback = async () => {
-      // 3. Perform asynchronous callback verification using the preserved local variables
-      const result = await completeAuthCallbackFromUrl(currentSearch, currentHash);
+      // Capture callback parameters before scrubbing the URL, then restore the session.
+      const result = await runBrowserAuthCallback({
+        search: window.location.search,
+        hash: window.location.hash,
+        scrubUrl: () => {
+          try {
+            window.history.replaceState(
+              window.history.state,
+              document.title,
+              window.location.pathname
+            );
+          } catch {
+            // Ignore history API restrictions in embedded contexts
+          }
+        },
+      });
 
       if (!result.success || !result.data) {
         setStatus('failed');

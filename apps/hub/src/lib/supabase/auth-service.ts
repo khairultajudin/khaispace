@@ -496,6 +496,29 @@ export function parseAuthCallbackParams(
 }
 
 /**
+ * Extracts implicit-flow tokens from a preserved URL hash fragment without
+ * exposing raw token values on public callback parameter summaries.
+ */
+function extractImplicitHashTokens(hash: string): {
+  hasImplicitParams: boolean;
+  accessToken: string | null;
+  refreshToken: string | null;
+} {
+  const rawHash = hash.startsWith('#') ? hash.slice(1) : hash;
+  const hashParams = new URLSearchParams(rawHash);
+  const hasImplicitParams =
+    hashParams.has('access_token') || hashParams.has('refresh_token');
+  const accessToken = hashParams.get('access_token')?.trim() || null;
+  const refreshToken = hashParams.get('refresh_token')?.trim() || null;
+
+  return {
+    hasImplicitParams,
+    accessToken,
+    refreshToken,
+  };
+}
+
+/**
  * Initiates passwordless Email Magic Link / Email OTP sign-in for an existing user.
  *
  * Security invariants:
@@ -625,13 +648,32 @@ export async function verifyEmailOtpCode(
   }
 }
 
+export interface AuthCallbackClient {
+  exchangeCodeForSession: (
+    authCode: string
+  ) => Promise<{ data: { session: Session | null; user: User | null }; error: AuthError | null }>;
+  verifyOtp: (params: {
+    token_hash: string;
+    type: EmailOtpType;
+  }) => Promise<{ data: { session: Session | null; user: User | null }; error: AuthError | null }>;
+  setSession: (currentSession: {
+    access_token: string;
+    refresh_token: string;
+  }) => Promise<{ data: { session: Session | null; user: User | null }; error: AuthError | null }>;
+  getSession: () => Promise<{
+    data: { session: Session | null };
+    error: AuthError | null;
+  }>;
+}
+
 /**
  * Completes an authentication callback returned via Magic Link (`token_hash`, PKCE `code`,
- * or URL hash fragment session).
+ * or implicit URL hash fragment `#access_token=...&refresh_token=...`).
  */
 export async function completeAuthCallbackFromUrl(
   search: string,
-  hash: string
+  hash: string,
+  authClientOverride?: AuthCallbackClient
 ): Promise<
   AuthOperationResult<{
     session: Session;
@@ -655,11 +697,12 @@ export async function completeAuthCallbackFromUrl(
   }
 
   try {
-    const supabase = getSupabaseBrowserClient();
+    const authClient: AuthCallbackClient =
+      authClientOverride ?? getSupabaseBrowserClient().auth;
 
     // Case 1: PKCE Authorization Code (`?code=...`)
     if (parsed.code) {
-      const { data, error } = await supabase.auth.exchangeCodeForSession(parsed.code);
+      const { data, error } = await authClient.exchangeCodeForSession(parsed.code);
       if (error || !data.session || !data.user) {
         return {
           success: false,
@@ -683,7 +726,7 @@ export async function completeAuthCallbackFromUrl(
 
     // Case 2: Token Hash verification (`?token_hash=...&type=...`)
     if (parsed.tokenHash && parsed.otpType) {
-      const { data, error } = await supabase.auth.verifyOtp({
+      const { data, error } = await authClient.verifyOtp({
         token_hash: parsed.tokenHash,
         type: parsed.otpType,
       });
@@ -709,8 +752,50 @@ export async function completeAuthCallbackFromUrl(
       };
     }
 
-    // Case 3: Implicit hash fragment (`#access_token=...`) detected by Supabase client or existing session
-    const { data, error } = await supabase.auth.getSession();
+    // Case 3: Implicit hash fragment (`#access_token=...&refresh_token=...`)
+    const implicitTokens = extractImplicitHashTokens(hash);
+    if (implicitTokens.hasImplicitParams) {
+      if (!implicitTokens.accessToken || !implicitTokens.refreshToken) {
+        return {
+          success: false,
+          data: null,
+          error: {
+            category: 'expired_or_invalid_link',
+            message:
+              'The sign-in link is incomplete or malformed. Please request a new sign-in link.',
+            code: 'incomplete_implicit_tokens',
+          },
+        };
+      }
+
+      const { data, error } = await authClient.setSession({
+        access_token: implicitTokens.accessToken,
+        refresh_token: implicitTokens.refreshToken,
+      });
+
+      if (error || !data.session || !data.user) {
+        return {
+          success: false,
+          data: null,
+          error: normalizeSupabaseAuthError(
+            error ?? new Error('The sign-in link has expired or is invalid.')
+          ),
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          session: data.session,
+          user: data.user,
+          redirectPath: parsed.redirectPath,
+        },
+        error: null,
+      };
+    }
+
+    // Case 4: Existing active session fallback when no callback parameters are present
+    const { data, error } = await authClient.getSession();
     if (error) {
       return {
         success: false,
@@ -748,6 +833,32 @@ export async function completeAuthCallbackFromUrl(
       error: normalizeSupabaseAuthError(err),
     };
   }
+}
+
+export interface BrowserCallbackEnvironment {
+  search: string;
+  hash: string;
+  scrubUrl: () => void;
+}
+
+/**
+ * Captures callback query and hash parameters before scrubbing the browser URL,
+ * then completes session establishment from the preserved values.
+ */
+export async function runBrowserAuthCallback(
+  env: BrowserCallbackEnvironment,
+  authClientOverride?: AuthCallbackClient
+): Promise<
+  AuthOperationResult<{
+    session: Session;
+    user: User;
+    redirectPath: string;
+  }>
+> {
+  const capturedSearch = env.search;
+  const capturedHash = env.hash;
+  env.scrubUrl();
+  return completeAuthCallbackFromUrl(capturedSearch, capturedHash, authClientOverride);
 }
 
 /**
