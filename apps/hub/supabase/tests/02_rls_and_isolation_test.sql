@@ -526,6 +526,18 @@ BEGIN
     SET LOCAL ROLE authenticated;
     PERFORM set_config('request.jwt.claim.sub', user_member::text, true);
 
+    -- A.4b (Option B): authenticated cannot directly INSERT into public.profiles (42501 insufficient_privilege)
+    v_denied := false;
+    BEGIN
+      INSERT INTO public.profiles (id, full_name, display_name, email)
+      VALUES (user_member, 'Spoof', 'Spoof', 'spoof-insert@example.com');
+    EXCEPTION WHEN insufficient_privilege THEN
+      v_denied := true;
+    END;
+    IF NOT v_denied THEN
+      RAISE EXCEPTION '[POST_REMEDIATION] Security Failure: authenticated directly inserted into public.profiles!';
+    END IF;
+
     -- A.5: Cannot update own email (42501 insufficient_privilege)
     v_denied := false;
     BEGIN

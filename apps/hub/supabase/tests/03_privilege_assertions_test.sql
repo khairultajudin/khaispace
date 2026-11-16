@@ -74,7 +74,7 @@ BEGIN
   FOR v_tbl_spec IN
     SELECT * FROM (VALUES
       ('workspaces',             true,  false, true,  true),
-      ('profiles',               true,  true,  false, false),
+      ('profiles',               true,  false, false, false),
       ('workspace_members',      true,  false, true,  true),
       ('workspace_invitations',  true,  true,  true,  true),
       ('workspace_settings',     true,  false, true,  false),
@@ -276,6 +276,29 @@ BEGIN
       AND a.privilege_type = 'EXECUTE'
   ) THEN
     RAISE EXCEPTION 'SECURITY FAILURE: public pg_default_acl for postgres functions grants EXECUTE to PUBLIC/anon/authenticated';
+  END IF;
+
+  -- 5e. Verify service_role preserves expected table, view, and pg_default_acl access
+  IF NOT has_table_privilege('service_role', 'public.profiles', 'SELECT')
+     OR NOT has_table_privilege('service_role', 'public.profiles', 'INSERT')
+     OR NOT has_table_privilege('service_role', 'public.profiles', 'UPDATE')
+     OR NOT has_table_privilege('service_role', 'public.workspaces', 'SELECT')
+     OR NOT has_table_privilege('service_role', 'public.view_overall_finance_kpis', 'SELECT') THEN
+    RAISE EXCEPTION 'SECURITY/OPERATIONS FAILURE: service_role lost required table/view privileges';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_default_acl d
+    JOIN pg_namespace n ON n.oid = d.defaclnamespace
+    CROSS JOIN LATERAL aclexplode(d.defaclacl) a
+    WHERE d.defaclrole = 'postgres'::regrole
+      AND n.nspname = 'public'
+      AND d.defaclobjtype = 'r'
+      AND pg_get_userbyid(a.grantee) = 'service_role'
+      AND a.privilege_type = 'SELECT'
+  ) THEN
+    RAISE EXCEPTION 'OPERATIONS FAILURE: pg_default_acl in public no longer preserves service_role';
   END IF;
 
   RAISE NOTICE '[PASS] All strict table, view, column, and default privilege assertions passed.';

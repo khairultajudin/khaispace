@@ -162,7 +162,7 @@ BEGIN
       ('milestones', 'Members insert milestones', 'INSERT', ARRAY['public'], NULL, '(is_workspace_member(workspace_id) AND (get_user_workspace_role(workspace_id) <> ''Viewer''::member_role))'),
       ('milestones', 'Members read milestones', 'SELECT', ARRAY['public'], 'is_workspace_member(workspace_id)', NULL),
       ('milestones', 'Members update milestones', 'UPDATE', ARRAY['public'], '(is_workspace_member(workspace_id) AND (get_user_workspace_role(workspace_id) <> ''Viewer''::member_role))', NULL),
-      ('profiles', 'Users insert own profile', 'INSERT', ARRAY['public'], NULL, '(id = auth.uid())'),
+      ('profiles', 'Users insert own profile', 'INSERT', ARRAY['public'], NULL, CASE WHEN v_expected_mode = 'POST_REMEDIATION' THEN 'false' ELSE '(id = auth.uid())' END),
       ('profiles', 'Users read shared profiles', 'SELECT', ARRAY['public'], '((id = auth.uid()) OR (EXISTS ( SELECT 1 FROM (workspace_members wm1 JOIN workspace_members wm2 ON ((wm1.workspace_id = wm2.workspace_id))) WHERE ((wm1.user_id = auth.uid()) AND (wm2.user_id = profiles.id) AND (wm1.status = ''Active''::member_status)))))', NULL),
       ('profiles', 'Users update own profile', 'UPDATE', ARRAY['public'], '(id = auth.uid())', '(id = auth.uid())'),
       ('projects', 'Admins delete projects', 'DELETE', ARRAY['public'], 'is_workspace_admin_or_owner(workspace_id)', NULL),
