@@ -35,6 +35,7 @@ async function main() {
         text.includes('Sign Out')
       );
     },
+    undefined,
     { timeout: 300000 }
   );
 
