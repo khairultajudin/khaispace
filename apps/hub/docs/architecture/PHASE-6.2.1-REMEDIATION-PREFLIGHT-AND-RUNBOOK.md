@@ -1,6 +1,6 @@
 # Khai Space Hub — Phase 6.2.1 Remediation Preflight & Deployment Runbook
 
-**Document Version:** 1.0.1 (Phase 6.2.1.1)  
+**Document Version:** 1.0.2 (Phase 6.2.1.1.1)  
 **Application Target:** `apps/hub/`  
 **Branch:** `feature/khai-space-hub`  
 **Repository:** `khairultajudin/khaispace`  
@@ -37,7 +37,11 @@
 ### 1.3 Baseline-Aware Cleanup Verification Procedure
 1. **Discover Primary Keys from Live Catalog:** Query `pg_index` (`indisprimary = true`) for `auth.users` and all 12 `public` tables—**do not assume every table has an `id` column** (for example, `public.workspace_settings` uses `workspace_id` as its primary key).
 2. **Capture Pre-Test Primary-Key Sets, Row Fingerprints & Secondary Counts:**
-   - For `auth.users` and each of the 12 `public` tables, capture the full primary-key set and a canonical full-row hash/fingerprint keyed by primary key (e.g., `sha256` of `to_jsonb(t)::text` per PK). **Do not retain unnecessary raw personal data (PII) in the evidence bundle.**
+   - For `auth.users` and each of the 12 `public` tables, capture the full primary-key set and a canonical full-row fingerprint keyed by primary key using a stable JSON representation (`to_jsonb(row)::text`, which orders JSONB object keys deterministically).
+   - Confirm hash-function availability in the target environment (`SELECT extname, extnamespace::regnamespace FROM pg_extension WHERE extname = 'pgcrypto';`) rather than silently assuming an extension:
+     - When `pgcrypto` is installed in `extensions` (as in `20261113000001_phase6_initial_schema_and_rls.sql`), compute: `encode(extensions.digest(convert_to(to_jsonb(row)::text, 'UTF8'), 'sha256'), 'hex')`.
+     - If `pgcrypto` is absent in a disposable clone, use PostgreSQL's built-in `encode(sha256(convert_to(to_jsonb(row)::text, 'UTF8')), 'hex')`.
+   - **Do not retain unnecessary raw personal data (PII) in the evidence bundle.**
    - Record row counts as **secondary evidence only**.
    - **Stop Condition:** If a stable primary key or canonical row fingerprint cannot be generated for any table, **stop immediately** before running tests and document the additional catalog/column evidence required.
 3. **Distinguish Intentional Rollback Marker from Genuine Failure:**
@@ -46,7 +50,9 @@
    - Any other exception, PostgreSQL error, or missing marker indicates a **genuine test failure** (even if the block rolled back).
 4. **Compare Pre-Test vs. Post-Test Primary-Key Sets & Row Fingerprints:**
    - Re-capture primary-key sets, canonical full-row fingerprints, and secondary row counts across `auth.users` and all 12 `public` tables.
-   - Verify **zero** differences between pre-test and post-test PK sets and row fingerprints for every affected table, and verify `0` rows matching the 8 deterministic test user UUIDs/emails or `'Workspace A'`/`'Workspace B'`.
+   - Verify **zero** differences between pre-test and post-test PK sets and canonical row fingerprints for every affected table (which covers all generated workspace and child records).
+   - Continue verifying `0` rows matching the 8 deterministic test user UUIDs (`11111111-...` through `88888888-...`) and their exact test emails (`*@example.com` listed in Section 1.2).
+   - **Workspace Names Are Diagnostic Hints Only:** Do **not** require zero rows matching `'Workspace A'` or `'Workspace B'`—a legitimate pre-existing production workspace could use either name, and checking names alone must not trigger a false-positive cleanup failure. Use workspace names only as diagnostic hints, never as standalone proof of fixture presence or absence, and **never delete a record solely because its name matches a test fixture name**.
    - Row counts alone do **not** prove clean rollback (e.g., concurrent `+1/-1` writes or mutated baseline rows could leave counts unchanged). If any PK or fingerprint differs, **stop and investigate**; never auto-delete suspected fixtures.
 
 ---
