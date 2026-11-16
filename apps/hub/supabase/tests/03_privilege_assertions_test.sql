@@ -1,5 +1,5 @@
 -- ==============================================================================
--- KHAI SPACE HUB — DATABASE TEST SUITE (PHASE 6.1.4.1)
+-- KHAI SPACE HUB — DATABASE TEST SUITE (PHASE 6.1.4.2)
 -- Test 03: Strict Table, View, Column & Default Privilege Assertions (Read-Only)
 -- Target: khai-space-hub (dpicdhjaabfjbvppmsxk)
 -- ==============================================================================
@@ -10,10 +10,11 @@
 --        has_any_column_privilege(), aclexplode(pg_class.relacl),
 --        information_schema.role_table_grants, and information_schema.column_privileges,
 --        including PostgreSQL 17 `MAINTAIN`.
---   5:   Role inheritance boundaries (pg_auth_members) and BOTH global
---        (defaclnamespace = 0) and schema-specific (`public`) default privileges
---        (pg_default_acl) for `postgres` across tables/views, sequences, and
---        functions (including explicit global PUBLIC EXECUTE revocation).
+--   5:   Effective role inheritance boundaries (pg_has_role(..., 'USAGE'/'MEMBER'))
+--        and BOTH global (defaclnamespace = 0) and schema-specific (`public`)
+--        default privileges (pg_default_acl) for `postgres` across tables/views,
+--        sequences, and functions (including explicit global PUBLIC EXECUTE
+--        revocation).
 --        Note: Catalog inspection of pg_default_acl is NOT equivalent to creating
 --        a future object and testing its actual privileges. Isolated local
 --        future-object simulation remains NOT EXECUTED without local PostgreSQL.
@@ -38,6 +39,7 @@ DECLARE
   v_global_fn_acl aclitem[];
   v_public_fn_acl aclitem[];
   v_role_leak text;
+  v_missing_priv_roles text;
 BEGIN
   -- 1. Verify PUBLIC and anon have ZERO privileges on all 12 tables and 3 views
   FOR v_tbl_spec IN
@@ -188,14 +190,43 @@ BEGIN
   END IF;
 
   -- 5. Verify role inheritance & default privileges (`pg_default_acl`) for `postgres`
-  -- 5a. Ensure anon and authenticated do not inherit from privileged roles
-  SELECT string_agg(pg_get_userbyid(m.member) || '->' || pg_get_userbyid(m.roleid), ', ')
+  -- 5a. Ensure anon and authenticated do not effectively inherit from privileged roles
+  -- Uses pg_has_role(..., 'USAGE') to traverse transitive/indirect role inheritance chains
+  -- (and 'MEMBER' to catch NOINHERIT memberships), rather than direct-only pg_auth_members.
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon')
+     OR NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+    RAISE EXCEPTION 'TEST ENVIRONMENT FAILURE: Required client role(s) anon/authenticated missing from pg_roles';
+  END IF;
+
+  SELECT string_agg(target.rolname, ', ' ORDER BY target.rolname)
+  INTO v_missing_priv_roles
+  FROM unnest(ARRAY['postgres', 'supabase_admin', 'service_role', 'supabase_privileged_role']) AS target(rolname)
+  WHERE NOT EXISTS (SELECT 1 FROM pg_roles p WHERE p.rolname = target.rolname);
+
+  IF v_missing_priv_roles IS NOT NULL THEN
+    RAISE NOTICE '[INFO] Privileged role(s) not present in this environment (skipped in 5a): %', v_missing_priv_roles;
+  END IF;
+
+  SELECT string_agg(
+    c.rolname || '->' || p.rolname ||
+    CASE
+      WHEN pg_has_role(c.oid, p.oid, 'USAGE') THEN ' (USAGE)'
+      ELSE ' (MEMBER)'
+    END,
+    ', '
+    ORDER BY c.rolname, p.rolname
+  )
   INTO v_role_leak
-  FROM pg_auth_members m
-  WHERE pg_get_userbyid(m.member) IN ('anon', 'authenticated')
-    AND pg_get_userbyid(m.roleid) IN ('postgres', 'supabase_admin', 'service_role', 'supabase_privileged_role');
+  FROM pg_roles c
+  CROSS JOIN unnest(ARRAY['postgres', 'supabase_admin', 'service_role', 'supabase_privileged_role']) AS target(rolname)
+  JOIN pg_roles p ON p.rolname = target.rolname
+  WHERE c.rolname IN ('anon', 'authenticated')
+    AND (
+      pg_has_role(c.oid, p.oid, 'USAGE')
+      OR pg_has_role(c.oid, p.oid, 'MEMBER')
+    );
   IF v_role_leak IS NOT NULL THEN
-    RAISE EXCEPTION 'SECURITY FAILURE: Client role inherits privileged membership: %', v_role_leak;
+    RAISE EXCEPTION 'SECURITY FAILURE: Client role inherits or holds privileged membership: %', v_role_leak;
   END IF;
 
   -- 5b. Check pg_default_acl for `postgres` (both `public` and `<GLOBAL>`) on tables, sequences, functions
