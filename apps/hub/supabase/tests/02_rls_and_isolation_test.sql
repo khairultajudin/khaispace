@@ -8,14 +8,17 @@
 -- ('PHASE_6_1_3_ALL_TESTS_PASSED_INTENTIONAL_ROLLBACK') to guarantee atomic
 -- rollback. Zero test fixtures, rows, or auth users persist in the remote DB.
 -- Supports explicit mode:
---   - 'PRE_REMEDIATION'  (default): reproduces open profiles.email finding
---   - 'POST_REMEDIATION' : enforces 42501 on email/id/created_at/updated_at,
---                          atomic combined-update failure, and auth.users sync
+--   - 'POST_REMEDIATION' (default): enforces Option B (42501 on profiles INSERT),
+--                          42501 on email/id/created_at/updated_at, atomic
+--                          combined-update failure, and auth.users sync
+--   - 'PRE_REMEDIATION'  (isolated pre-remediation test environment ONLY):
+--                          set v_expected_mode := 'PRE_REMEDIATION' to reproduce
+--                          the historical open profiles.email finding
 -- ==============================================================================
 
 DO $$
 DECLARE
-  v_expected_mode text := 'PRE_REMEDIATION'; -- Valid: 'PRE_REMEDIATION' | 'POST_REMEDIATION'
+  v_expected_mode text := 'POST_REMEDIATION'; -- Valid: 'POST_REMEDIATION' | 'PRE_REMEDIATION' (isolated test env only)
   -- Distinct test user identities
   user_a uuid := '11111111-1111-1111-1111-111111111111'::uuid;
   user_b uuid := '22222222-2222-2222-2222-222222222222'::uuid;

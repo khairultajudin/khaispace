@@ -4,8 +4,9 @@
 -- Target: khai-space-hub (dpicdhjaabfjbvppmsxk)
 -- ==============================================================================
 -- Read-only catalog assertions. Supports two explicit validation modes:
---   - 'PRE_REMEDIATION'  (default): 17 functions, 20 triggers (Phase 6 baseline)
---   - 'POST_REMEDIATION' : 19 functions, 22 triggers (after owner-approved remediation)
+--   - 'POST_REMEDIATION' (default): 19 functions, 22 triggers (Option B remediated)
+--   - 'PRE_REMEDIATION'  (isolated pre-remediation test environment ONLY):
+--                        17 functions, 20 triggers (Phase 6 baseline)
 -- Never guesses or mixes states. Fails on partial remediation.
 -- Validates every expected object individually:
 --   B1: 12 tables + RLS enabled + 0 unexpected tables
@@ -20,7 +21,7 @@
 
 DO $$
 DECLARE
-  v_expected_mode text := 'PRE_REMEDIATION'; -- Valid: 'PRE_REMEDIATION' | 'POST_REMEDIATION'
+  v_expected_mode text := 'POST_REMEDIATION'; -- Valid: 'POST_REMEDIATION' | 'PRE_REMEDIATION' (isolated test env only)
   v_expected_fn_count int;
   v_expected_trg_count int;
 
