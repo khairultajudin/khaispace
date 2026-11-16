@@ -1,6 +1,6 @@
 # Khai Space Hub — Persistence Implementation & Migration Roadmap
-**Document Version:** 1.4.4 (Updated through Phase 6.2.1.1 Preflight Clarifications)
-**Phase:** Phase 6 / 6.1–6.2.1.1 — Schema, RLS, Security Verification & Deployment Preparation (Remediation Pending Owner Approval)
+**Document Version:** 2.0.0 (Phases 6–9 Implemented & Deployed to `feature/khai-space-hub`)
+**Phase:** Phase 6 (Closed — 5 raw `DELETE` assertions deferred to `psql`) | Phases 7–9 (Implemented) | Phase 10 (Cloudflare Pages Deployment Verification)
 **Application Target:** `apps/hub/`
 **Working Branch:** `feature/khai-space-hub`
 **Repository:** `khairultajudin/khaispace`
@@ -21,11 +21,11 @@ Moving Khai Space Hub from in-memory React session state to a persistent, produc
 flowchart LR
     P3["Phase 3: Architecture Planning (Completed)"] --> P4["Phase 4 & 4.1: Supabase Foundation & Types (Completed)"]
     P4 --> P5["Phase 5: Auth & Workspace Access (Completed)"]
-    P5 --> P6["Phase 6 / 6.2.1.1: Schema & RLS (NOT CLOSED — Remediation Pending Owner Approval)"]
-    P6 --> P7["Phase 7: Core Persistence (Projects, Tasks, Notes)"]
-    P7 --> P8["Phase 8: Finance & Subscriptions"]
-    P8 --> P9["Phase 9: Members & Settings"]
-    P9 --> P10["Phase 10: Production Hardening & Launch"]
+    P5 --> P6["Phase 6: Schema, RLS & Option B Remediation (DEPLOYED & VERIFIED)"]
+    P6 --> P7["Phase 7: Core Persistence (IMPLEMENTED)"]
+    P7 --> P8["Phase 8: Finance & Subscriptions (IMPLEMENTED)"]
+    P8 --> P9["Phase 9: Members & Settings (IMPLEMENTED)"]
+    P9 --> P10["Phase 10: Production Hardening & Launch (IN PROGRESS)"]
 ```
 
 ---
