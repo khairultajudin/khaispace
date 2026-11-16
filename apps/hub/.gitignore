@@ -18,6 +18,7 @@ next-env.d.ts
 .DS_Store
 Thumbs.db
 
-# Playwright artifacts
+# Playwright artifacts & local auth state (never commit)
 /test-results/
 /playwright-report/
+/e2e/.auth/
