@@ -7,14 +7,14 @@ import {
   Info,
 } from "lucide-react";
 import { MilestoneItem, TaskItem } from "../../types/dashboard";
-import { SAMPLE_MILESTONES } from "../../data/sample-dashboard-data";
 
 interface MilestonesViewProps {
   tasks: TaskItem[];
+  milestones: MilestoneItem[];
   onSelectTask: (taskId: string) => void;
 }
 
-export function MilestonesView({ tasks, onSelectTask }: MilestonesViewProps) {
+export function MilestonesView({ tasks, milestones, onSelectTask }: MilestonesViewProps) {
   const milestoneStatusStyles = {
     Completed: "bg-[#EFF6FF] text-[#1D4ED8] border-[#BFDBFE]",
     "In Progress": "bg-[#EDF5F2] text-[#347A63] border-[#A8CFC2]",
@@ -41,15 +41,20 @@ export function MilestonesView({ tasks, onSelectTask }: MilestonesViewProps) {
 
           <div className="shrink-0 flex items-center gap-2 font-mono text-xs">
             <span className="px-3 py-1.5 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] text-[#0C2340]">
-              Milestones: <strong className="font-semibold">{SAMPLE_MILESTONES.length}</strong>
+              Milestones: <strong className="font-semibold">{milestones.length}</strong>
             </span>
           </div>
         </div>
       </div>
 
       {/* Milestones Cards Grid */}
+      {milestones.length === 0 ? (
+        <div className="p-8 rounded-lg border border-dashed border-[#DCD7CC] bg-white text-center text-xs text-[#536B85]">
+          No milestones created in this workspace yet.
+        </div>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {SAMPLE_MILESTONES.map((milestone: MilestoneItem) => {
+        {milestones.map((milestone: MilestoneItem) => {
           // Calculate dynamic progress from related tasks
           const linkedTasks = tasks.filter((t) =>
             milestone.relatedTaskIds.includes(t.id)
@@ -160,6 +165,7 @@ export function MilestonesView({ tasks, onSelectTask }: MilestonesViewProps) {
           );
         })}
       </div>
+      )}
 
       {/* Planning Notice */}
       <div className="p-4 rounded-lg border border-[#DCD7CC] bg-[#E9E5DC]/50 flex items-start gap-3 text-xs text-[#536B85]">

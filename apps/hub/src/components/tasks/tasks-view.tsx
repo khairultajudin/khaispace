@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   CheckSquare,
   Search,
@@ -12,9 +12,14 @@ import {
   ListTodo,
   Milestone,
   Info,
+  Plus,
+  Loader2,
 } from "lucide-react";
-import { TaskItem, TaskStatus } from "../../types/dashboard";
-import { SAMPLE_TASKS, CATALOGED_PROJECTS } from "../../data/sample-dashboard-data";
+import { HubProject, MilestoneItem, TaskItem, TaskPriority, TaskStatus } from "../../types/dashboard";
+import { useWorkspace } from "@/hooks/use-workspace";
+import { useAuth } from "@/hooks/use-auth";
+import { fetchProjects } from "@/lib/supabase/projects-service";
+import { createTask, fetchMilestones, fetchTasks, updateTaskStatus } from "@/lib/supabase/tasks-service";
 import { getLocalTodayIso, isTaskOverdue } from "../../utils/date-utils";
 import { TaskCard } from "./task-card";
 import { TaskDetail } from "./task-detail";
@@ -25,15 +30,57 @@ interface TasksViewProps {
 }
 
 export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
-  // Local session state for tasks (supports interactive status changes without backend persistence)
-  const [tasks, setTasks] = useState<TaskItem[]>(SAMPLE_TASKS);
+  const { activeWorkspace } = useWorkspace();
+  const { user } = useAuth();
+  const [tasks, setTasks] = useState<TaskItem[]>([]);
+  const [milestones, setMilestones] = useState<MilestoneItem[]>([]);
+  const [projects, setProjects] = useState<HubProject[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"tasks" | "milestones">("tasks");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedProject, setSelectedProject] = useState<string>("ALL");
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
   const [selectedPriority, setSelectedPriority] = useState<string>("ALL");
   const [sortOrder, setSortOrder] = useState<"due-asc" | "due-desc">("due-asc");
-  const [hasSessionModifications, setHasSessionModifications] = useState<boolean>(false);
+
+  const [showNewTask, setShowNewTask] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskProjectId, setNewTaskProjectId] = useState("");
+  const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>("Normal");
+  const [newTaskDueIso, setNewTaskDueIso] = useState(() => getLocalTodayIso());
+  const [newTaskDesc, setNewTaskDesc] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const canWrite = activeWorkspace?.role !== "Viewer";
+
+  const loadData = useCallback(async () => {
+    if (!activeWorkspace) return;
+    try {
+      const [projRows, taskRows] = await Promise.all([
+        fetchProjects(activeWorkspace.id),
+        fetchTasks(activeWorkspace.id),
+      ]);
+      const msRows = await fetchMilestones(activeWorkspace.id, taskRows);
+      setProjects(projRows);
+      setTasks(taskRows);
+      setMilestones(msRows);
+      setError(null);
+      if (projRows.length > 0 && !newTaskProjectId) {
+        setNewTaskProjectId(projRows[0].id);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load tasks.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeWorkspace, newTaskProjectId]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void loadData();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadData]);
 
   // Dynamic local calendar date (updates automatically if page remains open across midnight)
   const [currentDateIso, setCurrentDateIso] = useState<string>(() => getLocalTodayIso());
@@ -87,18 +134,42 @@ export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
     }
   };
 
-  // Status transition handler (updates local React state immediately)
-  const handleStatusChange = (taskId: string, newStatus: TaskStatus) => {
+  const handleStatusChange = async (taskId: string, newStatus: TaskStatus) => {
+    if (!activeWorkspace) return;
+    const target = tasks.find((t) => t.id === taskId);
     setTasks((prev) =>
       prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t))
     );
-    setHasSessionModifications(true);
+    try {
+      await updateTaskStatus(activeWorkspace.id, taskId, newStatus, target?.title ?? "Task");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update task status.");
+      await loadData();
+    }
   };
 
-  // Reset session modifications back to default sample dataset
-  const handleResetSessionData = () => {
-    setTasks(SAMPLE_TASKS);
-    setHasSessionModifications(false);
+  const handleCreateTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeWorkspace || !user?.id || !newTaskProjectId || !newTaskTitle.trim()) return;
+    setIsSubmitting(true);
+    try {
+      await createTask(activeWorkspace.id, user.id, {
+        projectId: newTaskProjectId,
+        title: newTaskTitle.trim(),
+        priority: newTaskPriority,
+        status: "Pending",
+        dueDateIso: newTaskDueIso,
+        description: newTaskDesc.trim(),
+      });
+      setShowNewTask(false);
+      setNewTaskTitle("");
+      setNewTaskDesc("");
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create task.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Dynamic summary metrics calculation from active state
@@ -112,13 +183,12 @@ export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
     return { total, inProgress, pending, completed, overdue };
   }, [tasks, todayIso]);
 
-  // Unique project options from CATALOGED_PROJECTS
   const projectOptions = useMemo(() => {
     return [
       { id: "ALL", title: "All Projects" },
-      ...CATALOGED_PROJECTS.map((p) => ({ id: p.id, title: p.title })),
+      ...projects.map((p) => ({ id: p.id, title: p.title })),
     ];
-  }, []);
+  }, [projects]);
 
   // Filtered & Sorted Tasks
   const filteredTasks = useMemo(() => {
@@ -212,22 +282,17 @@ export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
             </p>
           </div>
 
-          {/* Session modifications indicator */}
-          {hasSessionModifications && (
-            <div className="shrink-0 flex items-center gap-2 font-mono text-xs">
-              <span className="px-3 py-1.5 rounded-md border border-[#A8CFC2] bg-[#EDF5F2] text-[#347A63] font-medium flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#347A63] animate-pulse"></span>
-                Session Modified
-              </span>
-              <button
-                type="button"
-                onClick={handleResetSessionData}
-                className="px-2.5 py-1.5 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] hover:bg-[#E9E5DC] text-[#536B85] hover:text-[#0C2340] transition-colors cursor-pointer"
-                title="Reset tasks to initial sample state"
-              >
-                Reset State
-              </button>
-            </div>
+          {canWrite && (
+            <button
+              type="button"
+              onClick={() => setShowNewTask(true)}
+              disabled={projects.length === 0}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-[#0C2340] text-white text-xs font-medium hover:bg-[#133258] disabled:opacity-50 cursor-pointer shrink-0"
+              title={projects.length === 0 ? "Create a project first" : "Create a new task"}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>New Task</span>
+            </button>
           )}
         </div>
 
@@ -350,17 +415,26 @@ export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
         </div>
       </div>
 
-      {/* Local Session State Disclaimer */}
-      <div className="px-4 py-3 rounded-lg border border-[#DCD7CC] bg-[#E9E5DC]/50 flex items-start gap-2.5 text-xs text-[#536B85]">
+      {error && (
+        <div className="p-3 rounded-lg border border-red-200 bg-red-50 text-red-800 text-xs flex items-center justify-between">
+          <span>{error}</span>
+          <button type="button" onClick={() => void loadData()} className="underline font-medium">
+            Retry
+          </button>
+        </div>
+      )}
+
+      <div className="p-4 rounded-lg border border-[#DCD7CC] bg-[#FAF8F4] flex items-start gap-3 text-xs text-[#536B85]">
         <Info className="w-4 h-4 text-[#347A63] shrink-0 mt-0.5" />
         <div className="leading-relaxed">
-          <strong className="text-[#0C2340] font-semibold">Local Session State:</strong> Task statuses and metrics can be dynamically adjusted for this browser session. Changes are maintained in client memory and are not synced with an external database.
+          <strong className="text-[#0C2340] font-semibold">Live Workspace Persistence:</strong> Task statuses and new tasks are persisted to Supabase PostgreSQL under workspace RLS.
+          {isLoading ? " Syncing..." : ""}
         </div>
       </div>
 
       {/* Tab Content */}
       {activeTab === "milestones" ? (
-        <MilestonesView tasks={tasks} onSelectTask={handleSelectTask} />
+        <MilestonesView tasks={tasks} milestones={milestones} onSelectTask={handleSelectTask} />
       ) : (
         /* Tasks Queue Tab */
         <div className="space-y-6">
@@ -515,6 +589,94 @@ export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
               </button>
             </div>
           )}
+        </div>
+      )}
+      {showNewTask && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-xl border border-[#DCD7CC] bg-white p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold text-[#0C2340]">Create New Task</h2>
+              <button type="button" onClick={() => setShowNewTask(false)} className="p-1 text-[#536B85]">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateTask} className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-[#0C2340] mb-1">Project</label>
+                <select
+                  value={newTaskProjectId}
+                  onChange={(e) => setNewTaskProjectId(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
+                >
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>{p.title}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#0C2340] mb-1">Task Title</label>
+                <input
+                  type="text"
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  maxLength={200}
+                  required
+                  className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-[#0C2340] mb-1">Priority</label>
+                  <select
+                    value={newTaskPriority}
+                    onChange={(e) => setNewTaskPriority(e.target.value as TaskPriority)}
+                    className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
+                  >
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Normal">Normal</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#0C2340] mb-1">Due Date</label>
+                  <input
+                    type="date"
+                    value={newTaskDueIso}
+                    onChange={(e) => setNewTaskDueIso(e.target.value)}
+                    required
+                    className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#0C2340] mb-1">Description</label>
+                <textarea
+                  value={newTaskDesc}
+                  onChange={(e) => setNewTaskDesc(e.target.value)}
+                  rows={2}
+                  className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowNewTask(false)}
+                  className="px-3 py-1.5 rounded border border-[#DCD7CC] text-xs text-[#536B85]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded bg-[#0C2340] text-white text-xs font-medium disabled:opacity-50"
+                >
+                  {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  Create Task
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

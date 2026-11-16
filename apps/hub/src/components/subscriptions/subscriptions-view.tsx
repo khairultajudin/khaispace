@@ -6,12 +6,18 @@ import {
   ListFilter,
   CalendarDays,
   PieChart,
-  RotateCcw,
   Plus,
   AlertTriangle,
 } from "lucide-react";
 import { AISubscriptionItem } from "../../types/dashboard";
-import { SAMPLE_SUBSCRIPTIONS } from "../../data/sample-dashboard-data";
+import { useWorkspace } from "@/hooks/use-workspace";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  createSubscription,
+  deleteSubscription,
+  fetchSubscriptions,
+  updateSubscription,
+} from "@/lib/supabase/subscriptions-service";
 import { SubscriptionMetrics } from "./subscription-metrics";
 import { SubscriptionList } from "./subscription-list";
 import { SubscriptionRenewals } from "./subscription-renewals";
@@ -22,9 +28,32 @@ import { SubscriptionForm } from "./subscription-form";
 type SubscriptionTab = "directory" | "renewals" | "cost-analysis";
 
 export function SubscriptionsView() {
-  const [subscriptions, setSubscriptions] = useState<AISubscriptionItem[]>(SAMPLE_SUBSCRIPTIONS);
+  const { activeWorkspace } = useWorkspace();
+  const { user } = useAuth();
+  const [subscriptions, setSubscriptions] = useState<AISubscriptionItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<SubscriptionTab>("directory");
-  const [isModified, setIsModified] = useState(false);
+
+  const loadSubscriptions = useCallback(async () => {
+    if (!activeWorkspace) return;
+    try {
+      const rows = await fetchSubscriptions(activeWorkspace.id);
+      setSubscriptions(rows);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load subscriptions.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeWorkspace]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void loadSubscriptions();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadSubscriptions]);
 
   // Form modal state
   const [formModal, setFormModal] = useState<{
@@ -115,39 +144,40 @@ export function SubscriptionsView() {
     });
   };
 
-  const handleSave = (savedSub: AISubscriptionItem) => {
-    if (formModal.mode === "add") {
-      setSubscriptions((prev) => [savedSub, ...prev]);
-    } else {
-      setSubscriptions((prev) =>
-        prev.map((s) => (s.id === savedSub.id ? savedSub : s))
-      );
-      if (selectedSub?.id === savedSub.id) {
-        setSelectedSub(savedSub);
+  const handleSave = async (savedSub: AISubscriptionItem) => {
+    if (!activeWorkspace || !user?.id) return;
+    try {
+      if (formModal.mode === "add") {
+        await createSubscription(activeWorkspace.id, user.id, savedSub);
+      } else {
+        await updateSubscription(activeWorkspace.id, savedSub.id, savedSub);
+        if (selectedSub?.id === savedSub.id) {
+          setSelectedSub(savedSub);
+        }
       }
+      setFormModal({ isOpen: false, mode: "add" });
+      await loadSubscriptions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save subscription.");
     }
-    setIsModified(true);
-    setFormModal({ isOpen: false, mode: "add" });
   };
 
   const handleDeletePrompt = (sub: AISubscriptionItem) => {
     setDeleteCandidate(sub);
   };
 
-  const confirmDelete = () => {
-    if (!deleteCandidate) return;
-    setSubscriptions((prev) => prev.filter((s) => s.id !== deleteCandidate.id));
-    setIsModified(true);
-    if (selectedSub?.id === deleteCandidate.id) {
-      closeDetail();
+  const confirmDelete = async () => {
+    if (!deleteCandidate || !activeWorkspace) return;
+    try {
+      await deleteSubscription(activeWorkspace.id, deleteCandidate.id, deleteCandidate.productName);
+      if (selectedSub?.id === deleteCandidate.id) {
+        closeDetail();
+      }
+      setDeleteCandidate(null);
+      await loadSubscriptions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete subscription.");
     }
-    setDeleteCandidate(null);
-  };
-
-  const handleResetToBaseline = () => {
-    setSubscriptions(SAMPLE_SUBSCRIPTIONS);
-    setIsModified(false);
-    setSelectedSub(null);
   };
 
   return (
@@ -169,17 +199,9 @@ export function SubscriptionsView() {
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
-            {isModified && (
-              <button
-                type="button"
-                onClick={handleResetToBaseline}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] hover:bg-[#E9E5DC] text-xs font-medium text-[#536B85] hover:text-[#0C2340] transition-colors cursor-pointer"
-                title="Restore default sample subscriptions"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Reset Baseline</span>
-              </button>
-            )}
+            <span className="text-xs font-mono text-[#536B85]">
+              {isLoading ? "Syncing..." : `${subscriptions.length} tracked`}
+            </span>
 
             <button
               type="button"
@@ -239,12 +261,15 @@ export function SubscriptionsView() {
           </button>
         </div>
 
-        {isModified && (
-          <span className="text-[11px] font-mono text-[#8C6D2B] bg-[#FAF8F4] px-2 py-1 rounded border border-[#DCD7CC] shrink-0">
-            Session modified
-          </span>
-        )}
       </div>
+      {error && (
+        <div className="p-3 rounded-lg border border-red-200 bg-red-50 text-red-800 text-xs flex items-center justify-between">
+          <span>{error}</span>
+          <button type="button" onClick={() => void loadSubscriptions()} className="underline font-medium">
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Tab Panels */}
       {activeTab === "directory" && (

@@ -4,12 +4,18 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   FileText,
   Scale,
-  RotateCcw,
   Plus,
   AlertTriangle,
 } from "lucide-react";
 import { WorkspaceNoteItem, NoteRecordType } from "../../types/dashboard";
-import { SAMPLE_NOTES_AND_DECISIONS } from "../../data/sample-dashboard-data";
+import { useWorkspace } from "@/hooks/use-workspace";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  createNoteOrDecision,
+  deleteNoteOrDecision,
+  fetchNotesAndDecisions,
+  updateNoteOrDecision,
+} from "@/lib/supabase/notes-service";
 import { NotesMetrics } from "./notes-metrics";
 import { NotesList } from "./notes-list";
 import { DecisionsList } from "./decisions-list";
@@ -19,7 +25,11 @@ import { NoteForm } from "./note-form";
 type NotesTab = "notes" | "decisions";
 
 export function NotesView() {
-  const [records, setRecords] = useState<WorkspaceNoteItem[]>(SAMPLE_NOTES_AND_DECISIONS);
+  const { activeWorkspace } = useWorkspace();
+  const { user } = useAuth();
+  const [records, setRecords] = useState<WorkspaceNoteItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<NotesTab>(() => {
     if (typeof window !== "undefined") {
       const hash = window.location.hash.replace("#", "");
@@ -33,7 +43,26 @@ export function NotesView() {
     }
     return "notes";
   });
-  const [isModified, setIsModified] = useState(false);
+
+  const loadRecords = useCallback(async () => {
+    if (!activeWorkspace) return;
+    try {
+      const rows = await fetchNotesAndDecisions(activeWorkspace.id);
+      setRecords(rows);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load notes and decisions.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeWorkspace]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void loadRecords();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadRecords]);
 
   // Form modal state
   const [formModal, setFormModal] = useState<{
@@ -48,32 +77,10 @@ export function NotesView() {
   });
 
   // Selected record for detail modal / deep linking
-  const [selectedRecord, setSelectedRecord] = useState<WorkspaceNoteItem | null>(() => {
-    if (typeof window !== "undefined") {
-      const hash = window.location.hash.replace("#", "");
-      if (hash.startsWith("note-")) {
-        const id = hash.replace("note-", "");
-        return (
-          SAMPLE_NOTES_AND_DECISIONS.find((r) => r.id === hash || r.id === id) || null
-        );
-      }
-      if (hash.startsWith("decision-") || hash.startsWith("dec-")) {
-        const id = hash.startsWith("decision-")
-          ? hash.replace("decision-", "")
-          : hash;
-        return (
-          SAMPLE_NOTES_AND_DECISIONS.find((r) => r.id === id || r.id === hash) || null
-        );
-      }
-    }
-    return null;
-  });
+  const [selectedRecord, setSelectedRecord] = useState<WorkspaceNoteItem | null>(null);
 
   // Delete confirmation modal state
   const [deleteCandidate, setDeleteCandidate] = useState<WorkspaceNoteItem | null>(null);
-
-  // Reset baseline confirmation dialog state
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // Synchronize URL hash with active tabs and deep links
   useEffect(() => {
@@ -159,39 +166,40 @@ export function NotesView() {
     });
   };
 
-  const handleSave = (savedRecord: WorkspaceNoteItem) => {
-    if (formModal.mode === "add") {
-      setRecords((prev) => [savedRecord, ...prev]);
-    } else {
-      setRecords((prev) =>
-        prev.map((r) => (r.id === savedRecord.id ? savedRecord : r))
-      );
-      if (selectedRecord?.id === savedRecord.id) {
-        setSelectedRecord(savedRecord);
+  const handleSave = async (savedRecord: WorkspaceNoteItem) => {
+    if (!activeWorkspace || !user?.id) return;
+    try {
+      if (formModal.mode === "add") {
+        await createNoteOrDecision(activeWorkspace.id, user.id, savedRecord);
+      } else {
+        const updated = await updateNoteOrDecision(activeWorkspace.id, savedRecord.id, savedRecord);
+        if (selectedRecord?.id === savedRecord.id) {
+          setSelectedRecord(updated);
+        }
       }
+      setFormModal({ isOpen: false, mode: "add", initialType: "Note" });
+      await loadRecords();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save record.");
     }
-    setIsModified(true);
-    setFormModal({ isOpen: false, mode: "add", initialType: "Note" });
   };
 
   const handleDeletePrompt = (record: WorkspaceNoteItem) => {
     setDeleteCandidate(record);
   };
 
-  const confirmDelete = () => {
-    if (!deleteCandidate) return;
-    setRecords((prev) => prev.filter((r) => r.id !== deleteCandidate.id));
-    setIsModified(true);
-    if (selectedRecord?.id === deleteCandidate.id) {
-      closeDetail();
+  const confirmDelete = async () => {
+    if (!deleteCandidate || !activeWorkspace) return;
+    try {
+      await deleteNoteOrDecision(activeWorkspace.id, deleteCandidate.id, deleteCandidate.title);
+      if (selectedRecord?.id === deleteCandidate.id) {
+        closeDetail();
+      }
+      setDeleteCandidate(null);
+      await loadRecords();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete record.");
     }
-    setDeleteCandidate(null);
-  };
-
-  const handleResetToBaseline = () => {
-    setRecords(SAMPLE_NOTES_AND_DECISIONS);
-    setIsModified(false);
-    setSelectedRecord(null);
   };
 
   const notesCount = records.filter((r) => r.type === "Note").length;
@@ -216,17 +224,9 @@ export function NotesView() {
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
-            {isModified && (
-              <button
-                type="button"
-                onClick={() => setShowResetConfirm(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] hover:bg-[#E9E5DC] text-xs font-medium text-[#536B85] hover:text-[#0C2340] transition-colors cursor-pointer"
-                title="Restore default sample records"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Reset Baseline</span>
-              </button>
-            )}
+            <span className="text-xs font-mono text-[#536B85]">
+              {isLoading ? "Syncing..." : `${records.length} entries`}
+            </span>
 
             <button
               type="button"
@@ -273,12 +273,15 @@ export function NotesView() {
           </button>
         </div>
 
-        {isModified && (
-          <span className="text-[11px] font-mono text-[#8C6D2B] bg-[#FAF8F4] px-2 py-1 rounded border border-[#DCD7CC] shrink-0">
-            Session modified
-          </span>
-        )}
       </div>
+      {error && (
+        <div className="p-3 rounded-lg border border-red-200 bg-red-50 text-red-800 text-xs flex items-center justify-between">
+          <span>{error}</span>
+          <button type="button" onClick={() => void loadRecords()} className="underline font-medium">
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Tab Panels */}
       {activeTab === "notes" && (
@@ -370,46 +373,6 @@ export function NotesView() {
         </div>
       )}
 
-      {/* Reset Baseline Confirmation Modal */}
-      {showResetConfirm && (
-        <div
-          className="fixed inset-0 z-50 bg-[#0C2340]/40 backdrop-blur-2xs flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="reset-modal-title"
-        >
-          <div className="w-full max-w-md bg-[#FFFFFF] rounded-lg border border-[#DCD7CC] shadow-xl p-6 space-y-4">
-            <div className="flex items-center gap-3 text-[#8C6D2B]">
-              <RotateCcw className="w-6 h-6 shrink-0" />
-              <h3 id="reset-modal-title" className="font-bold text-base text-[#0C2340]">
-                Reset Baseline Data?
-              </h3>
-            </div>
-            <p className="text-xs text-[#536B85] leading-relaxed">
-              Are you sure you want to restore the default sample notes and decisions? All additions, edits, and deletions made during this session will be permanently discarded.
-            </p>
-            <div className="flex items-center justify-end gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowResetConfirm(false)}
-                className="px-3.5 py-2 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] text-xs font-medium text-[#536B85] hover:text-[#0C2340] hover:bg-[#E9E5DC] transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  handleResetToBaseline();
-                  setShowResetConfirm(false);
-                }}
-                className="px-4 py-2 rounded-md bg-[#8C6D2B] hover:bg-[#8C6D2B]/90 text-white text-xs font-medium transition-colors cursor-pointer"
-              >
-                Confirm Reset
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

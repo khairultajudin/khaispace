@@ -1,15 +1,20 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Search,
   X,
   FolderKanban,
   RotateCcw,
   Layers,
+  Plus,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
-import { CATALOGED_PROJECTS } from "../../data/sample-dashboard-data";
-import { ProjectStatus } from "../../types/dashboard";
+import { HubProject, ProjectStatus } from "../../types/dashboard";
+import { useWorkspace } from "@/hooks/use-workspace";
+import { useAuth } from "@/hooks/use-auth";
+import { createProject, fetchProjects } from "@/lib/supabase/projects-service";
 import { ProjectCard } from "./project-card";
 import { ProjectDetail } from "./project-detail";
 
@@ -23,6 +28,12 @@ const STATUS_FILTERS: { id: "ALL" | ProjectStatus; label: string }[] = [
 ];
 
 export function ProjectsView() {
+  const { activeWorkspace } = useWorkspace();
+  const { user } = useAuth();
+  const [projects, setProjects] = useState<HubProject[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<"ALL" | ProjectStatus>("ALL");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
@@ -36,7 +47,39 @@ export function ProjectsView() {
     return null;
   });
 
-  React.useEffect(() => {
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newCategory, setNewCategory] = useState("Engineering");
+  const [newStatus, setNewStatus] = useState<ProjectStatus>("Planning");
+  const [newLocation, setNewLocation] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newTags, setNewTags] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const canWrite = activeWorkspace?.role !== "Viewer";
+
+  const loadProjects = useCallback(async () => {
+    if (!activeWorkspace) return;
+    try {
+      const rows = await fetchProjects(activeWorkspace.id);
+      setProjects(rows);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load projects.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeWorkspace]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void loadProjects();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadProjects]);
+
+  useEffect(() => {
     const handleHash = () => {
       const match = window.location.hash.match(/^#project-([a-z0-9-]+)$/);
       if (match) {
@@ -52,50 +95,76 @@ export function ProjectsView() {
     };
   }, []);
 
-  // Compute status counts dynamically from single source of truth
+  const handleCreateProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeWorkspace || !user?.id) return;
+    if (!newTitle.trim() || !newDescription.trim()) {
+      setFormError("Project title and description are required.");
+      return;
+    }
+    setIsSubmitting(true);
+    setFormError(null);
+    try {
+      const parsedTags = newTags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+      await createProject(activeWorkspace.id, user.id, {
+        title: newTitle.trim(),
+        category: newCategory.trim() || "Engineering",
+        status: newStatus,
+        location: newLocation.trim(),
+        description: newDescription.trim(),
+        tags: parsedTags,
+      });
+      setShowCreateModal(false);
+      setNewTitle("");
+      setNewLocation("");
+      setNewDescription("");
+      setNewTags("");
+      await loadProjects();
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Failed to create project.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {
-      ALL: CATALOGED_PROJECTS.length,
+      ALL: projects.length,
     };
-    for (const project of CATALOGED_PROJECTS) {
+    for (const project of projects) {
       counts[project.status] = (counts[project.status] || 0) + 1;
     }
     return counts;
-  }, []);
+  }, [projects]);
 
-  // Dynamically calculate Active / Dev count (Production, In Development, Active)
   const activeOrDevCount = useMemo(() => {
-    return CATALOGED_PROJECTS.filter(
+    return projects.filter(
       (p) =>
         p.status === "Production" ||
         p.status === "In Development" ||
         p.status === "Active"
     ).length;
-  }, []);
+  }, [projects]);
 
-  // Compute unique categories dynamically
   const categories = useMemo(() => {
     const set = new Set<string>();
-    for (const project of CATALOGED_PROJECTS) {
+    for (const project of projects) {
       set.add(project.category);
     }
     return ["ALL", ...Array.from(set)];
-  }, []);
+  }, [projects]);
 
-  // Filtered projects
   const filteredProjects = useMemo(() => {
-    return CATALOGED_PROJECTS.filter((project) => {
-      // Status filter
+    return projects.filter((project) => {
       if (selectedStatus !== "ALL" && project.status !== selectedStatus) {
         return false;
       }
-
-      // Category filter
       if (selectedCategory !== "ALL" && project.category !== selectedCategory) {
         return false;
       }
-
-      // Search query (name, category, description, tags, location)
       if (searchQuery.trim() !== "") {
         const q = searchQuery.toLowerCase().trim();
         const matchesName = project.title.toLowerCase().includes(q);
@@ -108,10 +177,9 @@ export function ProjectsView() {
           return false;
         }
       }
-
       return true;
     });
-  }, [searchQuery, selectedStatus, selectedCategory]);
+  }, [projects, searchQuery, selectedStatus, selectedCategory]);
 
   const hasActiveFilters =
     searchQuery.trim() !== "" || selectedStatus !== "ALL" || selectedCategory !== "ALL";
@@ -122,9 +190,8 @@ export function ProjectsView() {
     setSelectedCategory("ALL");
   };
 
-  // If a project detail is open, render detail view
   if (selectedProjectId) {
-    const selectedProject = CATALOGED_PROJECTS.find((p) => p.id === selectedProjectId);
+    const selectedProject = projects.find((p) => p.id === selectedProjectId);
     if (selectedProject) {
       return (
         <ProjectDetail
@@ -143,29 +210,37 @@ export function ProjectsView() {
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#347A63]">
               <FolderKanban className="w-4 h-4" />
-              <span>Repository Project Catalog</span>
+              <span>Workspace Project Catalog</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0C2340]">
               Projects &amp; Workspaces
             </h1>
             <p className="text-xs sm:text-sm text-[#536B85] max-w-2xl leading-relaxed">
-              Consolidated registry of all verified applications, research documentation, and
-              hardware showcases currently residing in the <code>khairultajudin/khaispace</code> monorepo.
+              Live database registry of projects, applications, and engineering assets in{" "}
+              <strong>{activeWorkspace?.name}</strong>.
             </p>
           </div>
 
-          {/* Project Count Badges */}
           <div className="shrink-0 flex flex-wrap items-center gap-2 font-mono text-xs">
             <div className="px-3 py-1.5 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] text-[#0C2340]">
-              Total: <strong className="font-semibold">{CATALOGED_PROJECTS.length}</strong>
+              Total: <strong className="font-semibold">{projects.length}</strong>
             </div>
             <div className="px-3 py-1.5 rounded-md border border-[#A8CFC2] bg-[#EDF5F2] text-[#347A63]">
               Active / Dev: <strong className="font-semibold">{activeOrDevCount}</strong>
             </div>
+            {canWrite && (
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#0C2340] text-white font-sans font-medium hover:bg-[#133258] transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>New Project</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Status Group Summary Pills */}
         <div className="pt-2 border-t border-[#E9E5DC] flex flex-wrap items-center gap-1.5 text-xs">
           <span className="text-[#536B85] text-[11px] font-mono mr-1">Status Counts:</span>
           {STATUS_FILTERS.map((filter) => {
@@ -196,10 +271,25 @@ export function ProjectsView() {
         </div>
       </div>
 
+      {error && (
+        <div className="p-4 rounded-lg border border-red-200 bg-red-50 text-red-800 text-xs flex items-center justify-between gap-2">
+          <span className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            {error}
+          </span>
+          <button
+            type="button"
+            onClick={() => void loadProjects()}
+            className="underline font-medium cursor-pointer"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
       {/* Search & Category Filter Controls */}
       <div className="p-4 rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs space-y-3">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          {/* Search Input */}
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-[#536B85] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
@@ -220,7 +310,6 @@ export function ProjectsView() {
             )}
           </div>
 
-          {/* Category Dropdown Filter */}
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5 text-xs text-[#536B85] shrink-0 font-medium">
               <Layers className="w-3.5 h-3.5 text-[#347A63]" />
@@ -238,7 +327,6 @@ export function ProjectsView() {
               ))}
             </select>
 
-            {/* Reset Filters Button */}
             {hasActiveFilters && (
               <button
                 onClick={handleResetFilters}
@@ -252,11 +340,10 @@ export function ProjectsView() {
           </div>
         </div>
 
-        {/* Filter Summary & Result Count */}
         <div className="flex items-center justify-between text-xs text-[#536B85] pt-1">
           <div>
             Showing <strong className="text-[#0C2340]">{filteredProjects.length}</strong> of{" "}
-            <strong>{CATALOGED_PROJECTS.length}</strong> projects
+            <strong>{projects.length}</strong> projects
             {hasActiveFilters && <span className="italic ml-1">(filtered)</span>}
           </div>
 
@@ -271,8 +358,11 @@ export function ProjectsView() {
         </div>
       </div>
 
-      {/* Projects Grid or Empty State */}
-      {filteredProjects.length > 0 ? (
+      {isLoading ? (
+        <div className="p-8 rounded-lg border border-[#DCD7CC] bg-white text-center text-xs text-[#536B85]">
+          Loading workspace projects...
+        </div>
+      ) : filteredProjects.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredProjects.map((project) => (
             <ProjectCard
@@ -283,25 +373,147 @@ export function ProjectsView() {
           ))}
         </div>
       ) : (
-        /* Empty State */
         <div className="p-12 rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs text-center space-y-4">
           <div className="w-12 h-12 rounded-full bg-[#FAF8F4] border border-[#DCD7CC] text-[#536B85] flex items-center justify-center mx-auto">
-            <Search className="w-6 h-6" />
+            <FolderKanban className="w-6 h-6" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-base font-semibold text-[#0C2340]">No matching projects found</h3>
+            <h3 className="text-base font-semibold text-[#0C2340]">
+              {projects.length === 0 ? "No projects in this workspace yet" : "No matching projects found"}
+            </h3>
             <p className="text-xs text-[#536B85] max-w-sm mx-auto leading-relaxed">
-              We couldn&apos;t find any project matching your query &ldquo;{searchQuery}&rdquo; or filter
-              criteria.
+              {projects.length === 0
+                ? "Create your first project to start tracking milestones, tasks, and financials."
+                : "We couldn't find any project matching your filter criteria."}
             </p>
           </div>
-          <button
-            onClick={handleResetFilters}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-medium text-white bg-[#0C2340] hover:bg-[#0C2340]/90 transition-colors cursor-pointer"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>Clear Filters &amp; Reset</span>
-          </button>
+          {hasActiveFilters ? (
+            <button
+              onClick={handleResetFilters}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-medium text-white bg-[#0C2340] hover:bg-[#0C2340]/90 transition-colors cursor-pointer"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Clear Filters &amp; Reset</span>
+            </button>
+          ) : canWrite ? (
+            <button
+              type="button"
+              onClick={() => setShowCreateModal(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-medium text-white bg-[#0C2340] hover:bg-[#0C2340]/90 transition-colors cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Create First Project</span>
+            </button>
+          ) : null}
+        </div>
+      )}
+
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg rounded-xl border border-[#DCD7CC] bg-white p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-[#0C2340]">Create New Project</h2>
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                className="p-1 text-[#536B85] hover:text-[#0C2340]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {formError && (
+              <div className="p-2.5 rounded border border-red-200 bg-red-50 text-red-800 text-xs">
+                {formError}
+              </div>
+            )}
+            <form onSubmit={handleCreateProject} className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-[#0C2340] mb-1">Title</label>
+                <input
+                  type="text"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  maxLength={150}
+                  required
+                  className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-[#0C2340] mb-1">Category</label>
+                  <input
+                    type="text"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    maxLength={100}
+                    required
+                    className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#0C2340] mb-1">Status</label>
+                  <select
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value as ProjectStatus)}
+                    className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
+                  >
+                    <option value="Planning">Planning</option>
+                    <option value="In Development">In Development</option>
+                    <option value="Active">Active</option>
+                    <option value="Production">Production</option>
+                    <option value="Documented">Documented</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#0C2340] mb-1">Location / Path</label>
+                <input
+                  type="text"
+                  value={newLocation}
+                  onChange={(e) => setNewLocation(e.target.value)}
+                  placeholder="e.g. apps/hub or https://..."
+                  className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#0C2340] mb-1">Description</label>
+                <textarea
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                  rows={3}
+                  required
+                  className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#0C2340] mb-1">Tags (comma-separated)</label>
+                <input
+                  type="text"
+                  value={newTags}
+                  onChange={(e) => setNewTags(e.target.value)}
+                  placeholder="Next.js, Supabase, Commerce"
+                  className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-3 py-2 rounded border border-[#DCD7CC] text-xs text-[#536B85]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#0C2340] text-white text-xs font-medium disabled:opacity-50"
+                >
+                  {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  Create Project
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

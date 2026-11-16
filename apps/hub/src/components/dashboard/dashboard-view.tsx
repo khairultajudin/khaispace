@@ -16,6 +16,8 @@ import { FinanceView } from "../finance/finance-view";
 import { SubscriptionsView } from "../subscriptions/subscriptions-view";
 import { NotesView } from "../notes/notes-view";
 import { SettingsView } from "../settings/settings-view";
+import { WorkspaceProvider, useWorkspace } from "../../hooks/use-workspace";
+import { WorkspaceOnboarding } from "./workspace-onboarding";
 
 const VALID_SECTIONS: NavSection[] = [
   "overview",
@@ -28,6 +30,16 @@ const VALID_SECTIONS: NavSection[] = [
 ];
 
 export function DashboardView() {
+  return (
+    <WorkspaceProvider>
+      <DashboardShell />
+    </WorkspaceProvider>
+  );
+}
+
+function DashboardShell() {
+  const { activeWorkspace, isLoading: isWorkspaceLoading, error: workspaceError, refreshWorkspaces } =
+    useWorkspace();
   const [currentSection, setCurrentSection] = useState<NavSection>(() => {
     if (typeof window !== "undefined") {
       const rawHash = window.location.hash.replace("#", "");
@@ -164,7 +176,24 @@ export function DashboardView() {
 
         {/* Dynamic Page Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-8">
-          {currentSection === "overview" ? (
+          {isWorkspaceLoading ? (
+            <div className="p-8 rounded-lg border border-[#DCD7CC] bg-white text-center text-sm text-[#536B85]">
+              Loading workspace...
+            </div>
+          ) : workspaceError ? (
+            <div className="p-6 rounded-lg border border-red-200 bg-red-50 text-red-800 text-sm space-y-3">
+              <p className="font-medium">Unable to load workspace: {workspaceError}</p>
+              <button
+                type="button"
+                onClick={() => void refreshWorkspaces()}
+                className="px-3 py-1.5 rounded bg-red-800 text-white text-xs font-medium"
+              >
+                Retry
+              </button>
+            </div>
+          ) : !activeWorkspace ? (
+            <WorkspaceOnboarding />
+          ) : currentSection === "overview" ? (
             <>
               {/* Section 1: Welcome Header & Disclosure */}
               <WelcomeBanner />

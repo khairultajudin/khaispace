@@ -1,15 +1,21 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   TrendingUp,
   Receipt,
   FolderKanban,
   BarChart3,
-  RotateCcw,
 } from "lucide-react";
 import { TransactionItem } from "../../types/dashboard";
-import { SAMPLE_TRANSACTIONS } from "../../data/sample-dashboard-data";
+import { useWorkspace } from "@/hooks/use-workspace";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  createTransaction,
+  deleteTransaction,
+  fetchTransactions,
+  updateTransaction,
+} from "@/lib/supabase/finance-service";
 import { FinancialMetrics } from "./financial-metrics";
 import { ProjectFinance } from "./project-finance";
 import { FinancialTrends } from "./financial-trends";
@@ -18,10 +24,32 @@ import { TransactionDetail } from "./transaction-detail";
 import { TransactionForm } from "./transaction-form";
 
 export function FinanceView() {
-  // Local session state for transactions
-  const [transactions, setTransactions] = useState<TransactionItem[]>(SAMPLE_TRANSACTIONS);
+  const { activeWorkspace } = useWorkspace();
+  const { user } = useAuth();
+  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "transactions" | "projects" | "trends">("overview");
-  const [hasSessionModifications, setHasSessionModifications] = useState<boolean>(false);
+
+  const loadTransactions = useCallback(async () => {
+    if (!activeWorkspace) return;
+    try {
+      const rows = await fetchTransactions(activeWorkspace.id);
+      setTransactions(rows);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load financial transactions.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeWorkspace]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void loadTransactions();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadTransactions]);
 
   // Synchronous hash reader for direct transaction links (#tx-<id>)
   const [selectedTxId, setSelectedTxId] = useState<string | null>(() => {
@@ -85,32 +113,33 @@ export function FinanceView() {
     }
   };
 
-  // Add transaction
-  const handleSaveTransaction = (savedTx: TransactionItem) => {
-    if (modalState.mode === "add") {
-      setTransactions((prev) => [savedTx, ...prev]);
-    } else {
-      setTransactions((prev) =>
-        prev.map((t) => (t.id === savedTx.id ? savedTx : t))
-      );
-    }
-    setHasSessionModifications(true);
-    setModalState({ isOpen: false, mode: "add" });
-  };
-
-  // Delete transaction
-  const handleDeleteTransaction = (txId: string) => {
-    setTransactions((prev) => prev.filter((t) => t.id !== txId));
-    setHasSessionModifications(true);
-    if (selectedTxId === txId) {
-      handleSelectTransaction(null);
+  const handleSaveTransaction = async (savedTx: TransactionItem) => {
+    if (!activeWorkspace || !user?.id) return;
+    try {
+      if (modalState.mode === "add") {
+        await createTransaction(activeWorkspace.id, user.id, savedTx);
+      } else {
+        await updateTransaction(activeWorkspace.id, savedTx.id, savedTx);
+      }
+      setModalState({ isOpen: false, mode: "add" });
+      await loadTransactions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save transaction.");
     }
   };
 
-  // Reset session modifications to initial sample state
-  const handleResetSessionData = () => {
-    setTransactions(SAMPLE_TRANSACTIONS);
-    setHasSessionModifications(false);
+  const handleDeleteTransaction = async (txId: string) => {
+    if (!activeWorkspace) return;
+    const target = transactions.find((t) => t.id === txId);
+    try {
+      await deleteTransaction(activeWorkspace.id, txId, target?.description ?? "Transaction");
+      if (selectedTxId === txId) {
+        handleSelectTransaction(null);
+      }
+      await loadTransactions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete transaction.");
+    }
   };
 
   // If viewing a transaction detail, render TransactionDetail view
@@ -155,29 +184,22 @@ export function FinanceView() {
               Finance &amp; ROI
             </h1>
             <p className="text-xs sm:text-sm text-[#536B85] max-w-2xl leading-relaxed">
-              Consolidated operational cashflow, multi-month trajectories, and capital asset return analysis. Changes made here operate strictly in local React session state.
+              Consolidated operational cashflow, multi-month trajectories, and capital asset return analysis synced with Supabase PostgreSQL.
             </p>
           </div>
 
-          {/* Session modifications indicator */}
-          {hasSessionModifications && (
-            <div className="shrink-0 flex items-center gap-2 font-mono text-xs">
-              <span className="px-3 py-1.5 rounded-md border border-[#A8CFC2] bg-[#EDF5F2] text-[#347A63] font-medium flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#347A63] animate-pulse"></span>
-                Session Modified
-              </span>
-              <button
-                type="button"
-                onClick={handleResetSessionData}
-                className="px-2.5 py-1.5 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] hover:bg-[#E9E5DC] text-[#536B85] hover:text-[#0C2340] transition-colors cursor-pointer"
-                title="Reset transactions to initial sample state"
-              >
-                <RotateCcw className="w-3.5 h-3.5 inline mr-1" />
-                Reset State
-              </button>
-            </div>
-          )}
+          <div className="shrink-0 font-mono text-xs text-[#536B85]">
+            {isLoading ? "Syncing ledger..." : `${transactions.length} ledger entries`}
+          </div>
         </div>
+        {error && (
+          <div className="p-3 rounded-lg border border-red-200 bg-red-50 text-red-800 text-xs flex items-center justify-between">
+            <span>{error}</span>
+            <button type="button" onClick={() => void loadTransactions()} className="underline font-medium">
+              Retry
+            </button>
+          </div>
+        )}
 
         {/* Tab Switcher */}
         <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-[#E9E5DC]">

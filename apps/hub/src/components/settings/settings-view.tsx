@@ -6,22 +6,31 @@ import {
   Users,
   User,
   Sliders,
-  RotateCcw,
   UserPlus,
   AlertTriangle,
   UserX,
   UserCheck,
+  KeyRound,
 } from "lucide-react";
 import {
   WorkspaceMember,
   UserProfile,
   WorkspaceSettings,
 } from "../../types/dashboard";
+import { useWorkspace } from "@/hooks/use-workspace";
+import { useAuth } from "@/hooks/use-auth";
 import {
-  SAMPLE_MEMBERS,
-  SAMPLE_OWNER_PROFILE,
-  SAMPLE_WORKSPACE_SETTINGS,
-} from "../../data/sample-dashboard-data";
+  createWorkspaceInvitation,
+  fetchWorkspaceRoster,
+  removeWorkspaceMember,
+  updateMemberRoleOrStatus,
+} from "@/lib/supabase/members-service";
+import {
+  fetchUserProfile,
+  fetchWorkspaceSettings,
+  updateUserProfile,
+  updateWorkspaceSettings,
+} from "@/lib/supabase/settings-service";
 import { MembersMetrics } from "./members-metrics";
 import { MembersList } from "./members-list";
 import { MemberDetail } from "./member-detail";
@@ -32,12 +41,68 @@ import { WorkspaceSettingsView } from "./workspace-settings";
 type SettingsTab = "members" | "profile" | "workspace";
 
 export function SettingsView() {
-  const [members, setMembers] = useState<WorkspaceMember[]>(SAMPLE_MEMBERS);
-  const [profile, setProfile] = useState<UserProfile>(SAMPLE_OWNER_PROFILE);
-  const [settings, setSettings] = useState<WorkspaceSettings>(
-    SAMPLE_WORKSPACE_SETTINGS
-  );
-  const [isModified, setIsModified] = useState(false);
+  const { activeWorkspace, refreshWorkspaces } = useWorkspace();
+  const { user } = useAuth();
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [profile, setProfile] = useState<UserProfile>({
+    id: user?.id ?? "",
+    fullName: "",
+    displayName: "",
+    email: user?.email ?? "",
+    role: activeWorkspace?.role ?? "Member",
+    bio: "",
+    location: "",
+    timezone: "Asia/Kuala_Lumpur (GMT+8)",
+    avatarInitials: "KS",
+  });
+  const [settings, setSettings] = useState<WorkspaceSettings>({
+    workspaceName: activeWorkspace?.name ?? "",
+    workspaceDescription: activeWorkspace?.description ?? "",
+    timezone: activeWorkspace?.timezone ?? "Asia/Kuala_Lumpur (GMT+8)",
+    defaultCurrency: activeWorkspace?.defaultCurrency ?? "MYR (RM)",
+    dateFormat: "YYYY-MM-DD",
+    contentDensity: "comfortable",
+    notifications: {
+      taskReminders: true,
+      milestoneUpdates: true,
+      projectUpdates: true,
+      workspaceActivity: false,
+      subscriptionRenewals: true,
+    },
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [lastInviteToken, setLastInviteToken] = useState<string | null>(null);
+  const [profileVersion, setProfileVersion] = useState(0);
+  const [settingsVersion, setSettingsVersion] = useState(0);
+
+  const loadSettingsData = useCallback(async () => {
+    if (!activeWorkspace || !user) return;
+    try {
+      const [roster, prof, wsSettings] = await Promise.all([
+        fetchWorkspaceRoster(activeWorkspace.id, activeWorkspace.role),
+        fetchUserProfile(user.id, activeWorkspace.role),
+        fetchWorkspaceSettings(activeWorkspace.id),
+      ]);
+      setMembers(roster);
+      setProfile(prof);
+      setSettings(wsSettings);
+      setError(null);
+      setProfileVersion((v) => v + 1);
+      setSettingsVersion((v) => v + 1);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load members and settings.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeWorkspace, user]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void loadSettingsData();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadSettingsData]);
 
   // Active sub-tab state (lazy initialized from hash)
   const [activeTab, setActiveTab] = useState<SettingsTab>(() => {
@@ -50,19 +115,8 @@ export function SettingsView() {
     return "members";
   });
 
-  // Selected member for detail modal / deep linking (lazy initialized from hash)
-  const [selectedMember, setSelectedMember] = useState<WorkspaceMember | null>(() => {
-    if (typeof window !== "undefined") {
-      const hash = window.location.hash.replace("#", "");
-      if (hash.startsWith("member-")) {
-        const id = hash.replace("member-", "");
-        return (
-          SAMPLE_MEMBERS.find((m) => m.id === hash || m.id === id) || null
-        );
-      }
-    }
-    return null;
-  });
+  // Selected member for detail modal / deep linking
+  const [selectedMember, setSelectedMember] = useState<WorkspaceMember | null>(null);
 
   // Form modal state
   const [formModal, setFormModal] = useState<{
@@ -79,11 +133,6 @@ export function SettingsView() {
 
   // Status toggle (suspend/reactivate) candidate
   const [statusCandidate, setStatusCandidate] = useState<WorkspaceMember | null>(null);
-
-  // Reset baseline confirmation dialog state
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
-  const [profileVersion, setProfileVersion] = useState(0);
-  const [settingsVersion, setSettingsVersion] = useState(0);
 
   // Synchronize URL hash with active sub-tabs and deep links
   useEffect(() => {
@@ -160,19 +209,31 @@ export function SettingsView() {
     });
   };
 
-  const handleSaveMember = (savedMember: WorkspaceMember) => {
-    if (formModal.mode === "invite") {
-      setMembers((prev) => [savedMember, ...prev]);
-    } else {
-      setMembers((prev) =>
-        prev.map((m) => (m.id === savedMember.id ? savedMember : m))
-      );
-      if (selectedMember?.id === savedMember.id) {
-        setSelectedMember(savedMember);
+  const handleSaveMember = async (savedMember: WorkspaceMember) => {
+    if (!activeWorkspace || !user?.id) return;
+    setError(null);
+    try {
+      if (formModal.mode === "invite") {
+        if (savedMember.role === "Owner") {
+          throw new Error("Cannot invite a second Owner.");
+        }
+        const { inviteToken } = await createWorkspaceInvitation(activeWorkspace.id, user.id, {
+          email: savedMember.email,
+          role: savedMember.role,
+          personalMessage: savedMember.personalMessage,
+        });
+        setLastInviteToken(inviteToken);
+      } else {
+        await updateMemberRoleOrStatus(activeWorkspace.id, savedMember.id, {
+          role: savedMember.role,
+          status: savedMember.status,
+        });
       }
+      setFormModal({ isOpen: false, mode: "invite" });
+      await loadSettingsData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save member.");
     }
-    setIsModified(true);
-    setFormModal({ isOpen: false, mode: "invite" });
   };
 
   const handleDeletePrompt = (member: WorkspaceMember) => {
@@ -180,14 +241,18 @@ export function SettingsView() {
     setDeleteCandidate(member);
   };
 
-  const confirmDelete = () => {
-    if (!deleteCandidate || deleteCandidate.role === "Owner") return;
-    setMembers((prev) => prev.filter((m) => m.id !== deleteCandidate.id));
-    setIsModified(true);
-    if (selectedMember?.id === deleteCandidate.id) {
-      closeDetail();
+  const confirmDelete = async () => {
+    if (!deleteCandidate || deleteCandidate.role === "Owner" || !activeWorkspace) return;
+    try {
+      await removeWorkspaceMember(activeWorkspace.id, deleteCandidate.id);
+      if (selectedMember?.id === deleteCandidate.id) {
+        closeDetail();
+      }
+      setDeleteCandidate(null);
+      await loadSettingsData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to remove member.");
     }
-    setDeleteCandidate(null);
   };
 
   const handleToggleStatusPrompt = (member: WorkspaceMember) => {
@@ -195,73 +260,53 @@ export function SettingsView() {
     setStatusCandidate(member);
   };
 
-  const confirmToggleStatus = () => {
-    if (!statusCandidate || statusCandidate.role === "Owner") return;
+  const confirmToggleStatus = async () => {
+    if (!statusCandidate || statusCandidate.role === "Owner" || !activeWorkspace) return;
     const newStatus = statusCandidate.status === "Suspended" ? "Active" : "Suspended";
-    setMembers((prev) =>
-      prev.map((m) => (m.id === statusCandidate.id ? { ...m, status: newStatus } : m))
-    );
-    if (selectedMember?.id === statusCandidate.id) {
-      setSelectedMember({ ...statusCandidate, status: newStatus });
+    try {
+      await updateMemberRoleOrStatus(activeWorkspace.id, statusCandidate.id, { status: newStatus });
+      setStatusCandidate(null);
+      await loadSettingsData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update member status.");
     }
-    setIsModified(true);
-    setStatusCandidate(null);
   };
 
-  const handleSaveProfile = (updatedProfile: UserProfile) => {
-    setProfile(updatedProfile);
-    // Also synchronize member name and email if the owner was updated
-    setMembers((prev) =>
-      prev.map((m) =>
-        m.role === "Owner"
-          ? {
-              ...m,
-              name: updatedProfile.fullName,
-              email: updatedProfile.email,
-              bio: updatedProfile.bio,
-            }
-          : m
-      )
-    );
-    setIsModified(true);
+  const handleSaveProfile = async (updatedProfile: UserProfile) => {
+    if (!user?.id) return;
+    setError(null);
+    try {
+      await updateUserProfile(user.id, {
+        fullName: updatedProfile.fullName,
+        displayName: updatedProfile.displayName,
+        bio: updatedProfile.bio,
+        location: updatedProfile.location,
+        timezone: updatedProfile.timezone,
+        avatarInitials: updatedProfile.avatarInitials,
+      });
+      await loadSettingsData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update profile.");
+    }
   };
 
   const handleResetProfile = () => {
-    setProfile(SAMPLE_OWNER_PROFILE);
-    setMembers((prev) =>
-      prev.map((m) =>
-        m.role === "Owner"
-          ? {
-              ...m,
-              name: SAMPLE_OWNER_PROFILE.fullName,
-              email: SAMPLE_OWNER_PROFILE.email,
-              bio: SAMPLE_OWNER_PROFILE.bio,
-            }
-          : m
-      )
-    );
-    setIsModified(true);
+    void loadSettingsData();
   };
 
-  const handleSaveWorkspaceSettings = (updatedSettings: WorkspaceSettings) => {
-    setSettings(updatedSettings);
-    setIsModified(true);
+  const handleSaveWorkspaceSettings = async (updatedSettings: WorkspaceSettings) => {
+    if (!activeWorkspace) return;
+    setError(null);
+    try {
+      await updateWorkspaceSettings(activeWorkspace.id, updatedSettings);
+      await Promise.all([loadSettingsData(), refreshWorkspaces()]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update workspace settings.");
+    }
   };
 
   const handleResetWorkspaceSettings = () => {
-    setSettings(SAMPLE_WORKSPACE_SETTINGS);
-    setIsModified(true);
-  };
-
-  const handleResetToBaseline = () => {
-    setMembers(SAMPLE_MEMBERS);
-    setProfile(SAMPLE_OWNER_PROFILE);
-    setSettings(SAMPLE_WORKSPACE_SETTINGS);
-    setProfileVersion((v) => v + 1);
-    setSettingsVersion((v) => v + 1);
-    setIsModified(false);
-    setSelectedMember(null);
-    setShowResetConfirm(false);
+    void loadSettingsData();
   };
 
   return (
@@ -283,19 +328,11 @@ export function SettingsView() {
           </div>
 
           <div className="flex items-center gap-2.5 shrink-0">
-            {isModified && (
-              <button
-                type="button"
-                onClick={() => setShowResetConfirm(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] hover:bg-[#E9E5DC] text-xs font-medium text-[#536B85] hover:text-[#0C2340] transition-colors cursor-pointer"
-                title="Restore all member and settings records to default baseline"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Reset Module Baseline</span>
-              </button>
-            )}
+            <span className="text-xs font-mono text-[#536B85]">
+              {isLoading ? "Syncing..." : activeWorkspace?.role}
+            </span>
 
-            {activeTab === "members" && (
+            {activeTab === "members" && (activeWorkspace?.role === "Owner" || activeWorkspace?.role === "Administrator") && (
               <button
                 type="button"
                 onClick={handleAddNewMember}
@@ -358,12 +395,34 @@ export function SettingsView() {
           </button>
         </div>
 
-        {isModified && (
-          <span className="text-[11px] font-mono text-[#8C6D2B] bg-[#FAF8F4] px-2 py-1 rounded border border-[#DCD7CC] shrink-0">
-            Session modified
-          </span>
-        )}
       </div>
+      {error && (
+        <div className="p-3 rounded-lg border border-red-200 bg-red-50 text-red-800 text-xs flex items-center justify-between">
+          <span>{error}</span>
+          <button type="button" onClick={() => void loadSettingsData()} className="underline font-medium">
+            Retry
+          </button>
+        </div>
+      )}
+      {lastInviteToken && (
+        <div className="p-4 rounded-lg border border-[#A8CFC2] bg-[#EDF5F2] text-xs text-[#0C2340] space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold flex items-center gap-1.5 text-[#347A63]">
+              <KeyRound className="w-4 h-4" />
+              Invitation Created — Share Token Once
+            </span>
+            <button type="button" onClick={() => setLastInviteToken(null)} className="text-[#536B85] underline">
+              Dismiss
+            </button>
+          </div>
+          <p className="text-[#536B85]">
+            Only the SHA-256 hash is stored in the database. Share this token securely with the invited user:
+          </p>
+          <code className="block p-2 rounded bg-white border border-[#DCD7CC] font-mono text-[11px] break-all">
+            {lastInviteToken}
+          </code>
+        </div>
+      )}
 
       {/* Tab Panels */}
       {activeTab === "members" && (
@@ -516,43 +575,6 @@ export function SettingsView() {
         </div>
       )}
 
-      {/* Reset Module Baseline Confirmation Modal */}
-      {showResetConfirm && (
-        <div
-          className="fixed inset-0 z-50 bg-[#0C2340]/40 backdrop-blur-2xs flex items-center justify-center p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="reset-module-dialog-title"
-        >
-          <div className="w-full max-w-md bg-[#FFFFFF] rounded-lg border border-[#DCD7CC] shadow-xl p-6 space-y-4">
-            <div className="flex items-center gap-3 text-[#8C6D2B]">
-              <RotateCcw className="w-6 h-6 shrink-0" />
-              <h3 id="reset-module-dialog-title" className="font-bold text-base text-[#0C2340]">
-                Reset Members &amp; Settings Baseline?
-              </h3>
-            </div>
-            <p className="text-xs text-[#536B85] leading-relaxed">
-              Are you sure you want to restore all member records, owner profile data, and workspace configurations to default baseline values? All additions, edits, and deletions made during this session will be permanently discarded.
-            </p>
-            <div className="flex items-center justify-end gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowResetConfirm(false)}
-                className="px-3.5 py-2 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] text-xs font-medium text-[#536B85] hover:text-[#0C2340] hover:bg-[#E9E5DC] transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleResetToBaseline}
-                className="px-4 py-2 rounded-md bg-[#8C6D2B] hover:bg-[#8C6D2B]/90 text-white text-xs font-medium transition-colors cursor-pointer"
-              >
-                Confirm Reset
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
