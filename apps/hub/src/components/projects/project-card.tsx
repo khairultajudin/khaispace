@@ -172,6 +172,11 @@ export function ProjectCard({
               {project.category}
             </span>
             <div className="flex items-center gap-1.5 flex-wrap justify-end">
+              {project.metadata?.source === "public-website-migration" && (
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded border bg-[#FAF8F4] text-[#536B85] border-[#DCD7CC]">
+                  Portfolio
+                </span>
+              )}
               {isArchived && (
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded border bg-[#FAF8F4] text-[#536B85] border-[#DCD7CC]">
                   Archived
@@ -186,6 +191,17 @@ export function ProjectCard({
               </span>
             </div>
           </div>
+
+          {project.metadata?.coverImage && (
+            <div className="mb-3 overflow-hidden rounded-md border border-[#E9E5DC] bg-[#FAF8F4] aspect-video">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={project.metadata.coverImage}
+                alt={project.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
 
           {/* Project Title */}
           <div className="text-base font-semibold text-[#0C2340] tracking-tight group-hover:text-[#347A63] transition-colors flex items-center justify-between">
