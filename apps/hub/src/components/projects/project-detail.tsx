@@ -8,6 +8,7 @@ import {
   Bot,
   Calendar,
   CheckSquare,
+  ExternalLink,
   FileText,
   Layers,
   Loader2,
@@ -243,6 +244,23 @@ export function ProjectDetail({
                 <div className="p-2.5 rounded bg-[#FAF8F4] border border-[#DCD7CC] font-mono text-[#536B85]">
                   {project.metadata.repositoryPath}
                 </div>
+              </div>
+            )}
+
+            {project.metadata?.archiveUrl && (
+              <div>
+                <div className="text-[#536B85] font-medium mb-1.5">
+                  Preserved Private Portfolio Archive:
+                </div>
+                <a
+                  href={project.metadata.archiveUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-md border border-[#A8CFC2] bg-[#EDF5F2] hover:bg-[#A8CFC2]/40 text-xs font-medium text-[#347A63] transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Open Preserved Archive</span>
+                </a>
               </div>
             )}
 

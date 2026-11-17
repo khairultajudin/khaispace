@@ -35,6 +35,11 @@ export interface ProjectMetadata {
   dueDate?: string;
   archived?: boolean;
   archivedAt?: string;
+  source?: string;
+  originalSlug?: string;
+  originalStatus?: string;
+  coverImage?: string;
+  archiveUrl?: string;
 }
 
 export interface HubProject {

@@ -34,7 +34,7 @@ export function Hero() {
             {siteConfig.description}
           </p>
           <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-            <ButtonLink href="/#projects">Explore Projects</ButtonLink>
+            <ButtonLink href="/#capabilities">Explore Capabilities</ButtonLink>
             <ButtonLink href="/contact" variant="secondary">
               Get in Touch
             </ButtonLink>
