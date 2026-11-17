@@ -138,6 +138,105 @@ export async function updateProject(
   return mapProjectRow(data);
 }
 
+export interface ProjectDependencyCounts {
+  tasks: number;
+  milestones: number;
+  financialTransactions: number;
+  subscriptions: number;
+  notes: number;
+}
+
+export async function fetchProjectDependencyCounts(
+  workspaceId: string,
+  projectId: string
+): Promise<ProjectDependencyCounts> {
+  const supabase = getSupabaseBrowserClient();
+  const [tasksRes, milestonesRes, txRes, subsRes, notesRes] = await Promise.all([
+    supabase
+      .from('tasks')
+      .select('id', { count: 'exact', head: true })
+      .eq('workspace_id', workspaceId)
+      .eq('project_id', projectId),
+    supabase
+      .from('milestones')
+      .select('id', { count: 'exact', head: true })
+      .eq('workspace_id', workspaceId)
+      .eq('project_id', projectId),
+    supabase
+      .from('financial_transactions')
+      .select('id', { count: 'exact', head: true })
+      .eq('workspace_id', workspaceId)
+      .eq('project_id', projectId),
+    supabase
+      .from('ai_subscriptions')
+      .select('id', { count: 'exact', head: true })
+      .eq('workspace_id', workspaceId)
+      .eq('assigned_project_id', projectId),
+    supabase
+      .from('workspace_notes')
+      .select('id', { count: 'exact', head: true })
+      .eq('workspace_id', workspaceId)
+      .eq('project_id', projectId),
+  ]);
+
+  const firstErr =
+    tasksRes.error ||
+    milestonesRes.error ||
+    txRes.error ||
+    subsRes.error ||
+    notesRes.error;
+  if (firstErr) {
+    throw new Error(firstErr.message);
+  }
+
+  return {
+    tasks: tasksRes.count ?? 0,
+    milestones: milestonesRes.count ?? 0,
+    financialTransactions: txRes.count ?? 0,
+    subscriptions: subsRes.count ?? 0,
+    notes: notesRes.count ?? 0,
+  };
+}
+
+export async function setProjectArchived(
+  workspaceId: string,
+  project: HubProject,
+  archived: boolean
+): Promise<HubProject> {
+  const supabase = getSupabaseBrowserClient();
+  const nextMetadata: ProjectMetadata = {
+    ...(project.metadata ?? {}),
+    archived,
+    archivedAt: archived ? new Date().toISOString() : undefined,
+  };
+  if (!archived) {
+    delete nextMetadata.archivedAt;
+  }
+
+  const { data, error } = await supabase
+    .from('projects')
+    .update({
+      metadata: nextMetadata as Database['public']['Tables']['projects']['Update']['metadata'],
+    })
+    .eq('id', project.id)
+    .eq('workspace_id', workspaceId)
+    .select('*')
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  await logWorkspaceActivity({
+    workspaceId,
+    action: `${archived ? 'Archived' : 'Unarchived'} project "${data.title}"`,
+    entityType: 'project',
+    entityId: data.id,
+    category: 'Planning',
+    metadata: { project_title: data.title, archived },
+  });
+
+  return mapProjectRow(data);
+}
+
 export async function deleteProject(workspaceId: string, projectId: string, title: string): Promise<void> {
   const supabase = getSupabaseBrowserClient();
   const { error } = await supabase

@@ -31,6 +31,10 @@ export interface ProjectMetadata {
   verificationStatus?: "Verified In-Tree" | "Planned / Not Yet Implemented";
   pathStatus?: "Verified Filesystem Path" | "Planned Location (Not on filesystem)";
   stackStatus?: "Active Implementation" | "Proposed / Not Implemented";
+  startDate?: string;
+  dueDate?: string;
+  archived?: boolean;
+  archivedAt?: string;
 }
 
 export interface HubProject {

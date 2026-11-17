@@ -8,15 +8,24 @@ import {
   RotateCcw,
   Layers,
   Plus,
-  Loader2,
   AlertCircle,
+  Archive,
+  CheckCircle2,
 } from "lucide-react";
 import { HubProject, ProjectStatus } from "../../types/dashboard";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useAuth } from "@/hooks/use-auth";
-import { createProject, fetchProjects } from "@/lib/supabase/projects-service";
+import {
+  createProject,
+  deleteProject,
+  fetchProjects,
+  setProjectArchived,
+  updateProject,
+} from "@/lib/supabase/projects-service";
 import { ProjectCard } from "./project-card";
 import { ProjectDetail } from "./project-detail";
+import { ProjectFormModal, type ProjectFormValues } from "./project-form-modal";
+import { DeleteProjectModal } from "./delete-project-modal";
 
 const STATUS_FILTERS: { id: "ALL" | ProjectStatus; label: string }[] = [
   { id: "ALL", label: "All Projects" },
@@ -47,17 +56,16 @@ export function ProjectsView() {
     return null;
   });
 
+  const [viewMode, setViewMode] = useState<"active" | "archived">("active");
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newCategory, setNewCategory] = useState("Engineering");
-  const [newStatus, setNewStatus] = useState<ProjectStatus>("Planning");
-  const [newLocation, setNewLocation] = useState("");
-  const [newDescription, setNewDescription] = useState("");
-  const [newTags, setNewTags] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [editingProject, setEditingProject] = useState<HubProject | null>(null);
+  const [deletingProject, setDeletingProject] = useState<HubProject | null>(null);
+  const [archivingProjectId, setArchivingProjectId] = useState<string | null>(null);
+  const [feedbackBanner, setFeedbackBanner] = useState<string | null>(null);
 
   const canWrite = activeWorkspace?.role !== "Viewer";
+  const canDelete =
+    activeWorkspace?.role === "Owner" || activeWorkspace?.role === "Administrator";
 
   const loadProjects = useCallback(async () => {
     if (!activeWorkspace) return;
@@ -95,70 +103,121 @@ export function ProjectsView() {
     };
   }, []);
 
-  const handleCreateProject = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateProject = async (values: ProjectFormValues) => {
     if (!activeWorkspace || !user?.id) return;
-    if (!newTitle.trim() || !newDescription.trim()) {
-      setFormError("Project title and description are required.");
-      return;
-    }
-    setIsSubmitting(true);
-    setFormError(null);
+    await createProject(activeWorkspace.id, user.id, {
+      title: values.title,
+      category: values.category,
+      status: values.status,
+      location: values.location,
+      description: values.description,
+      fullDescription: values.fullDescription || undefined,
+      tags: values.tags,
+      metadata: values.metadata,
+    });
+    setShowCreateModal(false);
+    setFeedbackBanner(`Created project "${values.title}".`);
+    await loadProjects();
+  };
+
+  const handleEditProject = async (values: ProjectFormValues) => {
+    if (!activeWorkspace || !editingProject) return;
+    await updateProject(activeWorkspace.id, editingProject.id, {
+      title: values.title,
+      category: values.category,
+      status: values.status,
+      location: values.location,
+      description: values.description,
+      fullDescription: values.fullDescription,
+      tags: values.tags,
+      metadata: values.metadata,
+    });
+    setEditingProject(null);
+    setFeedbackBanner(`Updated project "${values.title}".`);
+    await loadProjects();
+  };
+
+  const handleToggleArchiveProject = async (project: HubProject) => {
+    if (!activeWorkspace || !canWrite) return;
+    const nextArchived = !Boolean(project.metadata?.archived);
+    setArchivingProjectId(project.id);
+    setError(null);
     try {
-      const parsedTags = newTags
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
-      await createProject(activeWorkspace.id, user.id, {
-        title: newTitle.trim(),
-        category: newCategory.trim() || "Engineering",
-        status: newStatus,
-        location: newLocation.trim(),
-        description: newDescription.trim(),
-        tags: parsedTags,
-      });
-      setShowCreateModal(false);
-      setNewTitle("");
-      setNewLocation("");
-      setNewDescription("");
-      setNewTags("");
+      await setProjectArchived(activeWorkspace.id, project, nextArchived);
+      setFeedbackBanner(
+        nextArchived
+          ? `Archived project "${project.title}".`
+          : `Restored "${project.title}" to active projects.`
+      );
+      if (nextArchived && selectedProjectId === project.id) {
+        setSelectedProjectId(null);
+      }
       await loadProjects();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : "Failed to create project.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : nextArchived
+          ? "Failed to archive project."
+          : "Failed to unarchive project."
+      );
     } finally {
-      setIsSubmitting(false);
+      setArchivingProjectId(null);
     }
   };
 
+  const handleDeleteProject = async (project: HubProject) => {
+    if (!activeWorkspace || !canDelete) return;
+    await deleteProject(activeWorkspace.id, project.id, project.title);
+    setDeletingProject(null);
+    if (selectedProjectId === project.id) {
+      setSelectedProjectId(null);
+    }
+    setFeedbackBanner(`Deleted project "${project.title}".`);
+    await loadProjects();
+  };
+
+  const activeProjects = useMemo(
+    () => projects.filter((p) => !p.metadata?.archived),
+    [projects]
+  );
+
+  const archivedProjects = useMemo(
+    () => projects.filter((p) => Boolean(p.metadata?.archived)),
+    [projects]
+  );
+
+  const scopedProjects = viewMode === "archived" ? archivedProjects : activeProjects;
+
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {
-      ALL: projects.length,
+      ALL: scopedProjects.length,
     };
-    for (const project of projects) {
+    for (const project of scopedProjects) {
       counts[project.status] = (counts[project.status] || 0) + 1;
     }
     return counts;
-  }, [projects]);
+  }, [scopedProjects]);
 
   const activeOrDevCount = useMemo(() => {
-    return projects.filter(
+    return activeProjects.filter(
       (p) =>
         p.status === "Production" ||
         p.status === "In Development" ||
         p.status === "Active"
     ).length;
-  }, [projects]);
+  }, [activeProjects]);
 
   const categories = useMemo(() => {
     const set = new Set<string>();
-    for (const project of projects) {
+    for (const project of scopedProjects) {
       set.add(project.category);
     }
     return ["ALL", ...Array.from(set)];
-  }, [projects]);
+  }, [scopedProjects]);
 
   const filteredProjects = useMemo(() => {
-    return projects.filter((project) => {
+    return scopedProjects.filter((project) => {
       if (selectedStatus !== "ALL" && project.status !== selectedStatus) {
         return false;
       }
@@ -179,7 +238,7 @@ export function ProjectsView() {
       }
       return true;
     });
-  }, [projects, searchQuery, selectedStatus, selectedCategory]);
+  }, [scopedProjects, searchQuery, selectedStatus, selectedCategory]);
 
   const hasActiveFilters =
     searchQuery.trim() !== "" || selectedStatus !== "ALL" || selectedCategory !== "ALL";
@@ -190,14 +249,51 @@ export function ProjectsView() {
     setSelectedCategory("ALL");
   };
 
+  const renderModals = () => (
+    <>
+      {showCreateModal && (
+        <ProjectFormModal
+          mode="create"
+          onClose={() => setShowCreateModal(false)}
+          onSubmit={handleCreateProject}
+        />
+      )}
+      {editingProject && (
+        <ProjectFormModal
+          mode="edit"
+          initialProject={editingProject}
+          onClose={() => setEditingProject(null)}
+          onSubmit={handleEditProject}
+        />
+      )}
+      {deletingProject && activeWorkspace && (
+        <DeleteProjectModal
+          workspaceId={activeWorkspace.id}
+          project={deletingProject}
+          onClose={() => setDeletingProject(null)}
+          onConfirmDelete={handleDeleteProject}
+        />
+      )}
+    </>
+  );
+
   if (selectedProjectId) {
     const selectedProject = projects.find((p) => p.id === selectedProjectId);
     if (selectedProject) {
       return (
-        <ProjectDetail
-          project={selectedProject}
-          onBack={() => setSelectedProjectId(null)}
-        />
+        <>
+          <ProjectDetail
+            project={selectedProject}
+            onBack={() => setSelectedProjectId(null)}
+            canWrite={canWrite}
+            canDelete={canDelete}
+            isArchiving={archivingProjectId === selectedProject.id}
+            onEdit={(proj) => setEditingProject(proj)}
+            onToggleArchive={handleToggleArchiveProject}
+            onDelete={(proj) => setDeletingProject(proj)}
+          />
+          {renderModals()}
+        </>
       );
     }
   }
@@ -241,35 +337,98 @@ export function ProjectsView() {
           </div>
         </div>
 
-        <div className="pt-2 border-t border-[#E9E5DC] flex flex-wrap items-center gap-1.5 text-xs">
-          <span className="text-[#536B85] text-[11px] font-mono mr-1">Status Counts:</span>
-          {STATUS_FILTERS.map((filter) => {
-            const count = statusCounts[filter.id] || 0;
-            const isSelected = selectedStatus === filter.id;
+        <div className="pt-2 border-t border-[#E9E5DC] flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[#536B85] text-[11px] font-mono mr-1">Status Counts:</span>
+            {STATUS_FILTERS.map((filter) => {
+              const count = statusCounts[filter.id] || 0;
+              const isSelected = selectedStatus === filter.id;
 
-            return (
-              <button
-                key={filter.id}
-                onClick={() => setSelectedStatus(filter.id)}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer border ${
-                  isSelected
-                    ? "bg-[#0C2340] text-white border-[#0C2340]"
-                    : "bg-[#FAF8F4] text-[#536B85] hover:text-[#0C2340] hover:bg-[#E9E5DC] border-[#DCD7CC]"
-                }`}
-              >
-                <span>{filter.label}</span>
-                <span
-                  className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${
-                    isSelected ? "bg-white/20 text-white" : "bg-[#E9E5DC] text-[#0C2340]"
+              return (
+                <button
+                  key={filter.id}
+                  type="button"
+                  onClick={() => setSelectedStatus(filter.id)}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer border ${
+                    isSelected
+                      ? "bg-[#0C2340] text-white border-[#0C2340]"
+                      : "bg-[#FAF8F4] text-[#536B85] hover:text-[#0C2340] hover:bg-[#E9E5DC] border-[#DCD7CC]"
                   }`}
                 >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
+                  <span>{filter.label}</span>
+                  <span
+                    className={`text-[10px] font-mono px-1.5 py-0.2 rounded ${
+                      isSelected ? "bg-white/20 text-white" : "bg-[#E9E5DC] text-[#0C2340]"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="inline-flex items-center rounded-md border border-[#DCD7CC] bg-[#FAF8F4] p-0.5 self-start lg:self-auto">
+            <button
+              type="button"
+              onClick={() => {
+                setViewMode("active");
+                setSelectedStatus("ALL");
+                setSelectedCategory("ALL");
+              }}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
+                viewMode === "active"
+                  ? "bg-white text-[#0C2340] shadow-xs"
+                  : "text-[#536B85] hover:text-[#0C2340]"
+              }`}
+            >
+              <span>Active</span>
+              <span className="text-[10px] font-mono px-1.5 rounded bg-[#E9E5DC] text-[#0C2340]">
+                {activeProjects.length}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setViewMode("archived");
+                setSelectedStatus("ALL");
+                setSelectedCategory("ALL");
+              }}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
+                viewMode === "archived"
+                  ? "bg-white text-[#0C2340] shadow-xs"
+                  : "text-[#536B85] hover:text-[#0C2340]"
+              }`}
+            >
+              <Archive className="w-3 h-3" />
+              <span>Archived</span>
+              <span className="text-[10px] font-mono px-1.5 rounded bg-[#E9E5DC] text-[#0C2340]">
+                {archivedProjects.length}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
+
+      {feedbackBanner && (
+        <div
+          role="status"
+          className="p-3.5 rounded-lg border border-[#A8CFC2] bg-[#EDF5F2] text-[#0C2340] text-xs flex items-center justify-between gap-2"
+        >
+          <span className="flex items-center gap-2 font-medium">
+            <CheckCircle2 className="w-4 h-4 text-[#347A63] shrink-0" />
+            {feedbackBanner}
+          </span>
+          <button
+            type="button"
+            onClick={() => setFeedbackBanner(null)}
+            aria-label="Dismiss notification"
+            className="p-1 text-[#536B85] hover:text-[#0C2340] cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {error && (
         <div className="p-4 rounded-lg border border-red-200 bg-red-50 text-red-800 text-xs flex items-center justify-between gap-2">
@@ -343,7 +502,8 @@ export function ProjectsView() {
         <div className="flex items-center justify-between text-xs text-[#536B85] pt-1">
           <div>
             Showing <strong className="text-[#0C2340]">{filteredProjects.length}</strong> of{" "}
-            <strong>{projects.length}</strong> projects
+            <strong>{scopedProjects.length}</strong>{" "}
+            {viewMode === "archived" ? "archived" : "active"} projects
             {hasActiveFilters && <span className="italic ml-1">(filtered)</span>}
           </div>
 
@@ -369,20 +529,35 @@ export function ProjectsView() {
               key={project.id}
               project={project}
               onSelectProject={setSelectedProjectId}
+              canWrite={canWrite}
+              canDelete={canDelete}
+              onEditProject={(proj) => setEditingProject(proj)}
+              onToggleArchiveProject={handleToggleArchiveProject}
+              onDeleteProject={(proj) => setDeletingProject(proj)}
             />
           ))}
         </div>
       ) : (
         <div className="p-12 rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs text-center space-y-4">
           <div className="w-12 h-12 rounded-full bg-[#FAF8F4] border border-[#DCD7CC] text-[#536B85] flex items-center justify-center mx-auto">
-            <FolderKanban className="w-6 h-6" />
+            {viewMode === "archived" ? (
+              <Archive className="w-6 h-6" />
+            ) : (
+              <FolderKanban className="w-6 h-6" />
+            )}
           </div>
           <div className="space-y-1">
             <h3 className="text-base font-semibold text-[#0C2340]">
-              {projects.length === 0 ? "No projects in this workspace yet" : "No matching projects found"}
+              {viewMode === "archived" && archivedProjects.length === 0
+                ? "No archived projects"
+                : scopedProjects.length === 0
+                ? "No active projects in this workspace yet"
+                : "No matching projects found"}
             </h3>
             <p className="text-xs text-[#536B85] max-w-sm mx-auto leading-relaxed">
-              {projects.length === 0
+              {viewMode === "archived" && archivedProjects.length === 0
+                ? "Projects you archive will appear here with their tasks and milestones preserved."
+                : scopedProjects.length === 0
                 ? "Create your first project to start tracking milestones, tasks, and financials."
                 : "We couldn't find any project matching your filter criteria."}
             </p>
@@ -394,6 +569,14 @@ export function ProjectsView() {
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Clear Filters &amp; Reset</span>
+            </button>
+          ) : viewMode === "archived" ? (
+            <button
+              type="button"
+              onClick={() => setViewMode("active")}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-medium text-[#0C2340] bg-[#FAF8F4] hover:bg-[#E9E5DC] border border-[#DCD7CC] transition-colors cursor-pointer"
+            >
+              <span>View Active Projects</span>
             </button>
           ) : canWrite ? (
             <button
@@ -408,114 +591,7 @@ export function ProjectsView() {
         </div>
       )}
 
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-lg rounded-xl border border-[#DCD7CC] bg-white p-6 shadow-xl space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-[#0C2340]">Create New Project</h2>
-              <button
-                type="button"
-                onClick={() => setShowCreateModal(false)}
-                className="p-1 text-[#536B85] hover:text-[#0C2340]"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            {formError && (
-              <div className="p-2.5 rounded border border-red-200 bg-red-50 text-red-800 text-xs">
-                {formError}
-              </div>
-            )}
-            <form onSubmit={handleCreateProject} className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-[#0C2340] mb-1">Title</label>
-                <input
-                  type="text"
-                  value={newTitle}
-                  onChange={(e) => setNewTitle(e.target.value)}
-                  maxLength={150}
-                  required
-                  className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-[#0C2340] mb-1">Category</label>
-                  <input
-                    type="text"
-                    value={newCategory}
-                    onChange={(e) => setNewCategory(e.target.value)}
-                    maxLength={100}
-                    required
-                    className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-[#0C2340] mb-1">Status</label>
-                  <select
-                    value={newStatus}
-                    onChange={(e) => setNewStatus(e.target.value as ProjectStatus)}
-                    className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
-                  >
-                    <option value="Planning">Planning</option>
-                    <option value="In Development">In Development</option>
-                    <option value="Active">Active</option>
-                    <option value="Production">Production</option>
-                    <option value="Documented">Documented</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#0C2340] mb-1">Location / Path</label>
-                <input
-                  type="text"
-                  value={newLocation}
-                  onChange={(e) => setNewLocation(e.target.value)}
-                  placeholder="e.g. apps/hub or https://..."
-                  className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#0C2340] mb-1">Description</label>
-                <textarea
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                  rows={3}
-                  required
-                  className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#0C2340] mb-1">Tags (comma-separated)</label>
-                <input
-                  type="text"
-                  value={newTags}
-                  onChange={(e) => setNewTags(e.target.value)}
-                  placeholder="Next.js, Supabase, Commerce"
-                  className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-3 py-2 rounded border border-[#DCD7CC] text-xs text-[#536B85]"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded bg-[#0C2340] text-white text-xs font-medium disabled:opacity-50"
-                >
-                  {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  Create Project
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {renderModals()}
     </div>
   );
 }
