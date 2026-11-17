@@ -19,10 +19,13 @@ import {
   type WorkspaceAccessBoundaryStatus,
   getCurrentSession,
   normalizeSupabaseAuthError,
+  requestPasswordResetEmail,
+  signInWithEmailAndPassword,
   signInWithEmailOtp,
   signOutCurrentUser,
   toAuthenticatedUserSummary,
   toSessionMetadataSummary,
+  updateUserPassword,
   verifyEmailOtpCode,
 } from '@/lib/supabase/auth-service';
 
@@ -42,6 +45,16 @@ export interface UseAuthContract {
   error: NormalizedAuthError | null;
   lastAuthEvent: AuthChangeEvent | null;
   workspaceAccessStatus: WorkspaceAccessBoundaryStatus;
+  signInWithPassword: (
+    email: string,
+    password: string
+  ) => Promise<AuthOperationResult<{ user: AuthenticatedUserSummary; session: SessionMetadataSummary }>>;
+  requestPasswordReset: (
+    email: string
+  ) => Promise<AuthOperationResult<{ email: string }>>;
+  updatePassword: (
+    newPassword: string
+  ) => Promise<AuthOperationResult<{ user: AuthenticatedUserSummary }>>;
   signInWithEmail: (
     email: string,
     nextPath?: string
@@ -179,6 +192,120 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [applySessionState]);
 
+  const signInWithPassword = useCallback(
+    async (
+      email: string,
+      password: string
+    ): Promise<
+      AuthOperationResult<{
+        user: AuthenticatedUserSummary;
+        session: SessionMetadataSummary;
+      }>
+    > => {
+      setError(null);
+      const result = await signInWithEmailAndPassword(email, password);
+
+      if (!result.success || !result.data) {
+        if (result.error && isMountedRef.current) {
+          setError(result.error);
+        }
+        return {
+          success: false,
+          data: null,
+          error: result.error,
+        };
+      }
+
+      const userSummary = toAuthenticatedUserSummary(result.data.user);
+      const sessionSummary = toSessionMetadataSummary(result.data.session);
+
+      if (!userSummary || !sessionSummary) {
+        const fallbackError: NormalizedAuthError = {
+          category: 'unauthorized',
+          message: 'Session was created but user profile metadata was incomplete.',
+        };
+        if (isMountedRef.current) {
+          setError(fallbackError);
+        }
+        return {
+          success: false,
+          data: null,
+          error: fallbackError,
+        };
+      }
+
+      if (isMountedRef.current) {
+        authEventRevisionRef.current += 1;
+        setUser(userSummary);
+        setSession(sessionSummary);
+      }
+
+      return {
+        success: true,
+        data: {
+          user: userSummary,
+          session: sessionSummary,
+        },
+        error: null,
+      };
+    },
+    []
+  );
+
+  const requestPasswordReset = useCallback(
+    async (email: string): Promise<AuthOperationResult<{ email: string }>> => {
+      setError(null);
+      const result = await requestPasswordResetEmail(email);
+      if (!result.success && result.error && isMountedRef.current) {
+        setError(result.error);
+      }
+      return result;
+    },
+    []
+  );
+
+  const updatePassword = useCallback(
+    async (
+      newPassword: string
+    ): Promise<AuthOperationResult<{ user: AuthenticatedUserSummary }>> => {
+      setError(null);
+      const result = await updateUserPassword(newPassword);
+      if (!result.success || !result.data) {
+        if (result.error && isMountedRef.current) {
+          setError(result.error);
+        }
+        return {
+          success: false,
+          data: null,
+          error: result.error,
+        };
+      }
+
+      const userSummary = toAuthenticatedUserSummary(result.data.user);
+      if (!userSummary) {
+        return {
+          success: false,
+          data: null,
+          error: {
+            category: 'unauthorized',
+            message: 'Password updated, but user metadata was incomplete.',
+          },
+        };
+      }
+
+      if (isMountedRef.current) {
+        setUser(userSummary);
+      }
+
+      return {
+        success: true,
+        data: { user: userSummary },
+        error: null,
+      };
+    },
+    []
+  );
+
   const signInWithEmail = useCallback(
     async (
       email: string,
@@ -291,6 +418,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       error,
       lastAuthEvent,
       workspaceAccessStatus,
+      signInWithPassword,
+      requestPasswordReset,
+      updatePassword,
       signInWithEmail,
       verifyOtp,
       signOut,
@@ -304,6 +434,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       error,
       lastAuthEvent,
       workspaceAccessStatus,
+      signInWithPassword,
+      requestPasswordReset,
+      updatePassword,
       signInWithEmail,
       verifyOtp,
       signOut,

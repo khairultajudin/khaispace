@@ -11,6 +11,8 @@ import { getSupabaseBrowserClient } from './client';
  */
 export type AuthErrorCategory =
   | 'invalid_email'
+  | 'invalid_credentials'
+  | 'weak_password'
   | 'invalid_otp'
   | 'expired_or_invalid_link'
   | 'rate_limited'
@@ -92,6 +94,34 @@ export type WorkspaceAccessBoundaryStatus =
  */
 export const PRIVACY_PRESERVING_OTP_CONFIRMATION =
   'If this email address is registered for an authorized Khai Space Hub account, a sign-in link and 6-digit verification code have been sent.';
+
+export const PRIVACY_PRESERVING_RESET_CONFIRMATION =
+  'If this email address is registered for an authorized Khai Space Hub account, a password reset link has been sent.';
+
+export function validatePasswordInput(
+  password: string,
+  requireMinLength: boolean = false
+): { isValid: boolean; error: NormalizedAuthError | null } {
+  if (!password) {
+    return {
+      isValid: false,
+      error: {
+        category: 'invalid_credentials',
+        message: 'Password is required.',
+      },
+    };
+  }
+  if (requireMinLength && password.length < 8) {
+    return {
+      isValid: false,
+      error: {
+        category: 'weak_password',
+        message: 'Password must be at least 8 characters long.',
+      },
+    };
+  }
+  return { isValid: true, error: null };
+}
 
 const EMAIL_FORMAT_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -383,13 +413,34 @@ export function normalizeSupabaseAuthError(error: unknown): NormalizedAuthError 
 
   if (
     code === 'invalid_credentials' ||
+    lowerMessage.includes('invalid login credentials')
+  ) {
+    return {
+      category: 'invalid_credentials',
+      message: 'Invalid email or password. Please check your credentials and try again.',
+      code: 'invalid_credentials',
+    };
+  }
+
+  if (
+    code === 'weak_password' ||
+    lowerMessage.includes('password should be at least')
+  ) {
+    return {
+      category: 'weak_password',
+      message: 'Password must be at least 8 characters and meet complexity requirements.',
+      code: 'weak_password',
+    };
+  }
+
+  if (
     code === 'unauthorized' ||
     authErr.status === 401 ||
     authErr.status === 403
   ) {
     return {
       category: 'unauthorized',
-      message: 'Authentication could not be verified. Please request a new sign-in code.',
+      message: 'Authentication could not be verified. Please sign in again.',
       code: code || 'unauthorized',
     };
   }
@@ -526,6 +577,161 @@ function extractImplicitHashTokens(hash: string): {
  * - Normalizes unregistered-email errors into a neutral confirmation so callers
  *   cannot enumerate whether an arbitrary email exists in `auth.users`.
  */
+export async function signInWithEmailAndPassword(
+  email: string,
+  password: string
+): Promise<AuthOperationResult<{ user: User; session: Session }>> {
+  const emailValidation = validateAuthEmail(email);
+  if (!emailValidation.isValid || emailValidation.error) {
+    return {
+      success: false,
+      data: null,
+      error: emailValidation.error,
+    };
+  }
+
+  const passwordValidation = validatePasswordInput(password, false);
+  if (!passwordValidation.isValid || passwordValidation.error) {
+    return {
+      success: false,
+      data: null,
+      error: passwordValidation.error,
+    };
+  }
+
+  try {
+    const supabase = getSupabaseBrowserClient();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: emailValidation.normalizedEmail,
+      password,
+    });
+
+    if (error || !data.session || !data.user) {
+      return {
+        success: false,
+        data: null,
+        error: error
+          ? normalizeSupabaseAuthError(error)
+          : {
+              category: 'invalid_credentials',
+              message: 'Invalid email or password. Please check your credentials and try again.',
+            },
+      };
+    }
+
+    return {
+      success: true,
+      data: {
+        user: data.user,
+        session: data.session,
+      },
+      error: null,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      data: null,
+      error: normalizeSupabaseAuthError(err),
+    };
+  }
+}
+
+export async function requestPasswordResetEmail(
+  email: string
+): Promise<AuthOperationResult<{ email: string }>> {
+  const emailValidation = validateAuthEmail(email);
+  if (!emailValidation.isValid || emailValidation.error) {
+    return {
+      success: false,
+      data: null,
+      error: emailValidation.error,
+    };
+  }
+
+  try {
+    const supabase = getSupabaseBrowserClient();
+    const redirectTo = buildAuthCallbackUrl('/reset-password');
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      emailValidation.normalizedEmail,
+      { redirectTo }
+    );
+
+    if (error) {
+      if (isEnumerationSensitiveOtpError(error)) {
+        return {
+          success: true,
+          data: { email: emailValidation.normalizedEmail },
+          error: null,
+          neutralNotice: PRIVACY_PRESERVING_RESET_CONFIRMATION,
+        };
+      }
+      return {
+        success: false,
+        data: null,
+        error: normalizeSupabaseAuthError(error),
+      };
+    }
+
+    return {
+      success: true,
+      data: { email: emailValidation.normalizedEmail },
+      error: null,
+      neutralNotice: PRIVACY_PRESERVING_RESET_CONFIRMATION,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      data: null,
+      error: normalizeSupabaseAuthError(err),
+    };
+  }
+}
+
+export async function updateUserPassword(
+  newPassword: string
+): Promise<AuthOperationResult<{ user: User }>> {
+  const passwordValidation = validatePasswordInput(newPassword, true);
+  if (!passwordValidation.isValid || passwordValidation.error) {
+    return {
+      success: false,
+      data: null,
+      error: passwordValidation.error,
+    };
+  }
+
+  try {
+    const supabase = getSupabaseBrowserClient();
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error || !data.user) {
+      return {
+        success: false,
+        data: null,
+        error: error
+          ? normalizeSupabaseAuthError(error)
+          : {
+              category: 'unauthorized',
+              message: 'Unable to update password. Please open a fresh password reset link.',
+            },
+      };
+    }
+
+    return {
+      success: true,
+      data: { user: data.user },
+      error: null,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      data: null,
+      error: normalizeSupabaseAuthError(err),
+    };
+  }
+}
+
 export async function signInWithEmailOtp(
   email: string,
   nextPath: string = '/'

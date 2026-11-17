@@ -22,7 +22,30 @@ test.describe('Khai Space Hub — Interactive Browser QA', () => {
 
     await expect(page.getByRole('heading', { name: /Sign in to Khai Space Hub/i })).toBeVisible();
     await expect(page.locator('input[type="email"]')).toBeVisible();
-    await expect(page.getByRole('button', { name: /Send Magic Link/i })).toBeVisible();
+    await expect(page.locator('input[type="password"]')).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Login$/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Forgot Password\?/i })).toBeVisible();
+
+    // Password visibility toggle
+    const toggleBtn = page.getByRole('button', { name: /Show password/i });
+    await expect(toggleBtn).toBeVisible();
+    await toggleBtn.click();
+    await expect(page.locator('input[type="text"]')).toBeVisible();
+    await page.getByRole('button', { name: /Hide password/i }).click();
+    await expect(page.locator('input[type="password"]')).toBeVisible();
+
+    // Validation when submitting empty password
+    await page.locator('input[type="email"]').fill('owner@khaispace.com');
+    await page.getByRole('button', { name: /^Login$/i }).click();
+    await expect(page.getByText(/Password is required\./i)).toBeVisible();
+
+    // Forgot Password mode toggle
+    await page.getByRole('button', { name: /Forgot Password\?/i }).click();
+    await expect(page.getByRole('heading', { name: /Reset your password/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Send Password Reset Link/i })).toBeVisible();
+    await page.getByRole('button', { name: /Back to Sign In/i }).click();
+    await expect(page.getByRole('heading', { name: /Sign in to Khai Space Hub/i })).toBeVisible();
+
     const nonFaviconErrors = consoleErrors.filter((e) => !e.includes('404'));
     expect(nonFaviconErrors).toEqual([]);
     expect(failedRequests).toEqual([]);
@@ -38,6 +61,21 @@ test.describe('Khai Space Hub — Interactive Browser QA', () => {
 
     await page.goto('/auth/callback', { waitUntil: 'networkidle' });
     await expect(page.locator('body')).toBeVisible();
+    const nonFaviconErrors = consoleErrors.filter((e) => !e.includes('404'));
+    expect(nonFaviconErrors).toEqual([]);
+  });
+
+  test('/reset-password renders recovery gate without crash when unauthenticated', async ({ page }) => {
+    const consoleErrors: string[] = [];
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') {
+        consoleErrors.push(msg.text());
+      }
+    });
+
+    await page.goto('/reset-password', { waitUntil: 'networkidle' });
+    await expect(page.getByText(/Recovery Session Required/i)).toBeVisible();
+    await expect(page.getByRole('link', { name: /Return to Sign In/i })).toBeVisible();
     const nonFaviconErrors = consoleErrors.filter((e) => !e.includes('404'));
     expect(nonFaviconErrors).toEqual([]);
   });
