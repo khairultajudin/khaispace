@@ -96,6 +96,45 @@ export async function createTask(
   });
 }
 
+export async function updateTask(
+  workspaceId: string,
+  taskId: string,
+  input: {
+    projectId: string;
+    milestoneId?: string | null;
+    title: string;
+    priority: TaskPriority;
+    status: TaskStatus;
+    dueDateIso: string;
+    description?: string;
+  }
+): Promise<void> {
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase
+    .from('tasks')
+    .update({
+      project_id: input.projectId,
+      milestone_id: input.milestoneId || null,
+      title: input.title.trim(),
+      priority: input.priority,
+      status: input.status,
+      due_date: input.dueDateIso,
+      description: input.description?.trim() ?? '',
+    })
+    .eq('id', taskId)
+    .eq('workspace_id', workspaceId);
+
+  if (error) throw new Error(error.message);
+
+  await logWorkspaceActivity({
+    workspaceId,
+    action: `Updated task "${input.title.trim()}"`,
+    entityType: 'task',
+    entityId: taskId,
+    category: 'Planning',
+  });
+}
+
 export async function updateTaskStatus(
   workspaceId: string,
   taskId: string,
@@ -209,6 +248,41 @@ export async function createMilestone(
     action: `Created milestone "${data.title}"`,
     entityType: 'milestone',
     entityId: data.id,
+    category: 'Planning',
+  });
+}
+
+export async function updateMilestone(
+  workspaceId: string,
+  milestoneId: string,
+  input: {
+    projectId: string;
+    title: string;
+    targetDateIso: string;
+    status: MilestoneStatus;
+    description?: string;
+  }
+): Promise<void> {
+  const supabase = getSupabaseBrowserClient();
+  const { error } = await supabase
+    .from('milestones')
+    .update({
+      project_id: input.projectId,
+      title: input.title.trim(),
+      target_date: input.targetDateIso,
+      status: input.status,
+      description: input.description?.trim() ?? '',
+    })
+    .eq('id', milestoneId)
+    .eq('workspace_id', workspaceId);
+
+  if (error) throw new Error(error.message);
+
+  await logWorkspaceActivity({
+    workspaceId,
+    action: `Updated milestone "${input.title.trim()}"`,
+    entityType: 'milestone',
+    entityId: milestoneId,
     category: 'Planning',
   });
 }

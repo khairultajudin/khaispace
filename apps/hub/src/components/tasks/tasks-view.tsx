@@ -14,12 +14,25 @@ import {
   Info,
   Plus,
   Loader2,
+  LayoutGrid,
+  Columns3,
 } from "lucide-react";
-import { HubProject, MilestoneItem, TaskItem, TaskPriority, TaskStatus } from "../../types/dashboard";
+import { HubProject, MilestoneItem, MilestoneStatus, TaskItem, TaskPriority, TaskStatus } from "../../types/dashboard";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useAuth } from "@/hooks/use-auth";
 import { fetchProjects } from "@/lib/supabase/projects-service";
-import { createTask, fetchMilestones, fetchTasks, updateTaskStatus } from "@/lib/supabase/tasks-service";
+import {
+  createMilestone,
+  createTask,
+  deleteMilestone,
+  deleteTask,
+  fetchMilestones,
+  fetchTasks,
+  updateMilestone,
+  updateMilestoneStatus,
+  updateTask,
+  updateTaskStatus,
+} from "@/lib/supabase/tasks-service";
 import { getLocalTodayIso, isTaskOverdue } from "../../utils/date-utils";
 import { TaskCard } from "./task-card";
 import { TaskDetail } from "./task-detail";
@@ -43,14 +56,21 @@ export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
   const [selectedPriority, setSelectedPriority] = useState<string>("ALL");
   const [sortOrder, setSortOrder] = useState<"due-asc" | "due-desc">("due-asc");
+  const [viewMode, setViewMode] = useState<"list" | "board">("list");
+  const [quickFilter, setQuickFilter] = useState<"all" | "overdue" | "upcoming" | "completed">("all");
 
-  const [showNewTask, setShowNewTask] = useState(false);
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [editingTask, setEditingTask] = useState<TaskItem | null>(null);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskProjectId, setNewTaskProjectId] = useState("");
+  const [newTaskMilestoneId, setNewTaskMilestoneId] = useState("");
   const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>("Normal");
+  const [newTaskStatus, setNewTaskStatus] = useState<TaskStatus>("Pending");
   const [newTaskDueIso, setNewTaskDueIso] = useState(() => getLocalTodayIso());
   const [newTaskDesc, setNewTaskDesc] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [deletingTask, setDeletingTask] = useState<TaskItem | null>(null);
+  const [isDeletingTask, setIsDeletingTask] = useState(false);
   const canWrite = activeWorkspace?.role !== "Viewer";
 
   const loadData = useCallback(async () => {
@@ -148,28 +168,120 @@ export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
     }
   };
 
-  const handleCreateTask = async (e: React.FormEvent) => {
+  const openCreateTask = () => {
+    setEditingTask(null);
+    setNewTaskTitle("");
+    setNewTaskProjectId(projects[0]?.id ?? "");
+    setNewTaskMilestoneId("");
+    setNewTaskPriority("Normal");
+    setNewTaskStatus("Pending");
+    setNewTaskDueIso(getLocalTodayIso());
+    setNewTaskDesc("");
+    setShowTaskModal(true);
+  };
+
+  const openEditTask = (task: TaskItem) => {
+    setEditingTask(task);
+    setNewTaskTitle(task.title);
+    setNewTaskProjectId(task.projectId);
+    setNewTaskMilestoneId(task.milestoneId ?? "");
+    setNewTaskPriority(task.priority);
+    setNewTaskStatus(task.status);
+    setNewTaskDueIso(task.dueDateIso);
+    setNewTaskDesc(task.description);
+    setShowTaskModal(true);
+  };
+
+  const handleSaveTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeWorkspace || !user?.id || !newTaskProjectId || !newTaskTitle.trim()) return;
     setIsSubmitting(true);
     try {
-      await createTask(activeWorkspace.id, user.id, {
-        projectId: newTaskProjectId,
-        title: newTaskTitle.trim(),
-        priority: newTaskPriority,
-        status: "Pending",
-        dueDateIso: newTaskDueIso,
-        description: newTaskDesc.trim(),
-      });
-      setShowNewTask(false);
-      setNewTaskTitle("");
-      setNewTaskDesc("");
+      if (editingTask) {
+        await updateTask(activeWorkspace.id, editingTask.id, {
+          projectId: newTaskProjectId,
+          milestoneId: newTaskMilestoneId || null,
+          title: newTaskTitle.trim(),
+          priority: newTaskPriority,
+          status: newTaskStatus,
+          dueDateIso: newTaskDueIso,
+          description: newTaskDesc.trim(),
+        });
+      } else {
+        await createTask(activeWorkspace.id, user.id, {
+          projectId: newTaskProjectId,
+          milestoneId: newTaskMilestoneId || null,
+          title: newTaskTitle.trim(),
+          priority: newTaskPriority,
+          status: newTaskStatus,
+          dueDateIso: newTaskDueIso,
+          description: newTaskDesc.trim(),
+        });
+      }
+      setShowTaskModal(false);
+      setEditingTask(null);
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create task.");
+      setError(err instanceof Error ? err.message : "Failed to save task.");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleConfirmDeleteTask = async () => {
+    if (!activeWorkspace || !deletingTask) return;
+    setIsDeletingTask(true);
+    try {
+      await deleteTask(activeWorkspace.id, deletingTask.id, deletingTask.title);
+      if (selectedTaskId === deletingTask.id) {
+        handleSelectTask(null);
+      }
+      setDeletingTask(null);
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete task.");
+    } finally {
+      setIsDeletingTask(false);
+    }
+  };
+
+  const handleCreateMilestone = async (input: {
+    projectId: string;
+    title: string;
+    targetDateIso: string;
+    status: MilestoneStatus;
+    description?: string;
+  }) => {
+    if (!activeWorkspace || !user?.id) return;
+    await createMilestone(activeWorkspace.id, user.id, input);
+    await loadData();
+  };
+
+  const handleUpdateMilestone = async (
+    milestoneId: string,
+    input: {
+      projectId: string;
+      title: string;
+      targetDateIso: string;
+      status: MilestoneStatus;
+      description?: string;
+    }
+  ) => {
+    if (!activeWorkspace) return;
+    await updateMilestone(activeWorkspace.id, milestoneId, input);
+    await loadData();
+  };
+
+  const handleMilestoneStatusChange = async (milestoneId: string, status: MilestoneStatus) => {
+    if (!activeWorkspace) return;
+    await updateMilestoneStatus(activeWorkspace.id, milestoneId, status);
+    await loadData();
+  };
+
+  const handleDeleteMilestone = async (milestone: MilestoneItem) => {
+    if (!activeWorkspace) return;
+    await deleteMilestone(activeWorkspace.id, milestone.id);
+    await loadData();
   };
 
   // Dynamic summary metrics calculation from active state
@@ -209,6 +321,17 @@ export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
           return false;
         }
 
+        // Quick filter
+        if (quickFilter === "overdue" && !isTaskOverdue(task, todayIso)) {
+          return false;
+        }
+        if (quickFilter === "upcoming" && (task.status === "Completed" || task.dueDateIso < todayIso)) {
+          return false;
+        }
+        if (quickFilter === "completed" && task.status !== "Completed") {
+          return false;
+        }
+
         // Search query
         if (searchQuery.trim() !== "") {
           const q = searchQuery.toLowerCase().trim();
@@ -231,13 +354,14 @@ export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
           return b.dueDateIso.localeCompare(a.dueDateIso);
         }
       });
-  }, [tasks, selectedProject, selectedStatus, selectedPriority, searchQuery, sortOrder]);
+  }, [tasks, selectedProject, selectedStatus, selectedPriority, quickFilter, todayIso, searchQuery, sortOrder]);
 
   const hasActiveFilters =
     searchQuery.trim() !== "" ||
     selectedProject !== "ALL" ||
     selectedStatus !== "ALL" ||
     selectedPriority !== "ALL" ||
+    quickFilter !== "all" ||
     sortOrder !== "due-asc";
 
   const handleResetFilters = () => {
@@ -245,6 +369,7 @@ export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
     setSelectedProject("ALL");
     setSelectedStatus("ALL");
     setSelectedPriority("ALL");
+    setQuickFilter("all");
     setSortOrder("due-asc");
   };
 
@@ -254,12 +379,36 @@ export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
     if (activeTask) {
       const isOverdue = isTaskOverdue(activeTask, todayIso);
       return (
-        <TaskDetail
-          task={activeTask}
-          onBack={() => handleSelectTask(null)}
-          onStatusChange={handleStatusChange}
-          isOverdue={isOverdue}
-        />
+        <>
+          <TaskDetail
+            task={activeTask}
+            projects={projects}
+            canWrite={canWrite}
+            onBack={() => handleSelectTask(null)}
+            onStatusChange={handleStatusChange}
+            onEditTask={openEditTask}
+            onDeleteTask={(t) => setDeletingTask(t)}
+            isOverdue={isOverdue}
+          />
+          {deletingTask && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true">
+              <div className="w-full max-w-md rounded-xl border border-[#E5B8B8] bg-white p-6 shadow-xl space-y-4">
+                <h3 className="text-base font-bold text-[#0C2340]">Delete Task?</h3>
+                <p className="text-xs text-[#536B85]">
+                  Are you sure you want to delete <strong className="text-[#0C2340]">&ldquo;{deletingTask.title}&rdquo;</strong>?
+                </p>
+                <div className="flex justify-end gap-2">
+                  <button type="button" onClick={() => setDeletingTask(null)} className="px-3 py-1.5 rounded border border-[#DCD7CC] text-xs text-[#536B85] cursor-pointer">
+                    Cancel
+                  </button>
+                  <button type="button" onClick={handleConfirmDeleteTask} disabled={isDeletingTask} className="px-4 py-1.5 rounded bg-[#B42318] text-white text-xs font-medium cursor-pointer disabled:opacity-50">
+                    {isDeletingTask ? "Deleting..." : "Delete Task"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       );
     }
   }
@@ -285,7 +434,7 @@ export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
           {canWrite && (
             <button
               type="button"
-              onClick={() => setShowNewTask(true)}
+              onClick={openCreateTask}
               disabled={projects.length === 0}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-[#0C2340] text-white text-xs font-medium hover:bg-[#133258] disabled:opacity-50 cursor-pointer shrink-0"
               title={projects.length === 0 ? "Create a project first" : "Create a new task"}
@@ -340,7 +489,9 @@ export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
           <div className="text-2xl font-bold tracking-tight text-[#0C2340] font-mono">
             {metrics.total}
           </div>
-          <span className="text-[11px] text-[#536B85] block">Across 8 projects</span>
+          <span className="text-[11px] text-[#536B85] block">
+            Across {projects.length} {projects.length === 1 ? "project" : "projects"}
+          </span>
         </div>
 
         {/* In Progress */}
@@ -434,10 +585,70 @@ export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
 
       {/* Tab Content */}
       {activeTab === "milestones" ? (
-        <MilestonesView tasks={tasks} milestones={milestones} onSelectTask={handleSelectTask} />
+        <MilestonesView
+          tasks={tasks}
+          milestones={milestones}
+          projects={projects}
+          canWrite={canWrite}
+          todayIso={todayIso}
+          onSelectTask={handleSelectTask}
+          onCreateMilestone={handleCreateMilestone}
+          onUpdateMilestone={handleUpdateMilestone}
+          onStatusChange={handleMilestoneStatusChange}
+          onDeleteMilestone={handleDeleteMilestone}
+        />
       ) : (
         /* Tasks Queue Tab */
         <div className="space-y-6">
+          {/* Quick Filter Pills & View Mode Switcher */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-1.5 text-xs">
+              {(
+                [
+                  { id: "all", label: "All Tasks" },
+                  { id: "overdue", label: `Overdue (${metrics.overdue})` },
+                  { id: "upcoming", label: "Upcoming" },
+                  { id: "completed", label: `Completed (${metrics.completed})` },
+                ] as const
+              ).map((pill) => (
+                <button
+                  key={pill.id}
+                  type="button"
+                  onClick={() => setQuickFilter(pill.id)}
+                  className={`px-3 py-1.5 rounded-md font-medium border transition-colors cursor-pointer ${
+                    quickFilter === pill.id
+                      ? "bg-[#0C2340] text-white border-[#0C2340]"
+                      : "bg-white text-[#536B85] border-[#DCD7CC] hover:text-[#0C2340]"
+                  }`}
+                >
+                  {pill.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="inline-flex items-center rounded-md border border-[#DCD7CC] bg-white p-0.5 self-start sm:self-auto text-xs">
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded font-medium cursor-pointer ${
+                  viewMode === "list" ? "bg-[#0C2340] text-white" : "text-[#536B85] hover:text-[#0C2340]"
+                }`}
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>Grid</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("board")}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded font-medium cursor-pointer ${
+                  viewMode === "board" ? "bg-[#0C2340] text-white" : "text-[#536B85] hover:text-[#0C2340]"
+                }`}
+              >
+                <Columns3 className="w-3.5 h-3.5" />
+                <span>Board</span>
+              </button>
+            </div>
+          </div>
           {/* Search, Filter & Sort Controls */}
           <div className="p-4 sm:p-5 rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs space-y-3">
             <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
@@ -551,22 +762,68 @@ export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
             </div>
           </div>
 
-          {/* Tasks Grid or Empty State */}
+          {/* Tasks Grid, Board, or Empty State */}
           {filteredTasks.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filteredTasks.map((task) => {
-                const isOverdue = isTaskOverdue(task, todayIso);
-                return (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    onSelectTask={handleSelectTask}
-                    onStatusChange={handleStatusChange}
-                    isOverdue={isOverdue}
-                  />
-                );
-              })}
-            </div>
+            viewMode === "board" ? (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                {(["Pending", "In Progress", "Completed"] as TaskStatus[]).map((colStatus) => {
+                  const colTasks = filteredTasks.filter((t) => t.status === colStatus);
+                  return (
+                    <div
+                      key={colStatus}
+                      className="rounded-lg border border-[#DCD7CC] bg-[#FAF8F4] p-4 space-y-3"
+                    >
+                      <div className="flex items-center justify-between pb-2 border-b border-[#DCD7CC]">
+                        <span className="text-xs font-bold uppercase tracking-wider text-[#0C2340]">
+                          {colStatus}
+                        </span>
+                        <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-white border border-[#DCD7CC] text-[#536B85]">
+                          {colTasks.length}
+                        </span>
+                      </div>
+                      <div className="space-y-3">
+                        {colTasks.length === 0 ? (
+                          <p className="text-xs text-[#536B85] text-center py-6">
+                            No {colStatus.toLowerCase()} tasks.
+                          </p>
+                        ) : (
+                          colTasks.map((task) => (
+                            <TaskCard
+                              key={task.id}
+                              task={task}
+                              onSelectTask={handleSelectTask}
+                              onStatusChange={handleStatusChange}
+                              canWrite={canWrite}
+                              onEditTask={openEditTask}
+                              onDeleteTask={(t) => setDeletingTask(t)}
+                              isOverdue={isTaskOverdue(task, todayIso)}
+                            />
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {filteredTasks.map((task) => {
+                  const isOverdue = isTaskOverdue(task, todayIso);
+                  return (
+                    <TaskCard
+                      key={task.id}
+                      task={task}
+                      onSelectTask={handleSelectTask}
+                      onStatusChange={handleStatusChange}
+                      canWrite={canWrite}
+                      onEditTask={openEditTask}
+                      onDeleteTask={(t) => setDeletingTask(t)}
+                      isOverdue={isOverdue}
+                    />
+                  );
+                })}
+              </div>
+            )
           ) : (
             /* Empty State */
             <div className="p-12 rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs text-center space-y-4">
@@ -591,28 +848,50 @@ export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
           )}
         </div>
       )}
-      {showNewTask && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      {showTaskModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" role="dialog" aria-modal="true">
           <div className="w-full max-w-md rounded-xl border border-[#DCD7CC] bg-white p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-[#0C2340]">Create New Task</h2>
-              <button type="button" onClick={() => setShowNewTask(false)} className="p-1 text-[#536B85]">
+              <h2 className="text-base font-semibold text-[#0C2340]">
+                {editingTask ? "Edit Task" : "Create New Task"}
+              </h2>
+              <button type="button" onClick={() => setShowTaskModal(false)} className="p-1 text-[#536B85] cursor-pointer">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={handleCreateTask} className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-[#0C2340] mb-1">Project</label>
-                <select
-                  value={newTaskProjectId}
-                  onChange={(e) => setNewTaskProjectId(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
-                >
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id}>{p.title}</option>
-                  ))}
-                </select>
+            <form onSubmit={handleSaveTask} className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-[#0C2340] mb-1">Project</label>
+                  <select
+                    value={newTaskProjectId}
+                    onChange={(e) => {
+                      setNewTaskProjectId(e.target.value);
+                      setNewTaskMilestoneId("");
+                    }}
+                    required
+                    className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
+                  >
+                    {projects.map((p) => (
+                      <option key={p.id} value={p.id}>{p.title}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#0C2340] mb-1">Milestone (optional)</label>
+                  <select
+                    value={newTaskMilestoneId}
+                    onChange={(e) => setNewTaskMilestoneId(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
+                  >
+                    <option value="">None</option>
+                    {milestones
+                      .filter((m) => m.projectId === newTaskProjectId)
+                      .map((m) => (
+                        <option key={m.id} value={m.id}>{m.title}</option>
+                      ))}
+                  </select>
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-[#0C2340] mb-1">Task Title</label>
@@ -625,7 +904,7 @@ export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
                   className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-[#0C2340] mb-1">Priority</label>
                   <select
@@ -636,6 +915,18 @@ export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
                     <option value="High">High</option>
                     <option value="Medium">Medium</option>
                     <option value="Normal">Normal</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#0C2340] mb-1">Status</label>
+                  <select
+                    value={newTaskStatus}
+                    onChange={(e) => setNewTaskStatus(e.target.value as TaskStatus)}
+                    className="w-full px-3 py-2 text-xs rounded border border-[#DCD7CC] bg-[#FAF8F4]"
+                  >
+                    <option value="Pending">Pending</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
                   </select>
                 </div>
                 <div>
@@ -661,21 +952,49 @@ export function TasksView({ simulatedTodayIso }: TasksViewProps = {}) {
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowNewTask(false)}
-                  className="px-3 py-1.5 rounded border border-[#DCD7CC] text-xs text-[#536B85]"
+                  onClick={() => setShowTaskModal(false)}
+                  className="px-3 py-1.5 rounded border border-[#DCD7CC] text-xs text-[#536B85] cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded bg-[#0C2340] text-white text-xs font-medium disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded bg-[#0C2340] text-white text-xs font-medium disabled:opacity-50 cursor-pointer"
                 >
                   {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  Create Task
+                  {editingTask ? "Save Task" : "Create Task"}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {deletingTask && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-xl border border-[#E5B8B8] bg-white p-6 shadow-xl space-y-4">
+            <h3 className="text-base font-bold text-[#0C2340]">Delete Task?</h3>
+            <p className="text-xs text-[#536B85]">
+              Are you sure you want to delete <strong className="text-[#0C2340]">&ldquo;{deletingTask.title}&rdquo;</strong>?
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeletingTask(null)}
+                className="px-3 py-1.5 rounded border border-[#DCD7CC] text-xs text-[#536B85] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteTask}
+                disabled={isDeletingTask}
+                className="px-4 py-1.5 rounded bg-[#B42318] text-white text-xs font-medium cursor-pointer disabled:opacity-50"
+              >
+                {isDeletingTask ? "Deleting..." : "Delete Task"}
+              </button>
+            </div>
           </div>
         </div>
       )}

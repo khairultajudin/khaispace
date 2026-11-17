@@ -9,24 +9,33 @@ import {
   Milestone,
   Info,
   AlertCircle,
+  Pencil,
+  Trash2,
 } from "lucide-react";
-import { TaskItem, TaskStatus } from "../../types/dashboard";
-import { CATALOGED_PROJECTS } from "../../data/sample-dashboard-data";
+import { HubProject, TaskItem, TaskStatus } from "../../types/dashboard";
 
 interface TaskDetailProps {
   task: TaskItem;
+  projects?: HubProject[];
+  canWrite?: boolean;
   onBack: () => void;
   onStatusChange: (taskId: string, newStatus: TaskStatus) => void;
+  onEditTask?: (task: TaskItem) => void;
+  onDeleteTask?: (task: TaskItem) => void;
   isOverdue?: boolean;
 }
 
 export function TaskDetail({
   task,
+  projects = [],
+  canWrite = false,
   onBack,
   onStatusChange,
+  onEditTask,
+  onDeleteTask,
   isOverdue = false,
 }: TaskDetailProps) {
-  const relatedProject = CATALOGED_PROJECTS.find((p) => p.id === task.projectId);
+  const relatedProject = projects.find((p) => p.id === task.projectId);
 
   const priorityStyles = {
     High: "bg-[#FBEAE8] text-[#8C3B2B] border-[#E8C2BA]",
@@ -42,16 +51,41 @@ export function TaskDetail({
 
   return (
     <div className="space-y-6">
-      {/* Top Navigation */}
-      <div>
+      {/* Top Navigation & Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <button
           onClick={onBack}
           type="button"
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-[#DCD7CC] bg-[#FFFFFF] hover:bg-[#FAF8F4] text-xs font-medium text-[#0C2340] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#347A63] cursor-pointer shadow-2xs"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-[#DCD7CC] bg-[#FFFFFF] hover:bg-[#FAF8F4] text-xs font-medium text-[#0C2340] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#347A63] cursor-pointer shadow-2xs self-start"
         >
           <ArrowLeft className="w-3.5 h-3.5 text-[#536B85]" />
           <span>Back to Tasks List</span>
         </button>
+
+        {canWrite && (onEditTask || onDeleteTask) && (
+          <div className="flex items-center gap-2">
+            {onEditTask && (
+              <button
+                type="button"
+                onClick={() => onEditTask(task)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[#DCD7CC] bg-white hover:bg-[#FAF8F4] text-xs font-medium text-[#0C2340] cursor-pointer"
+              >
+                <Pencil className="w-3.5 h-3.5 text-[#347A63]" />
+                <span>Edit Task</span>
+              </button>
+            )}
+            {onDeleteTask && (
+              <button
+                type="button"
+                onClick={() => onDeleteTask(task)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-[#E5B8B8] bg-[#FDF2F2] hover:bg-[#FEE4E2] text-xs font-medium text-[#B42318] cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Task</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Main Task Header Card */}

@@ -7,9 +7,10 @@ import {
   FolderKanban,
   BarChart3,
 } from "lucide-react";
-import { TransactionItem } from "../../types/dashboard";
+import { HubProject, TransactionItem } from "../../types/dashboard";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useAuth } from "@/hooks/use-auth";
+import { fetchProjects } from "@/lib/supabase/projects-service";
 import {
   createTransaction,
   deleteTransaction,
@@ -27,6 +28,7 @@ export function FinanceView() {
   const { activeWorkspace } = useWorkspace();
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+  const [projects, setProjects] = useState<HubProject[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "transactions" | "projects" | "trends">("overview");
@@ -34,8 +36,12 @@ export function FinanceView() {
   const loadTransactions = useCallback(async () => {
     if (!activeWorkspace) return;
     try {
-      const rows = await fetchTransactions(activeWorkspace.id);
+      const [rows, projRows] = await Promise.all([
+        fetchTransactions(activeWorkspace.id),
+        fetchProjects(activeWorkspace.id),
+      ]);
       setTransactions(rows);
+      setProjects(projRows);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load financial transactions.");
@@ -150,6 +156,7 @@ export function FinanceView() {
         <div className="space-y-6">
           <TransactionDetail
             transaction={activeTx}
+            projects={projects}
             onBack={() => handleSelectTransaction(null)}
             onEdit={(tx) => setModalState({ isOpen: true, mode: "edit", data: tx })}
             onDelete={handleDeleteTransaction}
@@ -161,6 +168,7 @@ export function FinanceView() {
               isOpen={modalState.isOpen}
               mode={modalState.mode}
               initialData={modalState.data}
+              projects={projects}
               onSave={handleSaveTransaction}
               onClose={() => setModalState({ isOpen: false, mode: "add" })}
             />
@@ -276,13 +284,14 @@ export function FinanceView() {
       {activeTab === "overview" && (
         <div className="space-y-6">
           <FinancialTrends transactions={transactions} />
-          <ProjectFinance transactions={transactions} />
+          <ProjectFinance transactions={transactions} projects={projects} />
         </div>
       )}
 
       {activeTab === "transactions" && (
         <TransactionList
           transactions={transactions}
+          projects={projects}
           onSelectTransaction={handleSelectTransaction}
           onAddTransaction={() => setModalState({ isOpen: true, mode: "add" })}
           onEditTransaction={(tx) => setModalState({ isOpen: true, mode: "edit", data: tx })}
@@ -291,7 +300,7 @@ export function FinanceView() {
       )}
 
       {activeTab === "projects" && (
-        <ProjectFinance transactions={transactions} />
+        <ProjectFinance transactions={transactions} projects={projects} />
       )}
 
       {activeTab === "trends" && (
@@ -305,6 +314,7 @@ export function FinanceView() {
           isOpen={modalState.isOpen}
           mode={modalState.mode}
           initialData={modalState.data}
+          projects={projects}
           onSave={handleSaveTransaction}
           onClose={() => setModalState({ isOpen: false, mode: "add" })}
         />

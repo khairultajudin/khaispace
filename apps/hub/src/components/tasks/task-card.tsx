@@ -1,13 +1,16 @@
 "use client";
 
 import React from "react";
-import { Calendar, Flag, AlertCircle } from "lucide-react";
+import { Calendar, Flag, AlertCircle, Pencil, Trash2 } from "lucide-react";
 import { TaskItem, TaskStatus } from "../../types/dashboard";
 
 interface TaskCardProps {
   task: TaskItem;
   onSelectTask: (taskId: string) => void;
   onStatusChange: (taskId: string, newStatus: TaskStatus) => void;
+  canWrite?: boolean;
+  onEditTask?: (task: TaskItem) => void;
+  onDeleteTask?: (task: TaskItem) => void;
   isOverdue?: boolean;
 }
 
@@ -15,6 +18,9 @@ export function TaskCard({
   task,
   onSelectTask,
   onStatusChange,
+  canWrite = false,
+  onEditTask,
+  onDeleteTask,
   isOverdue = false,
 }: TaskCardProps) {
   const priorityStyles = {
@@ -87,8 +93,30 @@ export function TaskCard({
           )}
         </div>
 
-        {/* Interactive Status Changer */}
+        {/* Interactive Status Changer & Edit/Delete */}
         <div className="flex items-center gap-1.5 shrink-0">
+          {canWrite && onEditTask && (
+            <button
+              type="button"
+              onClick={() => onEditTask(task)}
+              aria-label={`Edit task: ${task.title}`}
+              title="Edit task"
+              className="p-1.5 rounded border border-[#DCD7CC] bg-white text-[#536B85] hover:text-[#0C2340] hover:bg-[#FAF8F4] cursor-pointer"
+            >
+              <Pencil className="w-3 h-3" />
+            </button>
+          )}
+          {canWrite && onDeleteTask && (
+            <button
+              type="button"
+              onClick={() => onDeleteTask(task)}
+              aria-label={`Delete task: ${task.title}`}
+              title="Delete task"
+              className="p-1.5 rounded border border-[#E5B8B8] bg-[#FDF2F2] text-[#B42318] hover:bg-[#FEE4E2] cursor-pointer"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          )}
           <label htmlFor={`status-${task.id}`} className="sr-only">
             Status for {task.title}
           </label>

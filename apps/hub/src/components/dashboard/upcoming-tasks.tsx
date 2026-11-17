@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { CheckSquare, Calendar } from "lucide-react";
+import { CheckSquare, Calendar, AlertTriangle } from "lucide-react";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { fetchTasks } from "@/lib/supabase/tasks-service";
+import { getLocalTodayIso, isTaskOverdue } from "@/utils/date-utils";
 import type { TaskItem } from "../../types/dashboard";
 
 interface UpcomingTasksProps {
@@ -67,7 +68,9 @@ export function UpcomingTasks({ onNavigateToTasks }: UpcomingTasksProps = {}) {
           </p>
         ) : (
           <div className="space-y-3.5">
-            {tasks.map((task, idx) => (
+            {tasks.map((task, idx) => {
+              const overdue = isTaskOverdue(task, getLocalTodayIso());
+              return (
               <div
                 key={task.id}
                 className={`flex items-start justify-between gap-3 text-xs ${
@@ -78,12 +81,17 @@ export function UpcomingTasks({ onNavigateToTasks }: UpcomingTasksProps = {}) {
                   <div className="text-[#0C2340] font-medium leading-snug">
                     {task.title}
                   </div>
-                  <div className="flex items-center gap-2 text-[11px] text-[#536B85] font-mono">
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-[#536B85] font-mono">
                     <span className="font-semibold text-[#0C2340]">{task.projectTitle}</span>
                     <span>&bull;</span>
-                    <span className="inline-flex items-center gap-1">
-                      <Calendar className="w-3 h-3 text-[#536B85]" />
+                    <span className={`inline-flex items-center gap-1 ${overdue ? "text-[#8C3B2B] font-semibold" : ""}`}>
+                      {overdue ? (
+                        <AlertTriangle className="w-3 h-3 text-[#8C3B2B]" />
+                      ) : (
+                        <Calendar className="w-3 h-3 text-[#536B85]" />
+                      )}
                       {task.dueDate}
+                      {overdue && " (Overdue)"}
                     </span>
                   </div>
                 </div>
@@ -110,7 +118,8 @@ export function UpcomingTasks({ onNavigateToTasks }: UpcomingTasksProps = {}) {
                   </span>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

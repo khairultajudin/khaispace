@@ -3,11 +3,11 @@
 import React, { useState } from "react";
 import { X, Check, AlertCircle, Info, FileText, Scale } from "lucide-react";
 import {
+  HubProject,
   WorkspaceNoteItem,
   NoteRecordType,
   DecisionStatus,
 } from "../../types/dashboard";
-import { CATALOGED_PROJECTS } from "../../data/sample-dashboard-data";
 import { getLocalTodayIso } from "../../utils/date-utils";
 
 interface NoteFormProps {
@@ -15,6 +15,7 @@ interface NoteFormProps {
   mode: "add" | "edit";
   initialType?: NoteRecordType;
   initialData?: WorkspaceNoteItem;
+  projects: HubProject[];
   onSave: (record: WorkspaceNoteItem) => void;
   onClose: () => void;
 }
@@ -35,6 +36,7 @@ export function NoteForm({
   mode,
   initialType = "Note",
   initialData,
+  projects,
   onSave,
   onClose,
 }: NoteFormProps) {
@@ -67,7 +69,7 @@ export function NoteForm({
     }
 
     if (projectId !== "none") {
-      const validProject = CATALOGED_PROJECTS.find((p) => p.id === projectId);
+      const validProject = projects.find((p) => p.id === projectId);
       if (!validProject) {
         errs.projectId = "Selected project must exist in the catalog.";
       }
@@ -92,7 +94,7 @@ export function NoteForm({
 
     const matchedProject =
       projectId !== "none"
-        ? CATALOGED_PROJECTS.find((p) => p.id === projectId)
+        ? projects.find((p) => p.id === projectId)
         : undefined;
 
     const todayIso = getLocalTodayIso();
@@ -274,7 +276,7 @@ export function NoteForm({
                 className="w-full px-3 py-2 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] text-[#0C2340] focus:outline-none focus:border-[#347A63] cursor-pointer"
               >
                 <option value="none">General Workspace (No Project)</option>
-                {CATALOGED_PROJECTS.map((proj) => (
+                {projects.map((proj) => (
                   <option key={proj.id} value={proj.id}>
                     {proj.title}
                   </option>

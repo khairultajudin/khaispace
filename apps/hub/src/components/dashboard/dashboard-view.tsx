@@ -195,11 +195,11 @@ function DashboardShell() {
             <WorkspaceOnboarding />
           ) : currentSection === "overview" ? (
             <>
-              {/* Section 1: Welcome Header & Disclosure */}
-              <WelcomeBanner />
+              {/* Section 1: Welcome Header & Quick Jump */}
+              <WelcomeBanner onNavigate={setCurrentSection} />
 
               {/* Section 2: Summary Metrics Cards */}
-              <SummaryMetrics />
+              <SummaryMetrics onNavigate={setCurrentSection} />
 
               {/* Section 3: Project Catalog Overview */}
               <ProjectCatalog onNavigateToProjects={setCurrentSection} />

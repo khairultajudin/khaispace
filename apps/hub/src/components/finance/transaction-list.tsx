@@ -13,12 +13,12 @@ import {
   Edit2,
   Trash2,
 } from "lucide-react";
-import { TransactionItem, TransactionType } from "../../types/dashboard";
-import { CATALOGED_PROJECTS } from "../../data/sample-dashboard-data";
+import { HubProject, TransactionItem, TransactionType } from "../../types/dashboard";
 import { formatMYR } from "../../utils/finance-utils";
 
 interface TransactionListProps {
   transactions: TransactionItem[];
+  projects: HubProject[];
   onSelectTransaction: (txId: string) => void;
   onAddTransaction: () => void;
   onEditTransaction: (tx: TransactionItem) => void;
@@ -27,6 +27,7 @@ interface TransactionListProps {
 
 export function TransactionList({
   transactions,
+  projects,
   onSelectTransaction,
   onAddTransaction,
   onEditTransaction,
@@ -52,9 +53,9 @@ export function TransactionList({
     return [
       { id: "ALL", label: "All Workspaces" },
       { id: "unassigned", label: "General Operations (Shared)" },
-      ...CATALOGED_PROJECTS.map((p) => ({ id: p.id, label: p.title })),
+      ...projects.map((p) => ({ id: p.id, label: p.title })),
     ];
-  }, []);
+  }, [projects]);
 
   // Filtered and sorted transactions
   const filteredTransactions = useMemo(() => {

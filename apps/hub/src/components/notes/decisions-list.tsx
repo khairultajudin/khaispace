@@ -19,11 +19,11 @@ import {
   AlertCircle,
   Tag,
 } from "lucide-react";
-import { WorkspaceNoteItem, DecisionStatus } from "../../types/dashboard";
-import { CATALOGED_PROJECTS } from "../../data/sample-dashboard-data";
+import { HubProject, WorkspaceNoteItem, DecisionStatus } from "../../types/dashboard";
 
 interface DecisionsListProps {
   records: WorkspaceNoteItem[];
+  projects: HubProject[];
   onSelect: (decision: WorkspaceNoteItem) => void;
   onEdit: (decision: WorkspaceNoteItem) => void;
   onDelete: (decision: WorkspaceNoteItem) => void;
@@ -32,6 +32,7 @@ interface DecisionsListProps {
 
 export function DecisionsList({
   records,
+  projects,
   onSelect,
   onEdit,
   onDelete,
@@ -204,7 +205,7 @@ export function DecisionsList({
             >
               <option value="all">All Projects &amp; General</option>
               <option value="unassigned">General Workspace (No Project)</option>
-              {CATALOGED_PROJECTS.map((proj) => (
+              {projects.map((proj) => (
                 <option key={proj.id} value={proj.id}>
                   {proj.title}
                 </option>

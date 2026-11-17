@@ -7,9 +7,10 @@ import {
   Plus,
   AlertTriangle,
 } from "lucide-react";
-import { WorkspaceNoteItem, NoteRecordType } from "../../types/dashboard";
+import { HubProject, WorkspaceNoteItem, NoteRecordType } from "../../types/dashboard";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useAuth } from "@/hooks/use-auth";
+import { fetchProjects } from "@/lib/supabase/projects-service";
 import {
   createNoteOrDecision,
   deleteNoteOrDecision,
@@ -28,6 +29,7 @@ export function NotesView() {
   const { activeWorkspace } = useWorkspace();
   const { user } = useAuth();
   const [records, setRecords] = useState<WorkspaceNoteItem[]>([]);
+  const [projects, setProjects] = useState<HubProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<NotesTab>(() => {
@@ -47,8 +49,12 @@ export function NotesView() {
   const loadRecords = useCallback(async () => {
     if (!activeWorkspace) return;
     try {
-      const rows = await fetchNotesAndDecisions(activeWorkspace.id);
+      const [rows, projRows] = await Promise.all([
+        fetchNotesAndDecisions(activeWorkspace.id),
+        fetchProjects(activeWorkspace.id),
+      ]);
       setRecords(rows);
+      setProjects(projRows);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load notes and decisions.");
@@ -287,6 +293,7 @@ export function NotesView() {
       {activeTab === "notes" && (
         <NotesList
           records={records}
+          projects={projects}
           onSelect={openDetail}
           onEdit={handleEdit}
           onDelete={handleDeletePrompt}
@@ -297,6 +304,7 @@ export function NotesView() {
       {activeTab === "decisions" && (
         <DecisionsList
           records={records}
+          projects={projects}
           onSelect={openDetail}
           onEdit={handleEdit}
           onDelete={handleDeletePrompt}
@@ -327,6 +335,7 @@ export function NotesView() {
           mode={formModal.mode}
           initialType={formModal.initialType}
           initialData={formModal.data}
+          projects={projects}
           onSave={handleSave}
           onClose={() =>
             setFormModal({ isOpen: false, mode: "add", initialType: "Note" })

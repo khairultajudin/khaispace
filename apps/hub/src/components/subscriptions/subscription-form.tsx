@@ -4,16 +4,17 @@ import React, { useState } from "react";
 import { X, Check, AlertCircle, Info } from "lucide-react";
 import {
   AISubscriptionItem,
+  HubProject,
   SubscriptionStatus,
   SubscriptionBillingCycle,
 } from "../../types/dashboard";
-import { CATALOGED_PROJECTS } from "../../data/sample-dashboard-data";
 import { getLocalTodayIso, isValidCalendarDate } from "../../utils/date-utils";
 
 interface SubscriptionFormProps {
   isOpen: boolean;
   mode: "add" | "edit";
   initialData?: AISubscriptionItem;
+  projects: HubProject[];
   onSave: (subscription: AISubscriptionItem) => void;
   onClose: () => void;
 }
@@ -22,6 +23,7 @@ export function SubscriptionForm({
   isOpen,
   mode,
   initialData,
+  projects,
   onSave,
   onClose,
 }: SubscriptionFormProps) {
@@ -76,7 +78,7 @@ export function SubscriptionForm({
     }
 
     if (projectId !== "none") {
-      const validProject = CATALOGED_PROJECTS.find((p) => p.id === projectId);
+      const validProject = projects.find((p) => p.id === projectId);
       if (!validProject) {
         errs.projectId = "Selected project must exist in the catalog.";
       }
@@ -96,7 +98,7 @@ export function SubscriptionForm({
 
     const matchedProject =
       projectId !== "none"
-        ? CATALOGED_PROJECTS.find((p) => p.id === projectId)
+        ? projects.find((p) => p.id === projectId)
         : undefined;
 
     // Convert ISO dates to readable date strings
@@ -357,7 +359,7 @@ export function SubscriptionForm({
               className="w-full px-3 py-2 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] text-[#0C2340] focus:outline-none focus:border-[#347A63] cursor-pointer"
             >
               <option value="none">General Operations (Shared / No Project)</option>
-              {CATALOGED_PROJECTS.map((proj) => (
+              {projects.map((proj) => (
                 <option key={proj.id} value={proj.id}>
                   {proj.title} ({proj.category})
                 </option>
