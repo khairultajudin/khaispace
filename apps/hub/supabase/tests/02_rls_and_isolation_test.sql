@@ -35,6 +35,8 @@ DECLARE
   proj_b uuid;
   proj_owner uuid;
   ms_a uuid;
+  ms_ws_a uuid;
+  ms_direct uuid;
   task_a uuid;
   task_owner uuid;
   tx_a uuid;
@@ -144,8 +146,12 @@ BEGIN
   VALUES (ws_b, 'beta', 'Beta Project', 'Operations', 'Workspace B Project')
   RETURNING id INTO proj_b;
 
-  INSERT INTO public.tasks (workspace_id, project_id, title, due_date)
-  VALUES (ws_a, proj_a, 'Alpha Task', current_date + 7)
+  INSERT INTO public.milestones (workspace_id, project_id, title, target_date)
+  VALUES (ws_a, proj_a, 'Alpha Milestone', current_date + 14)
+  RETURNING id INTO ms_ws_a;
+
+  INSERT INTO public.tasks (workspace_id, project_id, milestone_id, title, due_date)
+  VALUES (ws_a, proj_a, ms_ws_a, 'Alpha Task', current_date + 7)
   RETURNING id INTO task_a;
 
   INSERT INTO public.financial_transactions (workspace_id, project_id, transaction_date, type, category, amount, description, is_investment_return) VALUES
@@ -315,6 +321,19 @@ BEGIN
   UPDATE public.tasks SET status = 'Completed' WHERE id = task_owner;
   GET DIAGNOSTICS v_affected = ROW_COUNT;
   IF v_affected != 1 THEN RAISE EXCEPTION 'Owner Failure: Owner could not update task'; END IF;
+
+  -- Direct milestone deletion must clear task.milestone_id without deleting the task or violating fk_task_project_ws
+  INSERT INTO public.milestones (workspace_id, project_id, title, target_date)
+  VALUES (ws_a, proj_owner, 'Direct Delete Milestone', current_date + 10)
+  RETURNING id INTO ms_direct;
+  UPDATE public.tasks SET milestone_id = ms_direct WHERE id = task_owner;
+  DELETE FROM public.milestones WHERE id = ms_direct;
+  GET DIAGNOSTICS v_affected = ROW_COUNT;
+  IF v_affected != 1 THEN RAISE EXCEPTION 'Owner Failure: Owner could not delete milestone directly'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.tasks WHERE id = task_owner AND milestone_id IS NULL) THEN
+    RAISE EXCEPTION 'Cascade Failure: Direct milestone deletion did not preserve task with milestone_id = NULL';
+  END IF;
+  UPDATE public.tasks SET milestone_id = ms_a WHERE id = task_owner;
 
   -- Create & update financial transaction
   INSERT INTO public.financial_transactions (workspace_id, project_id, transaction_date, type, category, amount, description)
