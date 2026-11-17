@@ -46,6 +46,7 @@ export function ProjectsView() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedStatus, setSelectedStatus] = useState<"ALL" | ProjectStatus>("ALL");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+  const [sortBy, setSortBy] = useState<"newest" | "title-asc" | "status">("newest");
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
       const match = window.location.hash.match(/^#project-([a-z0-9-]+)$/);
@@ -217,7 +218,7 @@ export function ProjectsView() {
   }, [scopedProjects]);
 
   const filteredProjects = useMemo(() => {
-    return scopedProjects.filter((project) => {
+    const filtered = scopedProjects.filter((project) => {
       if (selectedStatus !== "ALL" && project.status !== selectedStatus) {
         return false;
       }
@@ -238,15 +239,24 @@ export function ProjectsView() {
       }
       return true;
     });
-  }, [scopedProjects, searchQuery, selectedStatus, selectedCategory]);
+
+    if (sortBy === "title-asc") {
+      return [...filtered].sort((a, b) => a.title.localeCompare(b.title));
+    }
+    if (sortBy === "status") {
+      return [...filtered].sort((a, b) => a.status.localeCompare(b.status));
+    }
+    return filtered;
+  }, [scopedProjects, searchQuery, selectedStatus, selectedCategory, sortBy]);
 
   const hasActiveFilters =
-    searchQuery.trim() !== "" || selectedStatus !== "ALL" || selectedCategory !== "ALL";
+    searchQuery.trim() !== "" || selectedStatus !== "ALL" || selectedCategory !== "ALL" || sortBy !== "newest";
 
   const handleResetFilters = () => {
     setSearchQuery("");
     setSelectedStatus("ALL");
     setSelectedCategory("ALL");
+    setSortBy("newest");
   };
 
   const renderModals = () => (
@@ -477,6 +487,7 @@ export function ProjectsView() {
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
+              aria-label="Filter by category"
               className="py-2 px-3 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] text-xs text-[#0C2340] focus:outline-none focus:border-[#347A63] cursor-pointer"
             >
               {categories.map((cat) => (
@@ -484,6 +495,17 @@ export function ProjectsView() {
                   {cat === "ALL" ? "All Categories" : cat}
                 </option>
               ))}
+            </select>
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as "newest" | "title-asc" | "status")}
+              aria-label="Sort projects"
+              className="py-2 px-3 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] text-xs text-[#0C2340] focus:outline-none focus:border-[#347A63] cursor-pointer"
+            >
+              <option value="newest">Sort: Newest</option>
+              <option value="title-asc">Sort: Name (A–Z)</option>
+              <option value="status">Sort: Status</option>
             </select>
 
             {hasActiveFilters && (

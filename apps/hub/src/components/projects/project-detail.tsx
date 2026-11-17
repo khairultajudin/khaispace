@@ -331,6 +331,111 @@ export function ProjectDetail({
         </div>
       </div>
 
+      {/* Project Knowledge Base (Source-Backed Details) */}
+      {(project.metadata?.objectives ||
+        project.metadata?.architectureSummary ||
+        (project.metadata?.completedWork && project.metadata.completedWork.length > 0) ||
+        (project.metadata?.inProgressWork && project.metadata.inProgressWork.length > 0) ||
+        (project.metadata?.documentationRefs && project.metadata.documentationRefs.length > 0) ||
+        project.metadata?.ownerInputNeeded) && (
+        <div className="p-6 rounded-lg border border-[#DCD7CC] bg-white shadow-xs space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#E9E5DC]">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-[#0C2340]">
+              Project Knowledge Base
+            </h2>
+            {project.metadata?.repositoryUrl && (
+              <a
+                href={project.metadata.repositoryUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-[#347A63] hover:underline"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Repository</span>
+              </a>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
+            {project.metadata?.objectives && (
+              <div className="space-y-1">
+                <div className="font-semibold text-[#0C2340]">Objectives</div>
+                <p className="text-[#536B85] leading-relaxed">{project.metadata.objectives}</p>
+              </div>
+            )}
+
+            {project.metadata?.architectureSummary && (
+              <div className="space-y-1">
+                <div className="font-semibold text-[#0C2340]">Architecture &amp; Technical Notes</div>
+                <p className="text-[#536B85] leading-relaxed">
+                  {project.metadata.architectureSummary}
+                </p>
+              </div>
+            )}
+
+            {project.metadata?.completedWork && project.metadata.completedWork.length > 0 && (
+              <div className="space-y-1.5">
+                <div className="font-semibold text-[#347A63]">Completed Work</div>
+                <ul className="list-disc pl-4 space-y-1 text-[#536B85]">
+                  {project.metadata.completedWork.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {project.metadata?.inProgressWork && project.metadata.inProgressWork.length > 0 && (
+              <div className="space-y-1.5">
+                <div className="font-semibold text-[#0C2340]">In Progress / Next Steps</div>
+                <ul className="list-disc pl-4 space-y-1 text-[#536B85]">
+                  {project.metadata.inProgressWork.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {project.metadata?.hardwareComponents && project.metadata.hardwareComponents.length > 0 && (
+            <div className="pt-2 border-t border-[#E9E5DC] text-xs space-y-1.5">
+              <div className="font-semibold text-[#0C2340]">Hardware &amp; Components</div>
+              <div className="flex flex-wrap gap-1.5">
+                {project.metadata.hardwareComponents.map((comp) => (
+                  <span
+                    key={comp}
+                    className="px-2 py-0.5 rounded bg-[#FAF8F4] border border-[#DCD7CC] font-mono text-[11px] text-[#0C2340]"
+                  >
+                    {comp}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {project.metadata?.documentationRefs && project.metadata.documentationRefs.length > 0 && (
+            <div className="pt-2 border-t border-[#E9E5DC] text-xs space-y-1.5">
+              <div className="font-semibold text-[#0C2340]">Documentation &amp; Source References</div>
+              <div className="flex flex-wrap gap-2">
+                {project.metadata.documentationRefs.map((ref) => (
+                  <span
+                    key={ref}
+                    className="px-2 py-0.5 rounded bg-[#FAF8F4] border border-[#DCD7CC] font-mono text-[11px] text-[#536B85]"
+                  >
+                    {ref}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {project.metadata?.ownerInputNeeded && (
+            <div className="p-3 rounded-md border border-[#EAD0A0] bg-[#FAF8F4] text-xs text-[#8C5E1A]">
+              <strong>Owner Input Needed:</strong> {project.metadata.ownerInputNeeded}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Cross-Module Connected Records */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="p-5 rounded-lg border border-[#DCD7CC] bg-white shadow-xs space-y-3">
