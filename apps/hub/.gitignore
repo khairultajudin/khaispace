@@ -1,0 +1,24 @@
+# Dependencies
+/node_modules
+
+# Next.js build output
+/.next/
+/out/
+/build/
+
+# Environment files
+.env*
+!.env.example
+
+# TypeScript cache
+*.tsbuildinfo
+next-env.d.ts
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Playwright artifacts & local auth state (never commit)
+/test-results/
+/playwright-report/
+/e2e/.auth/
