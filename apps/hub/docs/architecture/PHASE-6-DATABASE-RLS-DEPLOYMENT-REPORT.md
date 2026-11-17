@@ -1,7 +1,7 @@
 # Khai Space Hub — Phase 6 Database Schema & Row Level Security Deployment Report
 
-**Document Version:** 2.0.1 (Option B Deployed; Future-Object Simulation **PASS**; 5 Raw `DELETE` Assertions Pending `psql` Runner)  
-**Phase:** Phase 6 — Deployment & Option B Remediation (`PARTIALLY VERIFIED — 5 RAW DELETE ASSERTIONS NOT EXECUTED`)  
+**Document Version:** 2.1.0 (Phase 6 **CLOSED & FULLY VERIFIED** — All `POST_REMEDIATION` Catalog, Privilege, Future-Object & `psql` `DELETE` / Cascade Assertions Passed)  
+**Phase:** Phase 6 — Deployment, Option B Remediation & Full Security Verification (`CLOSED — VERIFIED`)  
 **Application Target:** `apps/hub/`  
 **Working Branch:** `feature/khai-space-hub`  
 **Repository:** `https://github.com/khairultajudin/khaispace`  
@@ -16,7 +16,7 @@
 
 Phase 6 deployed the relational schema for **Khai Space Hub** on Supabase PostgreSQL 17.11 (`dpicdhjaabfjbvppmsxk`): 12 relational tables, 11 custom PostgreSQL enums, composite foreign-key integrity constraints, 17 database functions (15 `SECURITY DEFINER` + 2 `SECURITY INVOKER`), 20 database triggers, 45 Row Level Security (RLS) policies, and 3 financial accounting views (`security_invoker = true`).
 
-**Current Status (`PARTIALLY VERIFIED — NOT FULLY CLOSED`):** Option B security remediation (`20261116144728_phase6_privilege_and_profile_remediation.sql`) was deployed to `dpicdhjaabfjbvppmsxk` and local migration history was reconciled (`20261113024551_phase6_initial_schema_and_rls.sql`). In live `POST_REMEDIATION` verification, `01_schema_catalog_validation.sql` (**PASS**), `03_privilege_assertions_test.sql` (**PASS**, including PG 17 `MAINTAIN`, `pg_has_role`, `pg_default_acl`, `profiles` `INSERT = false`, and `service_role`), non-`DELETE` assertions of `02_rls_and_isolation_test.sql` (**PASS**), and the **live future-object default-privilege simulation** (`_sim_future_tbl`, `_sim_future_seq`, `_sim_future_fn`, **PASS** with atomic rollback) all succeeded with exact baseline PK/fingerprint preservation. However, **5 raw `DELETE` assertions in `02_rls_and_isolation_test.sql` remain `NOT EXECUTED`** (MCP runner auto-cancels raw `DELETE`, and no `psql`/DB password is available on this host). Therefore, Phase 6 is **NOT** labeled fully verified until those 5 `DELETE` assertions are executed in a `psql`/CLI runner.
+**Current Status (`CLOSED — FULLY VERIFIED`):** Option B security remediation (`20261116144728_phase6_privilege_and_profile_remediation.sql`), the milestone/project/workspace deletion cascade fix (`20261117093000_fix_milestone_cascade_cleanup.sql`), and local migration history reconciliation (`20261113024551_phase6_initial_schema_and_rls.sql`) are all deployed and verified on `dpicdhjaabfjbvppmsxk`. Every Phase 6 `POST_REMEDIATION` test has been executed and **PASSED**: `01_schema_catalog_validation.sql` (**PASS**), `03_privilege_assertions_test.sql` (**PASS**, including PG 17 `MAINTAIN`, `pg_has_role`, `pg_default_acl`, `profiles` `INSERT = false`, and `service_role`), live **future-object default-privilege simulation** (**PASS** with atomic rollback), and the complete `02_rls_and_isolation_test.sql` via `psql` (**PASS** — `ERROR: PHASE_6_1_3_ALL_TESTS_PASSED_INTENTIONAL_ROLLBACK [MODE: POST_REMEDIATION]`, including all 5 raw `DELETE` assertions and the direct-milestone / project / workspace cascade regression tests, with zero test fixtures persisted).
 
 Strict change control was maintained throughout execution:
 - The unrelated BizTrack Supabase project (`vzbazjzxonbkfpjljjdq`) was untouched.

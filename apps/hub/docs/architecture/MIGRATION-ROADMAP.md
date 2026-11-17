@@ -1,6 +1,6 @@
 # Khai Space Hub — Persistence Implementation & Migration Roadmap
-**Document Version:** 2.1.0 (Live Authenticated Browser QA **PASS** on `hub.khaispace.com`; 5 Raw `DELETE` SQL Assertions Pending `psql`)
-**Phase:** Phase 6 (Option B Deployed; Future-Obj Sim `PASS`; 5 raw `DELETE`s `NOT EXECUTED`) | Phases 7–9 (Implemented & Live Authenticated Browser QA **PASS**) | Phase 10 (`feature/khai-space-hub` Live at `hub.khaispace.com`; `main` Merge Held Pending 5 `DELETE` SQL Assertions)
+**Document Version:** 2.2.0 (Phase 6 **CLOSED & FULLY VERIFIED**; Phases 7–9 Live QA **PASS**; Ready for `main` Production Release)
+**Phase:** Phase 6 (`CLOSED — ALL TESTS PASS`) | Phases 7–9 (`IMPLEMENTED & LIVE QA PASS`) | Phase 10 (`PRODUCTION RELEASE`)
 **Application Target:** `apps/hub/`
 **Working Branch:** `feature/khai-space-hub`
 **Repository:** `khairultajudin/khaispace`
@@ -21,11 +21,11 @@ Moving Khai Space Hub from in-memory React session state to a persistent, produc
 flowchart LR
     P3["Phase 3: Architecture Planning (Completed)"] --> P4["Phase 4 & 4.1: Supabase Foundation & Types (Completed)"]
     P4 --> P5["Phase 5: Auth & Workspace Access (Completed)"]
-    P5 --> P6["Phase 6: Option B Deployed & Future-Obj Sim PASS (5 DELETEs NOT EXECUTED)"]
+    P5 --> P6["Phase 6: Schema, Option B & Cascade Fix (CLOSED — ALL TESTS PASS)"]
     P6 --> P7["Phase 7: Core Persistence (IMPLEMENTED & LIVE QA PASS)"]
     P7 --> P8["Phase 8: Finance & Subscriptions (IMPLEMENTED & LIVE QA PASS)"]
     P8 --> P9["Phase 9: Members & Settings (IMPLEMENTED & LIVE QA PASS)"]
-    P9 --> P10["Phase 10: Preview Live at hub.khaispace.com; main Merge Held Pending 5 DELETEs"]
+    P9 --> P10["Phase 10: Production Release on hub.khaispace.com"]
 ```
 
 ---
