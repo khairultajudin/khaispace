@@ -237,6 +237,108 @@ export async function setProjectArchived(
   return mapProjectRow(data);
 }
 
+export interface ProjectContextSummary {
+  tasks: Array<{ id: string; title: string; status: string; dueDate: string }>;
+  milestones: Array<{ id: string; title: string; status: string; targetDate: string }>;
+  finance: { count: number; totalIncome: number; totalExpense: number; net: number };
+  subscriptions: Array<{ id: string; productName: string; planName: string; status: string }>;
+  notes: Array<{ id: string; title: string; type: string }>;
+  recentActivity: Array<{ id: string; action: string; createdAt: string }>;
+}
+
+export async function fetchProjectContext(
+  workspaceId: string,
+  projectId: string
+): Promise<ProjectContextSummary> {
+  const supabase = getSupabaseBrowserClient();
+  const [tasksRes, milestonesRes, txRes, subsRes, notesRes, activityRes] = await Promise.all([
+    supabase
+      .from('tasks')
+      .select('id, title, status, due_date')
+      .eq('workspace_id', workspaceId)
+      .eq('project_id', projectId)
+      .order('due_date', { ascending: true })
+      .limit(6),
+    supabase
+      .from('milestones')
+      .select('id, title, status, target_date')
+      .eq('workspace_id', workspaceId)
+      .eq('project_id', projectId)
+      .order('target_date', { ascending: true })
+      .limit(6),
+    supabase
+      .from('financial_transactions')
+      .select('type, amount')
+      .eq('workspace_id', workspaceId)
+      .eq('project_id', projectId),
+    supabase
+      .from('ai_subscriptions')
+      .select('id, product_name, plan_name, status')
+      .eq('workspace_id', workspaceId)
+      .eq('assigned_project_id', projectId)
+      .limit(6),
+    supabase
+      .from('workspace_notes')
+      .select('id, title, type')
+      .eq('workspace_id', workspaceId)
+      .eq('project_id', projectId)
+      .order('updated_at', { ascending: false })
+      .limit(6),
+    supabase
+      .from('activity_logs')
+      .select('id, action, created_at')
+      .eq('workspace_id', workspaceId)
+      .eq('entity_id', projectId)
+      .order('created_at', { ascending: false })
+      .limit(5),
+  ]);
+
+  let totalIncome = 0;
+  let totalExpense = 0;
+  for (const row of txRes.data ?? []) {
+    const amt = Number(row.amount ?? 0);
+    if (row.type === 'Income') totalIncome += amt;
+    else totalExpense += amt;
+  }
+
+  return {
+    tasks: (tasksRes.data ?? []).map((t) => ({
+      id: t.id,
+      title: t.title,
+      status: t.status,
+      dueDate: t.due_date,
+    })),
+    milestones: (milestonesRes.data ?? []).map((m) => ({
+      id: m.id,
+      title: m.title,
+      status: m.status,
+      targetDate: m.target_date,
+    })),
+    finance: {
+      count: txRes.data?.length ?? 0,
+      totalIncome,
+      totalExpense,
+      net: totalIncome - totalExpense,
+    },
+    subscriptions: (subsRes.data ?? []).map((s) => ({
+      id: s.id,
+      productName: s.product_name,
+      planName: s.plan_name,
+      status: s.status,
+    })),
+    notes: (notesRes.data ?? []).map((n) => ({
+      id: n.id,
+      title: n.title,
+      type: n.type,
+    })),
+    recentActivity: (activityRes.data ?? []).map((a) => ({
+      id: a.id,
+      action: a.action,
+      createdAt: a.created_at,
+    })),
+  };
+}
+
 export async function deleteProject(workspaceId: string, projectId: string, title: string): Promise<void> {
   const supabase = getSupabaseBrowserClient();
   const { error } = await supabase

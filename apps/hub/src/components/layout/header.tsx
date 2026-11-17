@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
-import { Loader2, LogOut, Menu, ShieldCheck, UserCheck } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { Loader2, LogOut, Menu, Search, ShieldCheck, UserCheck } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { NavSection } from "../../types/dashboard";
+import { GlobalSearchModal } from "./global-search-modal";
 
 interface HeaderProps {
   currentSection: NavSection;
@@ -23,6 +24,18 @@ const SECTION_TITLES: Record<NavSection, string> = {
 export function Header({ currentSection, onOpenMobileMenu }: HeaderProps) {
   const { user, signOut } = useAuth();
   const [isSigningOut, setIsSigningOut] = useState<boolean>(false);
+  const [searchOpen, setSearchOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -54,11 +67,24 @@ export function Header({ currentSection, onOpenMobileMenu }: HeaderProps) {
         </div>
       </div>
 
-      {/* Right: Auth Identity, Governance Boundary & Sign Out */}
+      {/* Right: Search, Auth Identity, Governance Boundary & Sign Out */}
       <div className="flex items-center gap-2 sm:gap-2.5">
+        <button
+          type="button"
+          onClick={() => setSearchOpen(true)}
+          aria-label="Search workspace"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#DCD7CC] bg-white hover:bg-[#FAF8F4] text-[#536B85] hover:text-[#0C2340] text-[11px] font-medium transition-colors cursor-pointer"
+        >
+          <Search className="w-3.5 h-3.5 text-[#347A63]" />
+          <span className="hidden sm:inline">Search</span>
+          <kbd className="hidden lg:inline px-1 py-0.2 rounded bg-[#FAF8F4] border border-[#DCD7CC] text-[9px] font-mono">
+            Ctrl+K
+          </kbd>
+        </button>
+
         {user?.email && (
           <div
-            title="Authenticated Supabase identity. Database workspace membership and role verification are pending Phase 6 schema deployment."
+            title="Authenticated Supabase identity with workspace Row Level Security."
             className="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#DCD7CC] bg-white text-[#0C2340] text-[11px] font-mono"
           >
             <UserCheck className="w-3.5 h-3.5 text-[#347A63]" />
@@ -67,12 +93,12 @@ export function Header({ currentSection, onOpenMobileMenu }: HeaderProps) {
         )}
 
         <div
-          title="Phase 5 verifies Supabase user authentication. Database-level workspace membership and RLS role checks are scheduled for Phase 6."
+          title="Protected by Supabase Auth and PostgreSQL Row Level Security (RLS)."
           className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-[#A8CFC2] bg-[#EDF5F2] text-[#347A63] text-[11px] font-medium"
         >
           <ShieldCheck className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Phase 5 Auth</span>
-          <span className="sm:hidden">Auth</span>
+          <span className="hidden sm:inline">Workspace RLS</span>
+          <span className="sm:hidden">RLS</span>
         </div>
 
         <button
@@ -90,6 +116,9 @@ export function Header({ currentSection, onOpenMobileMenu }: HeaderProps) {
           <span>Sign Out</span>
         </button>
       </div>
+      {searchOpen && (
+        <GlobalSearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+      )}
     </header>
   );
 }

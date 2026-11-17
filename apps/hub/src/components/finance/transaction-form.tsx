@@ -2,13 +2,14 @@
 
 import React, { useState } from "react";
 import { X, Check, AlertCircle, Info } from "lucide-react";
-import { TransactionItem, TransactionType } from "../../types/dashboard";
-import { CATALOGED_PROJECTS } from "../../data/sample-dashboard-data";
+import { HubProject, TransactionItem, TransactionType } from "../../types/dashboard";
+import { getLocalTodayIso } from "../../utils/date-utils";
 
 interface TransactionFormProps {
   isOpen: boolean;
   mode: "add" | "edit";
   initialData?: TransactionItem;
+  projects: HubProject[];
   onSave: (transaction: TransactionItem) => void;
   onClose: () => void;
 }
@@ -17,13 +18,14 @@ export function TransactionForm({
   isOpen,
   mode,
   initialData,
+  projects,
   onSave,
   onClose,
 }: TransactionFormProps) {
   const [description, setDescription] = useState<string>(() => initialData?.description || "");
   const [type, setType] = useState<TransactionType>(() => initialData?.type || "Expense");
   const [amount, setAmount] = useState<string>(() => (initialData ? initialData.amount.toString() : ""));
-  const [dateIso, setDateIso] = useState<string>(() => initialData?.dateIso || "2026-11-09");
+  const [dateIso, setDateIso] = useState<string>(() => initialData?.dateIso || getLocalTodayIso());
   const [category, setCategory] = useState<string>(() => initialData?.category || "");
   const [projectId, setProjectId] = useState<string>(() => initialData?.projectId || "none");
   const [notes, setNotes] = useState<string>(() => initialData?.notes || "");
@@ -53,7 +55,7 @@ export function TransactionForm({
     }
 
     if (projectId !== "none") {
-      const validProject = CATALOGED_PROJECTS.find((p) => p.id === projectId);
+      const validProject = projects.find((p) => p.id === projectId);
       if (!validProject) {
         errs.projectId = "Selected project must exist in the catalog.";
       }
@@ -69,7 +71,7 @@ export function TransactionForm({
 
     const matchedProject =
       projectId !== "none"
-        ? CATALOGED_PROJECTS.find((p) => p.id === projectId)
+        ? projects.find((p) => p.id === projectId)
         : undefined;
 
     // Convert dateIso to formatted readable date string
@@ -234,7 +236,7 @@ export function TransactionForm({
               className="w-full px-3 py-2 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] text-[#0C2340] focus:outline-none focus:border-[#347A63] cursor-pointer"
             >
               <option value="none">General Operations (Shared / No Project)</option>
-              {CATALOGED_PROJECTS.map((proj) => (
+              {projects.map((proj) => (
                 <option key={proj.id} value={proj.id}>
                   {proj.title} ({proj.category})
                 </option>

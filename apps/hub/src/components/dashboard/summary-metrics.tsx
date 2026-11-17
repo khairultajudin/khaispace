@@ -7,11 +7,22 @@ import { fetchProjects } from "@/lib/supabase/projects-service";
 import { fetchTasks } from "@/lib/supabase/tasks-service";
 import { fetchOverallFinanceKpis } from "@/lib/supabase/finance-service";
 import { fetchSubscriptions } from "@/lib/supabase/subscriptions-service";
-import type { SummaryMetric } from "../../types/dashboard";
+import { getLocalTodayIso, isTaskOverdue } from "@/utils/date-utils";
+import type { NavSection, SummaryMetric } from "../../types/dashboard";
 
 const ICONS = [FolderKanban, Activity, CheckSquare, CreditCard];
+const METRIC_TARGETS: Record<string, NavSection> = {
+  projects: "projects",
+  tasks: "tasks",
+  cashflow: "finance",
+  subscriptions: "subscriptions",
+};
 
-export function SummaryMetrics() {
+interface SummaryMetricsProps {
+  onNavigate?: (section: NavSection) => void;
+}
+
+export function SummaryMetrics({ onNavigate }: SummaryMetricsProps = {}) {
   const { activeWorkspace } = useWorkspace();
   const [metrics, setMetrics] = useState<SummaryMetric[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,10 +40,16 @@ export function SummaryMetrics() {
       .then(([projects, tasks, kpis, subs]) => {
         if (cancelled) return;
         const nonArchivedProjects = projects.filter((p) => !p.metadata?.archived);
+        const archivedCount = projects.length - nonArchivedProjects.length;
         const activeProjects = nonArchivedProjects.filter(
           (p) => p.status === "Production" || p.status === "Active" || p.status === "In Development"
         ).length;
-        const openTasks = tasks.filter((t) => t.status !== "Completed").length;
+        const todayIso = getLocalTodayIso();
+        const openTasksList = tasks.filter((t) => t.status !== "Completed");
+        const openTasks = openTasksList.length;
+        const overdueTasks = openTasksList.filter((t) =>
+          isTaskOverdue(t, todayIso)
+        ).length;
         const activeSubs = subs.filter((s) => s.status === "Active");
         const monthlyAiCost = activeSubs.reduce((sum, s) => {
           return sum + (s.billingCycle === "Annual" ? s.amount / 12 : s.amount);
@@ -43,7 +60,7 @@ export function SummaryMetrics() {
             id: "projects",
             label: "Workspace Projects",
             value: String(nonArchivedProjects.length),
-            sublabel: `${activeProjects} active or in production`,
+            sublabel: `${activeProjects} active \u2022 ${archivedCount} archived`,
             badgeText: "Live DB",
             note: "Synced from public.projects via workspace RLS.",
           },
@@ -51,8 +68,8 @@ export function SummaryMetrics() {
             id: "tasks",
             label: "Open Tasks",
             value: String(openTasks),
-            sublabel: `${tasks.length} total tasks tracked`,
-            badgeText: openTasks > 0 ? "In Progress" : "Clear",
+            sublabel: `${tasks.length} total \u2022 ${overdueTasks} overdue`,
+            badgeText: overdueTasks > 0 ? `${overdueTasks} Overdue` : openTasks > 0 ? "In Progress" : "Clear",
             note: "Synced from public.tasks across workspace projects.",
           },
           {
@@ -109,11 +126,28 @@ export function SummaryMetrics() {
           : metrics
         ).map((metric, idx) => {
           const Icon = ICONS[idx % ICONS.length];
+          const targetSection = METRIC_TARGETS[metric.id];
+          const isClickable = Boolean(onNavigate && targetSection);
 
           return (
             <div
               key={metric.id}
-              className="p-5 rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs flex flex-col justify-between hover:border-[#347A63] transition-colors"
+              onClick={isClickable ? () => onNavigate?.(targetSection) : undefined}
+              role={isClickable ? "button" : undefined}
+              tabIndex={isClickable ? 0 : undefined}
+              onKeyDown={
+                isClickable
+                  ? (e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onNavigate?.(targetSection);
+                      }
+                    }
+                  : undefined
+              }
+              className={`p-5 rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs flex flex-col justify-between hover:border-[#347A63] transition-colors ${
+                isClickable ? "cursor-pointer" : ""
+              }`}
             >
               <div>
                 <div className="flex items-center justify-between mb-3">

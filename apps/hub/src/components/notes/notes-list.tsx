@@ -14,11 +14,11 @@ import {
   ArrowUpDown,
   AlertCircle,
 } from "lucide-react";
-import { WorkspaceNoteItem } from "../../types/dashboard";
-import { CATALOGED_PROJECTS } from "../../data/sample-dashboard-data";
+import { HubProject, WorkspaceNoteItem } from "../../types/dashboard";
 
 interface NotesListProps {
   records: WorkspaceNoteItem[];
+  projects: HubProject[];
   onSelect: (note: WorkspaceNoteItem) => void;
   onEdit: (note: WorkspaceNoteItem) => void;
   onDelete: (note: WorkspaceNoteItem) => void;
@@ -27,6 +27,7 @@ interface NotesListProps {
 
 export function NotesList({
   records,
+  projects,
   onSelect,
   onEdit,
   onDelete,
@@ -164,7 +165,7 @@ export function NotesList({
             >
               <option value="all">All Projects &amp; General</option>
               <option value="unassigned">General Workspace (No Project)</option>
-              {CATALOGED_PROJECTS.map((proj) => (
+              {projects.map((proj) => (
                 <option key={proj.id} value={proj.id}>
                   {proj.title}
                 </option>

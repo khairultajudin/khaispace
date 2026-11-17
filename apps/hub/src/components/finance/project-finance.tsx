@@ -2,8 +2,7 @@
 
 import React from "react";
 import { FolderKanban } from "lucide-react";
-import { TransactionItem } from "../../types/dashboard";
-import { CATALOGED_PROJECTS } from "../../data/sample-dashboard-data";
+import { HubProject, TransactionItem } from "../../types/dashboard";
 import {
   calculateProjectFinance,
   formatMYR,
@@ -13,10 +12,11 @@ import {
 
 interface ProjectFinanceProps {
   transactions: TransactionItem[];
+  projects: HubProject[];
 }
 
-export function ProjectFinance({ transactions }: ProjectFinanceProps) {
-  const projectSummaries = calculateProjectFinance(transactions, CATALOGED_PROJECTS);
+export function ProjectFinance({ transactions, projects }: ProjectFinanceProps) {
+  const projectSummaries = calculateProjectFinance(transactions, projects);
 
   return (
     <div className="space-y-6">

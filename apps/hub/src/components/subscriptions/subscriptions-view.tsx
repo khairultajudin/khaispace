@@ -9,9 +9,10 @@ import {
   Plus,
   AlertTriangle,
 } from "lucide-react";
-import { AISubscriptionItem } from "../../types/dashboard";
+import { AISubscriptionItem, HubProject } from "../../types/dashboard";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useAuth } from "@/hooks/use-auth";
+import { fetchProjects } from "@/lib/supabase/projects-service";
 import {
   createSubscription,
   deleteSubscription,
@@ -31,6 +32,7 @@ export function SubscriptionsView() {
   const { activeWorkspace } = useWorkspace();
   const { user } = useAuth();
   const [subscriptions, setSubscriptions] = useState<AISubscriptionItem[]>([]);
+  const [projects, setProjects] = useState<HubProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<SubscriptionTab>("directory");
@@ -38,8 +40,12 @@ export function SubscriptionsView() {
   const loadSubscriptions = useCallback(async () => {
     if (!activeWorkspace) return;
     try {
-      const rows = await fetchSubscriptions(activeWorkspace.id);
+      const [rows, projRows] = await Promise.all([
+        fetchSubscriptions(activeWorkspace.id),
+        fetchProjects(activeWorkspace.id),
+      ]);
       setSubscriptions(rows);
+      setProjects(projRows);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load subscriptions.");
@@ -315,6 +321,7 @@ export function SubscriptionsView() {
           isOpen={formModal.isOpen}
           mode={formModal.mode}
           initialData={formModal.data}
+          projects={projects}
           onSave={handleSave}
           onClose={() => setFormModal({ isOpen: false, mode: "add" })}
         />

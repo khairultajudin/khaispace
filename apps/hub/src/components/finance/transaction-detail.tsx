@@ -12,12 +12,12 @@ import {
   Edit2,
   Trash2,
 } from "lucide-react";
-import { TransactionItem } from "../../types/dashboard";
-import { CATALOGED_PROJECTS } from "../../data/sample-dashboard-data";
+import { HubProject, TransactionItem } from "../../types/dashboard";
 import { formatMYR } from "../../utils/finance-utils";
 
 interface TransactionDetailProps {
   transaction: TransactionItem;
+  projects: HubProject[];
   onBack: () => void;
   onEdit: (transaction: TransactionItem) => void;
   onDelete: (transactionId: string) => void;
@@ -25,12 +25,13 @@ interface TransactionDetailProps {
 
 export function TransactionDetail({
   transaction,
+  projects,
   onBack,
   onEdit,
   onDelete,
 }: TransactionDetailProps) {
   const relatedProject = transaction.projectId
-    ? CATALOGED_PROJECTS.find((p) => p.id === transaction.projectId)
+    ? projects.find((p) => p.id === transaction.projectId)
     : undefined;
 
   const typeConfig = {

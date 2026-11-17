@@ -1,18 +1,28 @@
-import React from "react";
+"use client";
+
+import React, { useEffect, useState } from "react";
 import {
   Archive,
   ArchiveRestore,
   ArrowLeft,
+  Bot,
   Calendar,
+  CheckSquare,
+  FileText,
   Layers,
   Loader2,
   MapPin,
   CheckCircle2,
   Info,
+  Milestone,
   Pencil,
   Trash2,
+  TrendingUp,
 } from "lucide-react";
 import { HubProject } from "../../types/dashboard";
+import { useWorkspace } from "@/hooks/use-workspace";
+import { fetchProjectContext, type ProjectContextSummary } from "@/lib/supabase/projects-service";
+import { formatMYR } from "@/utils/finance-utils";
 
 interface ProjectDetailProps {
   project: HubProject;
@@ -35,10 +45,31 @@ export function ProjectDetail({
   onToggleArchive,
   onDelete,
 }: ProjectDetailProps) {
+  const { activeWorkspace } = useWorkspace();
+  const [contextSummary, setContextSummary] = useState<ProjectContextSummary | null>(null);
+  const [isContextLoading, setIsContextLoading] = useState(true);
   const isArchived = Boolean(project.metadata?.archived);
   const isPlanned =
     project.status === "Planning" ||
     project.metadata?.verificationStatus === "Planned / Not Yet Implemented";
+
+  useEffect(() => {
+    if (!activeWorkspace) return;
+    let cancelled = false;
+    fetchProjectContext(activeWorkspace.id, project.id)
+      .then((res) => {
+        if (!cancelled) setContextSummary(res);
+      })
+      .catch(() => {
+        if (!cancelled) setContextSummary(null);
+      })
+      .finally(() => {
+        if (!cancelled) setIsContextLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeWorkspace, project.id]);
 
   const getStatusBadge = (status: HubProject["status"]) => {
     switch (status) {
@@ -279,6 +310,101 @@ export function ProjectDetail({
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Cross-Module Connected Records */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="p-5 rounded-lg border border-[#DCD7CC] bg-white shadow-xs space-y-3">
+          <div className="flex items-center justify-between border-b border-[#E9E5DC] pb-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#0C2340]">
+              <CheckSquare className="w-3.5 h-3.5 text-[#347A63]" />
+              Tasks ({contextSummary?.tasks.length ?? 0})
+            </span>
+            <a href="#tasks" className="text-[11px] font-medium text-[#347A63] hover:underline">
+              Open Tasks &rarr;
+            </a>
+          </div>
+          {isContextLoading ? (
+            <p className="text-xs text-[#536B85]">Loading linked tasks...</p>
+          ) : !contextSummary || contextSummary.tasks.length === 0 ? (
+            <p className="text-xs text-[#536B85]">No tasks linked to this project.</p>
+          ) : (
+            <ul className="space-y-1.5 text-xs">
+              {contextSummary.tasks.map((t) => (
+                <li key={t.id} className="flex items-center justify-between gap-2">
+                  <a href={`#task-${t.id}`} className="text-[#0C2340] hover:text-[#347A63] truncate font-medium">
+                    {t.title}
+                  </a>
+                  <span className="text-[10px] font-mono text-[#536B85] shrink-0">{t.status}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="p-5 rounded-lg border border-[#DCD7CC] bg-white shadow-xs space-y-3">
+          <div className="flex items-center justify-between border-b border-[#E9E5DC] pb-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#0C2340]">
+              <Milestone className="w-3.5 h-3.5 text-[#347A63]" />
+              Milestones ({contextSummary?.milestones.length ?? 0})
+            </span>
+            <a href="#milestones" className="text-[11px] font-medium text-[#347A63] hover:underline">
+              Roadmap &rarr;
+            </a>
+          </div>
+          {isContextLoading ? (
+            <p className="text-xs text-[#536B85]">Loading milestones...</p>
+          ) : !contextSummary || contextSummary.milestones.length === 0 ? (
+            <p className="text-xs text-[#536B85]">No milestones linked to this project.</p>
+          ) : (
+            <ul className="space-y-1.5 text-xs">
+              {contextSummary.milestones.map((m) => (
+                <li key={m.id} className="flex items-center justify-between gap-2">
+                  <span className="text-[#0C2340] truncate font-medium">{m.title}</span>
+                  <span className="text-[10px] font-mono text-[#536B85] shrink-0">{m.status}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="p-5 rounded-lg border border-[#DCD7CC] bg-white shadow-xs space-y-3">
+          <div className="flex items-center justify-between border-b border-[#E9E5DC] pb-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#0C2340]">
+              <TrendingUp className="w-3.5 h-3.5 text-[#347A63]" />
+              Finance &amp; Subscriptions
+            </span>
+            <a href="#finance" className="text-[11px] font-medium text-[#347A63] hover:underline">
+              Ledger &rarr;
+            </a>
+          </div>
+          {isContextLoading ? (
+            <p className="text-xs text-[#536B85]">Loading financial summary...</p>
+          ) : (
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="text-[#536B85]">Transactions ({contextSummary?.finance.count ?? 0}):</span>
+                <span className="font-mono font-semibold text-[#0C2340]">
+                  {formatMYR(contextSummary?.finance.net ?? 0)}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#536B85] inline-flex items-center gap-1">
+                  <Bot className="w-3 h-3 text-[#347A63]" /> AI Subscriptions:
+                </span>
+                <span className="font-mono text-[#0C2340]">{contextSummary?.subscriptions.length ?? 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#536B85] inline-flex items-center gap-1">
+                  <FileText className="w-3 h-3 text-[#347A63]" /> Notes &amp; Decisions:
+                </span>
+                <a href="#notes" className="font-mono text-[#347A63] hover:underline">
+                  {contextSummary?.notes.length ?? 0}
+                </a>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
