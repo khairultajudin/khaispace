@@ -28,7 +28,8 @@ export function SummaryMetrics() {
     ])
       .then(([projects, tasks, kpis, subs]) => {
         if (cancelled) return;
-        const activeProjects = projects.filter(
+        const nonArchivedProjects = projects.filter((p) => !p.metadata?.archived);
+        const activeProjects = nonArchivedProjects.filter(
           (p) => p.status === "Production" || p.status === "Active" || p.status === "In Development"
         ).length;
         const openTasks = tasks.filter((t) => t.status !== "Completed").length;
@@ -41,7 +42,7 @@ export function SummaryMetrics() {
           {
             id: "projects",
             label: "Workspace Projects",
-            value: String(projects.length),
+            value: String(nonArchivedProjects.length),
             sublabel: `${activeProjects} active or in production`,
             badgeText: "Live DB",
             note: "Synced from public.projects via workspace RLS.",

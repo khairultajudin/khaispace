@@ -20,7 +20,9 @@ export function ProjectCatalog({ onNavigateToProjects }: ProjectCatalogProps) {
     let cancelled = false;
     fetchProjects(activeWorkspace.id)
       .then((rows) => {
-        if (!cancelled) setProjects(rows.slice(0, 6));
+        if (!cancelled) {
+          setProjects(rows.filter((p) => !p.metadata?.archived).slice(0, 6));
+        }
       })
       .catch(() => {
         if (!cancelled) setProjects([]);

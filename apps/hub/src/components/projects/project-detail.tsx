@@ -1,19 +1,41 @@
 import React from "react";
 import {
+  Archive,
+  ArchiveRestore,
   ArrowLeft,
+  Calendar,
   Layers,
+  Loader2,
   MapPin,
   CheckCircle2,
   Info,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import { HubProject } from "../../types/dashboard";
 
 interface ProjectDetailProps {
   project: HubProject;
   onBack: () => void;
+  canWrite?: boolean;
+  canDelete?: boolean;
+  isArchiving?: boolean;
+  onEdit?: (project: HubProject) => void;
+  onToggleArchive?: (project: HubProject) => void;
+  onDelete?: (project: HubProject) => void;
 }
 
-export function ProjectDetail({ project, onBack }: ProjectDetailProps) {
+export function ProjectDetail({
+  project,
+  onBack,
+  canWrite = false,
+  canDelete = false,
+  isArchiving = false,
+  onEdit,
+  onToggleArchive,
+  onDelete,
+}: ProjectDetailProps) {
+  const isArchived = Boolean(project.metadata?.archived);
   const isPlanned =
     project.status === "Planning" ||
     project.metadata?.verificationStatus === "Planned / Not Yet Implemented";
@@ -37,15 +59,60 @@ export function ProjectDetail({ project, onBack }: ProjectDetailProps) {
 
   return (
     <div className="space-y-6">
-      {/* Back button */}
-      <div>
+      {/* Back button & Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <button
+          type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium text-[#0C2340] bg-[#FFFFFF] hover:bg-[#E9E5DC] border border-[#DCD7CC] transition-colors cursor-pointer shadow-xs"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium text-[#0C2340] bg-[#FFFFFF] hover:bg-[#E9E5DC] border border-[#DCD7CC] transition-colors cursor-pointer shadow-xs self-start"
         >
           <ArrowLeft className="w-3.5 h-3.5 text-[#347A63]" />
           <span>Back to Projects List</span>
         </button>
+
+        {(canWrite || canDelete) && (
+          <div className="flex flex-wrap items-center gap-2">
+            {canWrite && onEdit && (
+              <button
+                type="button"
+                onClick={() => onEdit(project)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-[#0C2340] bg-[#FFFFFF] hover:bg-[#FAF8F4] border border-[#DCD7CC] transition-colors cursor-pointer shadow-xs"
+              >
+                <Pencil className="w-3.5 h-3.5 text-[#347A63]" />
+                <span>Edit Project</span>
+              </button>
+            )}
+
+            {canWrite && onToggleArchive && (
+              <button
+                type="button"
+                onClick={() => onToggleArchive(project)}
+                disabled={isArchiving}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-[#0C2340] bg-[#FFFFFF] hover:bg-[#FAF8F4] border border-[#DCD7CC] transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+              >
+                {isArchiving ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#347A63]" />
+                ) : isArchived ? (
+                  <ArchiveRestore className="w-3.5 h-3.5 text-[#347A63]" />
+                ) : (
+                  <Archive className="w-3.5 h-3.5 text-[#536B85]" />
+                )}
+                <span>{isArchived ? "Unarchive Project" : "Archive Project"}</span>
+              </button>
+            )}
+
+            {canDelete && onDelete && (
+              <button
+                type="button"
+                onClick={() => onDelete(project)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-[#B42318] bg-[#FDF2F2] hover:bg-[#FEE4E2] border border-[#E5B8B8] transition-colors cursor-pointer shadow-xs"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Project</span>
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Main Project Header Card */}
@@ -64,6 +131,14 @@ export function ProjectDetail({ project, onBack }: ProjectDetailProps) {
               >
                 {project.status}
               </span>
+              {isArchived && (
+                <>
+                  <span className="text-[#DCD7CC]">&bull;</span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded border bg-[#FAF8F4] text-[#536B85] border-[#DCD7CC]">
+                    Archived
+                  </span>
+                </>
+              )}
               <span className="text-[#DCD7CC]">&bull;</span>
               <span
                 className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
@@ -190,6 +265,19 @@ export function ProjectDetail({ project, onBack }: ProjectDetailProps) {
                 {project.metadata?.deliveryModel || "Monorepo Asset"}
               </div>
             </div>
+
+            {(project.metadata?.startDate || project.metadata?.dueDate) && (
+              <div>
+                <div className="text-[#536B85] font-medium mb-1 flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-[#347A63]" />
+                  <span>Timeline:</span>
+                </div>
+                <div className="text-[#0C2340] font-mono text-[11px]">
+                  {project.metadata.startDate || "Not set"} &rarr;{" "}
+                  {project.metadata.dueDate || "Not set"}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
