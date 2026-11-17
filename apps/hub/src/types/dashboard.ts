@@ -40,6 +40,15 @@ export interface ProjectMetadata {
   originalStatus?: string;
   coverImage?: string;
   archiveUrl?: string;
+  repositoryUrl?: string;
+  objectives?: string;
+  architectureSummary?: string;
+  hardwareComponents?: string[];
+  completedWork?: string[];
+  inProgressWork?: string[];
+  blockers?: string[];
+  documentationRefs?: string[];
+  ownerInputNeeded?: string;
 }
 
 export interface HubProject {
