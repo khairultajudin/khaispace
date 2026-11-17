@@ -1,6 +1,6 @@
 # Khai Space Hub — Persistence Implementation & Migration Roadmap
-**Document Version:** 2.0.2 (Status Reconciled — Future-Object Simulation PASS; Playwright Unauth/Responsive E2E 6/6 PASS)
-**Phase:** Phase 6 (Option B Deployed; Future-Obj Sim `PASS`; 5 raw `DELETE`s `NOT EXECUTED`) | Phases 7–9 (Implemented; Unauth/Responsive E2E `PASS`; Auth CRUD E2E `NOT EXECUTED`) | Phase 10 (`feature/khai-space-hub` Preview Live; Production `main` Pending Merge)
+**Document Version:** 2.1.0 (Live Authenticated Browser QA **PASS** on `hub.khaispace.com`; 5 Raw `DELETE` SQL Assertions Pending `psql`)
+**Phase:** Phase 6 (Option B Deployed; Future-Obj Sim `PASS`; 5 raw `DELETE`s `NOT EXECUTED`) | Phases 7–9 (Implemented & Live Authenticated Browser QA **PASS**) | Phase 10 (`feature/khai-space-hub` Live at `hub.khaispace.com`; `main` Merge Held Pending 5 `DELETE` SQL Assertions)
 **Application Target:** `apps/hub/`
 **Working Branch:** `feature/khai-space-hub`
 **Repository:** `khairultajudin/khaispace`
@@ -21,11 +21,11 @@ Moving Khai Space Hub from in-memory React session state to a persistent, produc
 flowchart LR
     P3["Phase 3: Architecture Planning (Completed)"] --> P4["Phase 4 & 4.1: Supabase Foundation & Types (Completed)"]
     P4 --> P5["Phase 5: Auth & Workspace Access (Completed)"]
-    P5 --> P6["Phase 6: Option B Deployed (5 DELETEs & Future-Obj Sim NOT EXECUTED)"]
-    P6 --> P7["Phase 7: Core Persistence (IMPLEMENTED — Browser QA BLOCKED)"]
-    P7 --> P8["Phase 8: Finance & Subscriptions (IMPLEMENTED — Browser QA BLOCKED)"]
-    P8 --> P9["Phase 9: Members & Settings (IMPLEMENTED — Browser QA BLOCKED)"]
-    P9 --> P10["Phase 10: Preview Live; Production main Pending Merge"]
+    P5 --> P6["Phase 6: Option B Deployed & Future-Obj Sim PASS (5 DELETEs NOT EXECUTED)"]
+    P6 --> P7["Phase 7: Core Persistence (IMPLEMENTED & LIVE QA PASS)"]
+    P7 --> P8["Phase 8: Finance & Subscriptions (IMPLEMENTED & LIVE QA PASS)"]
+    P8 --> P9["Phase 9: Members & Settings (IMPLEMENTED & LIVE QA PASS)"]
+    P9 --> P10["Phase 10: Preview Live at hub.khaispace.com; main Merge Held Pending 5 DELETEs"]
 ```
 
 ---
