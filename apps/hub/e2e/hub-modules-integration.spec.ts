@@ -360,7 +360,7 @@ test.describe('Khai Space Hub — Full Cross-Module Integration E2E', () => {
 
     // Notes NoteForm
     await page.goto('/#notes', { waitUntil: 'networkidle' });
-    await page.getByRole('button', { name: /New Note/i }).first().click();
+    await page.getByRole('button', { name: /Create Note/i }).first().click();
     await expect(page.locator('form select option', { hasText: 'Live Workspace Alpha' })).toHaveCount(1);
   });
 
