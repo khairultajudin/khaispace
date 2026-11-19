@@ -375,6 +375,8 @@ class AgyBridge:
                 "conversation_id": data.get("conversation_id") or conversation_id,
                 "response": data.get("response", ""),
                 "error": None,
+                "usage": data.get("usage", {}),
+                "duration_seconds": data.get("duration_seconds"),
             }
         except json.JSONDecodeError:
             # Some resumed turns return plain text instead of JSON; surface as success with raw output.
@@ -383,4 +385,6 @@ class AgyBridge:
                 "conversation_id": conversation_id,
                 "response": (proc.stdout or "").strip(),
                 "error": None,
+                "usage": {},
+                "duration_seconds": None,
             }
