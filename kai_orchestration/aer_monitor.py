@@ -36,9 +36,11 @@ def monitor_relay(
 
     prompt = (
         f"Task: {task}\n\n"
-        f"Workspace: {win_dir}\n"
+        f"Workspace (SCOPE BOUNDARY — do not leave it): {win_dir}\n"
         "Execute the task fully and autonomously (accept-edits). You may create/modify files, "
-        "run commands, and use git within the workspace as needed. "
+        "run commands, and use git WITHIN the workspace only. "
+        "Do NOT read, modify, or delete files outside the workspace; do NOT access other projects, "
+        "tenants, or sensitive data. "
         "Report concisely: what you did, what you tested, and the final result."
     )
 
