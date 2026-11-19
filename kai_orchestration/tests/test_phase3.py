@@ -131,6 +131,32 @@ class TestAgyBridge(unittest.TestCase):
             self.assertEqual(rec.conversation_id, "conv-123")
             self.assertEqual(rec.attempts, 1)
 
+    def test_relay_dispatch_accept_edits_auto_approve(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bridge = AgyBridge(handoff_dir=Path(tmp), agy_bin="/fake/agy", is_wsl=True)
+
+            def fake_runner(cmd, **kwargs):
+                self.assertIn("--mode", cmd)
+                self.assertEqual(cmd[cmd.index("--mode") + 1], "accept-edits")
+                self.assertIn("--dangerously-skip-permissions", cmd)
+                self.assertNotIn("--sandbox", cmd)
+                self.assertEqual(kwargs.get("cwd"), "/mnt/e/KhaiSpace")
+                self.assertEqual(kwargs.get("stdin"), subprocess.DEVNULL)
+                add_dir_idx = cmd.index("--add-dir") + 1
+                self.assertEqual(cmd[add_dir_idx], r"E:\KhaiSpace")
+                self.assertTrue(cmd[-1].startswith("-p=Task: "))
+                return SimpleNamespace(
+                    returncode=0,
+                    stdout=json.dumps({"conversation_id": "conv-relay", "status": "SUCCESS", "response": "relay ok"}),
+                    stderr="",
+                )
+
+            res = bridge.relay_dispatch("Do a small task", "/mnt/e/KhaiSpace", runner=fake_runner)
+            self.assertEqual(res["status"], "SUCCESS")
+            self.assertEqual(res["conversation_id"], "conv-relay")
+            self.assertEqual(res["response"], "relay ok")
+            self.assertIsNone(res["error"])
+
     def test_posix_and_windows_path_resolution_on_wsl(self) -> None:
         cwd1, win1 = resolve_workspace_paths("/mnt/e/KhaiSpace", is_wsl=True)
         self.assertEqual(cwd1, "/mnt/e/KhaiSpace")

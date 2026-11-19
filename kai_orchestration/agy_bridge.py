@@ -198,6 +198,7 @@ class AgyBridge:
         *,
         timeout_seconds: int = 120,
         sandbox: bool = True,
+        skip_permissions: bool = False,
         runner: Any = subprocess.run,
     ) -> HandoffRecord:
         """Dispatch a prepared handoff to Antigravity CLI (`agy -p=... --output-format json`)."""
@@ -245,6 +246,8 @@ class AgyBridge:
         ]
         if sandbox:
             cmd.append("--sandbox")
+        if skip_permissions:
+            cmd.append("--dangerously-skip-permissions")
         if rec.conversation_id:
             cmd.extend(["--conversation", rec.conversation_id])
         cmd.append(f"-p={prompt}")
@@ -295,3 +298,87 @@ class AgyBridge:
             rec.last_error = (proc.stdout or "")[:500]
 
         return self.save_record(rec)
+
+    def relay_dispatch(
+        self,
+        task: str,
+        workspace_dir: str,
+        *,
+        conversation_id: Optional[str] = None,
+        timeout_seconds: int = 300,
+        runner: Any = subprocess.run,
+    ) -> Dict[str, Any]:
+        """Lightweight AER relay: send a plain task to Antigravity in accept-edits auto-approve mode.
+
+        Uses a minimal prompt (no full EngineeringBrief) to keep Hermes token usage low.
+        Returns {"status", "conversation_id", "response", "error"}.
+        """
+        if not self.agy_bin:
+            return {"status": "ERROR", "conversation_id": conversation_id, "response": "", "error": "Antigravity CLI (agy) binary not found."}
+
+        try:
+            subprocess_cwd, win_add_dir = resolve_workspace_paths(workspace_dir, is_wsl=self._is_wsl)
+        except ValueError as exc:
+            return {"status": "INVALID_WORKSPACE_CWD", "conversation_id": conversation_id, "response": "", "error": str(exc)}
+
+        prompt = (
+            f"Task: {task}\n\n"
+            f"Workspace: {win_add_dir}\n"
+            "Execute the task fully and autonomously (accept-edits). You may create/modify files, "
+            "run commands, and use git within the workspace as needed. "
+            "Report concisely: what you did, what you tested, and the final result."
+        )
+
+        cmd: List[str] = [
+            self.agy_bin,
+            "--output-format", "json",
+            "--mode", "accept-edits",
+            "--dangerously-skip-permissions",
+            "--print-timeout", f"{timeout_seconds}s",
+            "--add-dir", win_add_dir,
+        ]
+        if conversation_id:
+            cmd.extend(["--conversation", conversation_id])
+        cmd.append(f"-p={prompt}")
+
+        try:
+            proc = runner(
+                cmd,
+                cwd=subprocess_cwd,
+                stdin=subprocess.DEVNULL,
+                capture_output=True,
+                text=True,
+                timeout=timeout_seconds + 15,
+            )
+        except Exception as exc:
+            return {"status": "ERROR", "conversation_id": conversation_id, "response": "", "error": f"{type(exc).__name__}: {exc}"}
+
+        combined_output = f"{proc.stderr or ''}\n{proc.stdout or ''}"
+        auth_err = detect_auth_failure(combined_output)
+        if auth_err:
+            return {"status": "AUTH_FAILED", "conversation_id": conversation_id, "response": "", "error": auth_err}
+
+        if proc.returncode != 0:
+            return {
+                "status": f"EXIT_{proc.returncode}",
+                "conversation_id": conversation_id,
+                "response": "",
+                "error": (proc.stderr or proc.stdout or "").strip()[:1000],
+            }
+
+        try:
+            data = json.loads(proc.stdout.strip())
+            return {
+                "status": data.get("status", "SUCCESS"),
+                "conversation_id": data.get("conversation_id") or conversation_id,
+                "response": data.get("response", ""),
+                "error": None,
+            }
+        except json.JSONDecodeError:
+            # Some resumed turns return plain text instead of JSON; surface as success with raw output.
+            return {
+                "status": "SUCCESS",
+                "conversation_id": conversation_id,
+                "response": (proc.stdout or "").strip(),
+                "error": None,
+            }
