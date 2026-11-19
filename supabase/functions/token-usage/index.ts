@@ -9,7 +9,7 @@ const VALID_SOURCES = new Set(["hermes", "antigravity"]);
 const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
 };
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -107,8 +107,8 @@ Deno.serve(async (req: Request) => {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
   }
 
-  if (req.method !== "GET" && req.method !== "POST") {
-    return jsonResponse({ error: "Method not allowed. Use GET or POST." }, 405);
+  if (req.method !== "GET" && req.method !== "POST" && req.method !== "DELETE") {
+    return jsonResponse({ error: "Method not allowed. Use GET, POST, or DELETE." }, 405);
   }
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
@@ -169,6 +169,29 @@ Deno.serve(async (req: Request) => {
     }
 
     return jsonResponse({ data: data ?? [] });
+  }
+
+  // DELETE: remove token_usage rows (KAI_HUB_TOKEN or owner JWT only)
+  if (req.method === "DELETE") {
+    const url = new URL(req.url);
+    const idsParam = url.searchParams.get("ids")?.trim();
+    if (!idsParam) {
+      return jsonResponse({ error: "ids query param required (comma-separated UUIDs)" }, 400);
+    }
+    const ids = idsParam.split(",").map((s) => s.trim()).filter(Boolean);
+    if (ids.length === 0 || ids.length > 200) {
+      return jsonResponse({ error: "ids must be 1-200 UUIDs" }, 400);
+    }
+    for (const id of ids) {
+      if (!UUID_RE.test(id)) {
+        return jsonResponse({ error: `invalid id: ${id}` }, 400);
+      }
+    }
+    const { error, count } = await db.from("token_usage").delete({ count: "exact" }).in("id", ids);
+    if (error) {
+      return jsonResponse({ error: error.message }, 500);
+    }
+    return jsonResponse({ deleted: count ?? 0 });
   }
 
   // POST: insert a new token_usage record
