@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import {
   Search,
   X,
@@ -36,7 +36,11 @@ const STATUS_FILTERS: { id: "ALL" | ProjectStatus; label: string }[] = [
   { id: "Planning", label: "Planning" },
 ];
 
-export function ProjectsView() {
+interface ProjectsViewProps {
+  resetSignal?: number;
+}
+
+export function ProjectsView({ resetSignal = 0 }: ProjectsViewProps = {}) {
   const { activeWorkspace } = useWorkspace();
   const { user } = useAuth();
   const [projects, setProjects] = useState<HubProject[]>([]);
@@ -47,15 +51,40 @@ export function ProjectsView() {
   const [selectedStatus, setSelectedStatus] = useState<"ALL" | ProjectStatus>("ALL");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [sortBy, setSortBy] = useState<"newest" | "title-asc" | "status">("newest");
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(() => {
+  const resetSignalRef = useRef(resetSignal);
+  const [selectionState, setSelectionState] = useState<{
+    projectId: string | null;
+    nonce: number;
+  }>(() => {
     if (typeof window !== "undefined") {
-      const match = window.location.hash.match(/^#project-([a-z0-9-]+)$/);
+      const match = window.location.hash.match(/^#project-([a-z0-9-]+)$/i);
       if (match) {
-        return match[1];
+        return { projectId: match[1], nonce: resetSignal };
       }
     }
-    return null;
+    return { projectId: null, nonce: resetSignal };
   });
+
+  const selectedProjectId =
+    selectionState.nonce === resetSignal ? selectionState.projectId : null;
+
+  useEffect(() => {
+    resetSignalRef.current = resetSignal;
+  }, [resetSignal]);
+
+  const handleSelectProject = useCallback((projectId: string | null) => {
+    setSelectionState({ projectId, nonce: resetSignalRef.current });
+    if (typeof window !== "undefined") {
+      const targetHash = projectId ? `#project-${projectId}` : "#projects";
+      if (window.location.hash !== targetHash) {
+        window.history.pushState(
+          null,
+          "",
+          `${window.location.pathname}${window.location.search}${targetHash}`
+        );
+      }
+    }
+  }, []);
 
   const [viewMode, setViewMode] = useState<"active" | "archived">("active");
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -90,17 +119,19 @@ export function ProjectsView() {
 
   useEffect(() => {
     const handleHash = () => {
-      const match = window.location.hash.match(/^#project-([a-z0-9-]+)$/);
+      const match = window.location.hash.match(/^#project-([a-z0-9-]+)$/i);
       if (match) {
-        setSelectedProjectId(match[1]);
-      } else if (window.location.hash === "#projects") {
-        setSelectedProjectId(null);
+        setSelectionState({ projectId: match[1], nonce: resetSignalRef.current });
+      } else {
+        setSelectionState({ projectId: null, nonce: resetSignalRef.current });
       }
     };
 
     window.addEventListener("hashchange", handleHash);
+    window.addEventListener("popstate", handleHash);
     return () => {
       window.removeEventListener("hashchange", handleHash);
+      window.removeEventListener("popstate", handleHash);
     };
   }, []);
 
@@ -151,7 +182,7 @@ export function ProjectsView() {
           : `Restored "${project.title}" to active projects.`
       );
       if (nextArchived && selectedProjectId === project.id) {
-        setSelectedProjectId(null);
+        handleSelectProject(null);
       }
       await loadProjects();
     } catch (err) {
@@ -172,7 +203,7 @@ export function ProjectsView() {
     await deleteProject(activeWorkspace.id, project.id, project.title);
     setDeletingProject(null);
     if (selectedProjectId === project.id) {
-      setSelectedProjectId(null);
+      handleSelectProject(null);
     }
     setFeedbackBanner(`Deleted project "${project.title}".`);
     await loadProjects();
@@ -294,7 +325,7 @@ export function ProjectsView() {
         <>
           <ProjectDetail
             project={selectedProject}
-            onBack={() => setSelectedProjectId(null)}
+            onBack={() => handleSelectProject(null)}
             canWrite={canWrite}
             canDelete={canDelete}
             isArchiving={archivingProjectId === selectedProject.id}
@@ -550,7 +581,7 @@ export function ProjectsView() {
             <ProjectCard
               key={project.id}
               project={project}
-              onSelectProject={setSelectedProjectId}
+              onSelectProject={handleSelectProject}
               canWrite={canWrite}
               canDelete={canDelete}
               onEditProject={(proj) => setEditingProject(proj)}

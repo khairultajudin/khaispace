@@ -440,5 +440,80 @@ test.describe('Projects Module — Edit, Archive & Delete Lifecycle E2E', () => 
     );
     expect(modalOverflow).toBe(false);
   });
+
+  test('Sidebar Projects navigation always opens Projects Directory list rather than a stale project detail', async ({ page }) => {
+    await setupMockHubSession(page, {
+      role: 'Owner',
+      initialProjects: [
+        {
+          id: 'proj-nav-1',
+          workspace_id: '22222222-2222-4222-8222-222222222222',
+          slug: 'alpha-nav',
+          title: 'Alpha Nav Project',
+          category: 'Engineering',
+          status: 'Active',
+          location: 'apps/alpha',
+          description: 'First project for sidebar navigation regression test.',
+          full_description: null,
+          tags: ['Nav'],
+          metadata: {},
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          created_by: '11111111-1111-4111-8111-111111111111',
+        },
+        {
+          id: 'proj-nav-2',
+          workspace_id: '22222222-2222-4222-8222-222222222222',
+          slug: 'beta-nav',
+          title: 'Beta Nav Project',
+          category: 'Design',
+          status: 'Planning',
+          location: 'apps/beta',
+          description: 'Second project for sidebar navigation regression test.',
+          full_description: null,
+          tags: ['Nav'],
+          metadata: {},
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          created_by: '11111111-1111-4111-8111-111111111111',
+        },
+      ],
+    });
+
+    // 1. Land directly on a single project detail via deep link (#project-proj-nav-1)
+    await page.goto('/#project-proj-nav-1', { waitUntil: 'networkidle' });
+    await expect(page.getByRole('button', { name: /Back to Projects List/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Alpha Nav Project' })).toBeVisible();
+
+    // 2. Clicking "Projects" in the sidebar while on a project detail returns to the Projects Directory list
+    await page.locator('aside nav').getByRole('button', { name: /^Projects$/i }).click();
+    await expect(page.getByRole('heading', { name: /Projects & Workspaces/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'View details for Alpha Nav Project' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'View details for Beta Nav Project' })).toBeVisible();
+    expect(await page.evaluate(() => window.location.hash)).toBe('#projects');
+
+    // 3. Select a project card to open its detail, then navigate to Overview, then back to Projects via sidebar
+    await page.getByRole('button', { name: 'View details for Beta Nav Project' }).click();
+    await expect(page.getByRole('button', { name: /Back to Projects List/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Beta Nav Project' })).toBeVisible();
+    expect(await page.evaluate(() => window.location.hash)).toBe('#project-proj-nav-2');
+
+    await page.locator('aside nav').getByRole('button', { name: /^Overview$/i }).click();
+    await expect(page.getByRole('heading', { name: /Welcome to Khai Space Hub/i })).toBeVisible();
+    expect(await page.evaluate(() => window.location.hash)).toBe('');
+
+    await page.locator('aside nav').getByRole('button', { name: /^Projects$/i }).click();
+    await expect(page.getByRole('heading', { name: /Projects & Workspaces/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'View details for Alpha Nav Project' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'View details for Beta Nav Project' })).toBeVisible();
+    expect(await page.evaluate(() => window.location.hash)).toBe('#projects');
+
+    // 4. Open a project detail, click "Back to Projects List", verify hash clears to #projects
+    await page.getByRole('button', { name: 'View details for Alpha Nav Project' }).click();
+    await expect(page.getByRole('button', { name: /Back to Projects List/i })).toBeVisible();
+    await page.getByRole('button', { name: /Back to Projects List/i }).click();
+    await expect(page.getByRole('heading', { name: /Projects & Workspaces/i })).toBeVisible();
+    expect(await page.evaluate(() => window.location.hash)).toBe('#projects');
+  });
 });
 

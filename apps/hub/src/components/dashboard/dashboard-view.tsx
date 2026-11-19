@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { NavSection } from "../../types/dashboard";
 import { Sidebar } from "../layout/sidebar";
 import { Header } from "../layout/header";
@@ -101,10 +101,26 @@ function DashboardShell() {
     return false;
   });
 
+  const [sectionNavNonce, setSectionNavNonce] = useState(0);
+
+  const handleSelectSection = useCallback((section: NavSection) => {
+    setCurrentSection(section);
+    setSectionNavNonce((prev) => prev + 1);
+    if (typeof window !== "undefined") {
+      const targetHash = section === "overview" ? "" : `#${section}`;
+      if (window.location.hash !== targetHash) {
+        const nextUrl = `${window.location.pathname}${window.location.search}${targetHash}`;
+        window.history.pushState(null, "", nextUrl);
+      }
+    }
+  }, []);
+
   React.useEffect(() => {
     const handleHash = () => {
       const rawHash = window.location.hash.replace("#", "");
-      if (VALID_SECTIONS.includes(rawHash as NavSection)) {
+      if (rawHash === "") {
+        setCurrentSection("overview");
+      } else if (VALID_SECTIONS.includes(rawHash as NavSection)) {
         setCurrentSection(rawHash as NavSection);
       } else if (rawHash.startsWith("project-")) {
         setCurrentSection("projects");
@@ -161,7 +177,7 @@ function DashboardShell() {
       {/* Sidebar Navigation */}
       <Sidebar
         currentSection={currentSection}
-        onSelectSection={setCurrentSection}
+        onSelectSection={handleSelectSection}
         mobileOpen={mobileMenuOpen}
         onCloseMobile={() => setMobileMenuOpen(false)}
       />
@@ -196,22 +212,22 @@ function DashboardShell() {
           ) : currentSection === "overview" ? (
             <>
               {/* Section 1: Welcome Header & Quick Jump */}
-              <WelcomeBanner onNavigate={setCurrentSection} />
+              <WelcomeBanner onNavigate={handleSelectSection} />
 
               {/* Section 2: Summary Metrics Cards */}
-              <SummaryMetrics onNavigate={setCurrentSection} />
+              <SummaryMetrics onNavigate={handleSelectSection} />
 
               {/* Section 3: Project Catalog Overview */}
-              <ProjectCatalog onNavigateToProjects={setCurrentSection} />
+              <ProjectCatalog onNavigateToProjects={handleSelectSection} />
 
               {/* Section 4 & 5: Activity Feed & Upcoming Tasks */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <RecentActivity />
-                <UpcomingTasks onNavigateToTasks={() => setCurrentSection("tasks")} />
+                <UpcomingTasks onNavigateToTasks={() => handleSelectSection("tasks")} />
               </div>
             </>
           ) : currentSection === "projects" ? (
-            <ProjectsView />
+            <ProjectsView resetSignal={sectionNavNonce} />
           ) : currentSection === "tasks" ? (
             <TasksView />
           ) : currentSection === "finance" ? (
@@ -225,7 +241,7 @@ function DashboardShell() {
           ) : (
             <ComingSoonView
               section={currentSection}
-              onBackToOverview={() => setCurrentSection("overview")}
+              onBackToOverview={() => handleSelectSection("overview")}
             />
           )}
         </main>
