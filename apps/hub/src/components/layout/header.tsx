@@ -17,6 +17,7 @@ const SECTION_TITLES: Record<NavSection, string> = {
   tasks: "Tasks & Milestones",
   finance: "Finance & ROI",
   subscriptions: "AI Subscriptions",
+  tokens: "Token Monitor",
   notes: "Notes & Decisions",
   settings: "Members & Settings",
 };

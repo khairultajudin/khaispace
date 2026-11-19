@@ -4,6 +4,7 @@ export type NavSection =
   | "tasks"
   | "finance"
   | "subscriptions"
+  | "tokens"
   | "notes"
   | "settings";
 
@@ -258,4 +259,21 @@ export interface WorkspaceSettings {
     workspaceActivity: boolean;
     subscriptionRenewals: boolean;
   };
+}
+
+export type TokenUsageSource = "hermes" | "antigravity";
+
+export interface TokenUsageRecord {
+  id: string;
+  created_at: string;
+  command: string;
+  source: TokenUsageSource;
+  model: string | null;
+  input_tokens: number;
+  output_tokens: number;
+  reasoning_tokens: number;
+  cache_read_tokens: number;
+  total_tokens: number;
+  cost_usd: number | null;
+  workspace_id: string | null;
 }

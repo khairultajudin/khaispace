@@ -7,6 +7,7 @@ import {
   CheckSquare,
   TrendingUp,
   Bot,
+  Gauge,
   FileText,
   Settings,
   X,
@@ -62,6 +63,12 @@ const NAV_ITEMS: NavItemConfig[] = [
     id: "subscriptions",
     label: "AI Subscriptions",
     icon: Bot,
+    isReady: true,
+  },
+  {
+    id: "tokens",
+    label: "Tokens",
+    icon: Gauge,
     isReady: true,
   },
   {

@@ -519,6 +519,59 @@ export type Database = {
           },
         ]
       }
+      token_usage: {
+        Row: {
+          cache_read_tokens: number
+          command: string
+          cost_usd: number | null
+          created_at: string
+          id: string
+          input_tokens: number
+          model: string | null
+          output_tokens: number
+          reasoning_tokens: number
+          source: string
+          total_tokens: number
+          workspace_id: string | null
+        }
+        Insert: {
+          cache_read_tokens?: number
+          command: string
+          cost_usd?: number | null
+          created_at?: string
+          id?: string
+          input_tokens?: number
+          model?: string | null
+          output_tokens?: number
+          reasoning_tokens?: number
+          source: string
+          total_tokens?: number
+          workspace_id?: string | null
+        }
+        Update: {
+          cache_read_tokens?: number
+          command?: string
+          cost_usd?: number | null
+          created_at?: string
+          id?: string
+          input_tokens?: number
+          model?: string | null
+          output_tokens?: number
+          reasoning_tokens?: number
+          source?: string
+          total_tokens?: number
+          workspace_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "token_usage_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workspace_invitations: {
         Row: {
           created_at: string

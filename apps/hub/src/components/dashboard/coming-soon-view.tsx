@@ -45,6 +45,13 @@ const SECTION_METADATA: Record<
       "Centralized ledger to monitor AI model API budgets (Gemini, Claude, Midjourney, OpenAI) and recurring software tooling renewals.",
     phase: "Phase 2E",
   },
+  tokens: {
+    title: "AI Token Usage Monitor",
+    subtitle: "Real-time per-command token and cost telemetry",
+    description:
+      "Live monitoring of token consumption and cost across Hermes (DeepSeek) and Antigravity (Gemini).",
+    phase: "Live",
+  },
   notes: {
     title: "Notes & Architectural Decisions",
     subtitle: "Design records, meeting notes, and technical ADRs",

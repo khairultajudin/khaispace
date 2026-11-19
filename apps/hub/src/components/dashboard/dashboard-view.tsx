@@ -14,6 +14,7 @@ import { ProjectsView } from "../projects/projects-view";
 import { TasksView } from "../tasks/tasks-view";
 import { FinanceView } from "../finance/finance-view";
 import { SubscriptionsView } from "../subscriptions/subscriptions-view";
+import { TokenMonitorView } from "../tokens/token-monitor-view";
 import { NotesView } from "../notes/notes-view";
 import { SettingsView } from "../settings/settings-view";
 import { WorkspaceProvider, useWorkspace } from "../../hooks/use-workspace";
@@ -25,6 +26,7 @@ const VALID_SECTIONS: NavSection[] = [
   "tasks",
   "finance",
   "subscriptions",
+  "tokens",
   "notes",
   "settings",
 ];
@@ -234,6 +236,8 @@ function DashboardShell() {
             <FinanceView />
           ) : currentSection === "subscriptions" ? (
             <SubscriptionsView />
+          ) : currentSection === "tokens" ? (
+            <TokenMonitorView />
           ) : currentSection === "notes" ? (
             <NotesView />
           ) : currentSection === "settings" ? (
