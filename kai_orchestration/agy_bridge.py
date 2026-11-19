@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from .approval import evaluate_action_risk
 from .brief_generator import EngineeringBrief, generate_brief_markdown
@@ -17,6 +18,86 @@ from .lifecycle import Phase3State, can_transition
 
 WSL_AGY_PATH = "/mnt/c/Users/user/AppData/Local/agy/bin/agy.exe"
 DEFAULT_HANDOFF_DIR = Path(os.environ.get("HERMES_HOME", Path.home() / ".hermes")) / "handoffs"
+
+_WSL_MNT_RE = re.compile(r"^/mnt/([a-zA-Z])(?:/(.*))?$")
+_WIN_DRIVE_RE = re.compile(r"^([a-zA-Z]):[\\/](.*)$")
+_AUTH_FAILURE_MARKERS = (
+    "authentication required",
+    "silent auth failed",
+    "oauth2/auth",
+    "authentication failed or timed out",
+    "not authenticated, trying silent auth",
+    "paste the authorization code",
+)
+
+
+def _detect_wsl() -> bool:
+    """Return True when executing inside WSL2 on Linux."""
+    if os.name != "posix":
+        return False
+    try:
+        return "microsoft" in Path("/proc/version").read_text(encoding="utf-8", errors="ignore").lower()
+    except OSError:
+        return False
+
+
+def detect_auth_failure(output: str) -> Optional[str]:
+    """Detect Antigravity CLI authentication failures and return a redacted owner-facing notice."""
+    lower = (output or "").lower()
+    if any(marker in lower for marker in _AUTH_FAILURE_MARKERS):
+        return (
+            "Antigravity CLI authentication failed (silent auth unavailable or OAuth required). "
+            "Verify Windows Credential Manager login via interactive `agy` on Windows and ensure "
+            "a Windows-mounted workspace path (/mnt/<drive>/... or <D>:\\...) is used."
+        )
+    return None
+
+
+def resolve_workspace_paths(workspace_dir: str, *, is_wsl: Optional[bool] = None) -> Tuple[str, str]:
+    """Resolve (subprocess_cwd, windows_add_dir) for Win32 agy.exe execution.
+
+    On WSL2, rejects Linux ext4 paths (e.g. /home/user/.hermes) because WSL2 maps them
+    to UNC \\\\wsl.localhost\\... paths that break agy.exe silent authentication.
+    """
+    raw = (workspace_dir or "").strip()
+    if not raw:
+        raise ValueError("workspace_dir must be non-empty.")
+
+    wsl_mode = _detect_wsl() if is_wsl is None else is_wsl
+
+    mnt_match = _WSL_MNT_RE.match(raw)
+    win_match = _WIN_DRIVE_RE.match(raw)
+
+    if wsl_mode:
+        if mnt_match:
+            drive = mnt_match.group(1).upper()
+            rest = (mnt_match.group(2) or "").rstrip("/")
+            win_path = f"{drive}:\\" + rest.replace("/", "\\") if rest else f"{drive}:\\"
+            wsl_cwd = f"/mnt/{drive.lower()}/{rest}" if rest else f"/mnt/{drive.lower()}"
+            return wsl_cwd, win_path
+        if win_match:
+            drive = win_match.group(1).upper()
+            rest = win_match.group(2).replace("\\", "/").strip("/")
+            win_path = f"{drive}:\\" + rest.replace("/", "\\") if rest else f"{drive}:\\"
+            wsl_cwd = f"/mnt/{drive.lower()}/{rest}" if rest else f"/mnt/{drive.lower()}"
+            return wsl_cwd, win_path
+        raise ValueError(
+            f"Unsupported Linux ext4 workspace CWD for Win32 agy.exe: '{raw}'. "
+            "Use a Windows-mounted drive path (/mnt/<drive>/... or <D>:\\...)."
+        )
+
+    # Native Windows execution
+    if mnt_match:
+        drive = mnt_match.group(1).upper()
+        rest = (mnt_match.group(2) or "").rstrip("/")
+        win_path = f"{drive}:\\" + rest.replace("/", "\\") if rest else f"{drive}:\\"
+        return win_path, win_path
+    if win_match:
+        drive = win_match.group(1).upper()
+        rest = win_match.group(2).replace("/", "\\").rstrip("\\")
+        win_path = f"{drive}:\\{rest}" if rest else f"{drive}:\\"
+        return win_path, win_path
+    return raw, raw
 
 
 def resolve_agy_binary() -> Optional[str]:
@@ -45,10 +126,17 @@ class HandoffRecord:
 class AgyBridge:
     """Manages idempotent dispatch, persistence, and recovery for Antigravity jobs."""
 
-    def __init__(self, handoff_dir: Optional[Path] = None, agy_bin: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        handoff_dir: Optional[Path] = None,
+        agy_bin: Optional[str] = None,
+        *,
+        is_wsl: Optional[bool] = None,
+    ) -> None:
         self.handoff_dir = Path(handoff_dir) if handoff_dir else DEFAULT_HANDOFF_DIR
         self.handoff_dir.mkdir(parents=True, exist_ok=True)
         self.agy_bin = agy_bin or resolve_agy_binary()
+        self._is_wsl = _detect_wsl() if is_wsl is None else is_wsl
 
     def _record_path(self, brief_id: str) -> Path:
         safe_id = "".join(c for c in brief_id if c.isalnum() or c in ("-", "_"))
@@ -133,6 +221,14 @@ class AgyBridge:
         if not can_transition(current, Phase3State.DISPATCHED):
             raise ValueError(f"Cannot dispatch from state {current.value}")
 
+        try:
+            subprocess_cwd, win_add_dir = resolve_workspace_paths(rec.workspace_dir, is_wsl=self._is_wsl)
+        except ValueError as exc:
+            rec.state = Phase3State.BLOCKED.value
+            rec.last_status = "INVALID_WORKSPACE_CWD"
+            rec.last_error = str(exc)
+            return self.save_record(rec)
+
         brief_md = self._brief_path(brief_id).read_text(encoding="utf-8")
         prompt = (
             f"Execute the following KAI Engineering Brief in {rec.mode} mode.\n"
@@ -145,7 +241,7 @@ class AgyBridge:
             "--output-format", "json",
             "--mode", rec.mode,
             "--print-timeout", f"{timeout_seconds}s",
-            "--add-dir", rec.workspace_dir,
+            "--add-dir", win_add_dir,
         ]
         if sandbox:
             cmd.append("--sandbox")
@@ -158,10 +254,26 @@ class AgyBridge:
         self.save_record(rec)
 
         try:
-            proc = runner(cmd, capture_output=True, text=True, timeout=timeout_seconds + 15)
+            proc = runner(
+                cmd,
+                cwd=subprocess_cwd,
+                stdin=subprocess.DEVNULL,
+                capture_output=True,
+                text=True,
+                timeout=timeout_seconds + 15,
+            )
         except Exception as exc:
             rec.state = Phase3State.BLOCKED.value
             rec.last_error = f"Dispatch exception: {type(exc).__name__}: {exc}"
+            return self.save_record(rec)
+
+        combined_output = f"{proc.stderr or ''}\n{proc.stdout or ''}"
+        auth_err = detect_auth_failure(combined_output)
+        if auth_err:
+            rec.state = Phase3State.BLOCKED.value
+            rec.last_status = "AUTH_FAILED"
+            rec.last_error = auth_err
+            rec.attempts = rec.max_attempts  # Fast-fail: prevent repeated OAuth timeouts
             return self.save_record(rec)
 
         if proc.returncode != 0:

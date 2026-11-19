@@ -11,7 +11,13 @@ from .lifecycle import (
 )
 from .approval import AutonomyLevel, ApprovalDecision, evaluate_action_risk
 from .brief_generator import EngineeringBrief, generate_brief_markdown, validate_brief
-from .agy_bridge import HandoffRecord, AgyBridge, resolve_agy_binary
+from .agy_bridge import (
+    HandoffRecord,
+    AgyBridge,
+    resolve_agy_binary,
+    resolve_workspace_paths,
+    detect_auth_failure,
+)
 from .verifier import VerificationResult, verify_workspace_changes
 
 __all__ = [

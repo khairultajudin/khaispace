@@ -20,10 +20,12 @@ from kai_orchestration import (  # type: ignore[import-not-found]
     EngineeringBrief,
     Phase3State,
     can_transition,
+    detect_auth_failure,
     evaluate_action_risk,
     generate_brief_markdown,
     map_to_hub_status,
     map_to_kanban_status,
+    resolve_workspace_paths,
     verify_workspace_changes,
 )
 
@@ -107,13 +109,17 @@ class TestAgyBridge(unittest.TestCase):
 
     def test_dispatch_success_and_revision_loop(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            bridge = AgyBridge(handoff_dir=Path(tmp), agy_bin="/fake/agy")
+            bridge = AgyBridge(handoff_dir=Path(tmp), agy_bin="/fake/agy", is_wsl=True)
             brief = _sample_brief(brief_id="KAI-DEV-1")
-            bridge.prepare_handoff(brief, idempotency_key="k2", workspace_dir=tmp, mode="plan")
+            bridge.prepare_handoff(brief, idempotency_key="k2", workspace_dir="/mnt/e/KhaiSpace", mode="plan")
 
             def fake_runner(cmd, **kwargs):
                 self.assertIn("--sandbox", cmd)
                 self.assertNotIn("--dangerously-skip-permissions", cmd)
+                self.assertEqual(kwargs.get("cwd"), "/mnt/e/KhaiSpace")
+                self.assertEqual(kwargs.get("stdin"), subprocess.DEVNULL)
+                add_dir_idx = cmd.index("--add-dir") + 1
+                self.assertEqual(cmd[add_dir_idx], r"E:\KhaiSpace")
                 return SimpleNamespace(
                     returncode=0,
                     stdout=json.dumps({"conversation_id": "conv-123", "status": "SUCCESS", "response": "Done"}),
@@ -124,6 +130,55 @@ class TestAgyBridge(unittest.TestCase):
             self.assertEqual(rec.state, Phase3State.REVIEW_REQUIRED.value)
             self.assertEqual(rec.conversation_id, "conv-123")
             self.assertEqual(rec.attempts, 1)
+
+    def test_posix_and_windows_path_resolution_on_wsl(self) -> None:
+        cwd1, win1 = resolve_workspace_paths("/mnt/e/KhaiSpace", is_wsl=True)
+        self.assertEqual(cwd1, "/mnt/e/KhaiSpace")
+        self.assertEqual(win1, r"E:\KhaiSpace")
+
+        cwd2, win2 = resolve_workspace_paths(r"E:\KhaiSpace\apps\hub", is_wsl=True)
+        self.assertEqual(cwd2, "/mnt/e/KhaiSpace/apps/hub")
+        self.assertEqual(win2, r"E:\KhaiSpace\apps\hub")
+
+    def test_rejects_linux_ext4_cwd_on_wsl(self) -> None:
+        with self.assertRaises(ValueError):
+            resolve_workspace_paths("/home/user/.hermes", is_wsl=True)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            bridge = AgyBridge(handoff_dir=Path(tmp), agy_bin="/fake/agy", is_wsl=True)
+            brief = _sample_brief(brief_id="KAI-EXT4")
+            bridge.prepare_handoff(brief, idempotency_key="k-ext4", workspace_dir="/home/user/.hermes")
+            called = False
+
+            def should_not_run(*args, **kwargs):
+                nonlocal called
+                called = True
+                return SimpleNamespace(returncode=0, stdout="{}", stderr="")
+
+            rec = bridge.dispatch("KAI-EXT4", runner=should_not_run)
+            self.assertFalse(called)
+            self.assertEqual(rec.state, Phase3State.BLOCKED.value)
+            self.assertEqual(rec.last_status, "INVALID_WORKSPACE_CWD")
+
+    def test_auth_failure_fast_fails_without_oauth_url_leak(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bridge = AgyBridge(handoff_dir=Path(tmp), agy_bin="/fake/agy", is_wsl=True)
+            brief = _sample_brief(brief_id="KAI-AUTH-FAIL")
+            bridge.prepare_handoff(brief, idempotency_key="k-auth", workspace_dir="/mnt/e/KhaiSpace")
+
+            def auth_fail_runner(cmd, **kwargs):
+                return SimpleNamespace(
+                    returncode=1,
+                    stdout="Authentication required. https://accounts.google.com/o/oauth2/auth?code_challenge=abc",
+                    stderr="Print mode: silent auth failed",
+                )
+
+            rec = bridge.dispatch("KAI-AUTH-FAIL", runner=auth_fail_runner)
+            self.assertEqual(rec.state, Phase3State.BLOCKED.value)
+            self.assertEqual(rec.last_status, "AUTH_FAILED")
+            self.assertEqual(rec.attempts, rec.max_attempts)
+            self.assertNotIn("oauth2/auth", rec.last_error or "")
+            self.assertIsNotNone(detect_auth_failure("Print mode: silent auth failed"))
 
     def test_retry_limit_blocks_after_max_attempts(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
