@@ -1,180 +1,220 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowRight, CheckCircle2, Compass, Cpu, Sparkles } from "lucide-react";
 import { CollaborationCta } from "@/components/sections/collaboration-cta";
+import { HowWeWork } from "@/components/sections/how-we-work";
+import { ButtonLink } from "@/components/ui/button-link";
 import { Container } from "@/components/ui/container";
-import { DisciplineMarker, type DisciplineKind } from "@/components/ui/discipline-marker";
 import { PageIntro } from "@/components/ui/page-intro";
 import { SectionHeading } from "@/components/ui/section-heading";
+import { ServiceIcon } from "@/components/ui/service-icon";
+import { services } from "@/content/services";
+import { studioTechAreas } from "@/content/studio";
 
 export const metadata: Metadata = {
   title: "About",
   description:
-    "Khai Space is a personal technology studio built around curiosity, experimentation and practical problem-solving.",
+    "Learn about Khai Space — an independent interactive digital studio turning practical ideas into web applications, AI workflows, IoT prototypes, and custom digital solutions.",
   alternates: { canonical: "/about" },
 };
 
-const philosophy = [
+const studioPrinciples = [
   {
-    title: "Curiosity",
-    text: "Every project starts with a question worth asking, and a willingness to look at it from more than one angle.",
+    icon: Compass,
+    title: "Curiosity Grounded in Real Use",
+    text: "We enjoy exploring new technology, but every studio project is judged by whether it solves a real problem simply and reliably.",
   },
   {
-    title: "Experimentation",
-    text: "Ideas are tested by making them. Prototypes, small builds and honest iteration beat speculation.",
+    icon: Cpu,
+    title: "Cross-Disciplinary Craft",
+    text: "Software, structured AI workflows, environmental sensing, and physical 3D prototyping often reinforce each other when treated as one connected craft.",
   },
   {
-    title: "Practical problem-solving",
-    text: "The goal is something that works in the real world: simple, useful and understandable.",
+    icon: Sparkles,
+    title: "Transparent Scope & Honest Delivery",
+    text: "No exaggerated claims, fabricated metrics, or bloated retainers. We communicate trade-offs clearly and build incrementally.",
   },
 ] as const;
 
-const approach = [
-  { step: "Explore", text: "Understand the problem, the context and the constraints." },
-  { step: "Design", text: "Shape a clear concept through sketches, models and structure." },
-  { step: "Build", text: "Turn the concept into working software or a physical prototype." },
-  { step: "Refine", text: "Test, learn and improve until it does its job well." },
+const verifiedFocusTrack = [
+  "Production multi-tenant web applications for small-business operations and fee workflows",
+  "Custom digital publishing suites combining interactive reading, data visualization, and web comics",
+  "Self-contained web utilities and static-first sites deployed cleanly on Cloudflare Pages",
+  "Hands-on passive hydroponics growth tracking, ESP32 sensing experiments, and 3D CAD prototyping",
+  "Structured AI triage prototypes built around deterministic schema validation and human review",
 ] as const;
-
-const interests: ReadonlyArray<{ label: string; marker: DisciplineKind }> = [
-  { label: "Software", marker: "software" },
-  { label: "Engineering", marker: "research" },
-  { label: "Embedded systems", marker: "iot" },
-  { label: "Prototyping", marker: "prototype" },
-];
 
 export default function AboutPage() {
   return (
     <>
       <PageIntro
-        eyebrow="About"
-        title="Curiosity drives creation."
-        lead="Khai Space is a personal technology studio built around curiosity, experimentation, and practical problem-solving."
+        eyebrow="About Khai Space"
+        title="Turning practical ideas into reliable digital solutions."
+        lead="Khai Space is an independent interactive digital studio based in Malaysia — built around hands-on software engineering, applied AI workflows, and physical-digital prototyping."
+        actions={
+          <>
+            <ButtonLink href="/start-a-project">
+              <span>Start a Project</span>
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </ButtonLink>
+            <ButtonLink href="/projects" variant="secondary">
+              Explore Studio Work
+            </ButtonLink>
+          </>
+        }
       />
 
-      <section aria-labelledby="what-title" className="py-20 sm:py-28">
-        <Container className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
+      {/* Studio Story & Principles */}
+      <section aria-labelledby="studio-story-title" className="py-16 sm:py-24">
+        <Container className="grid gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
           <SectionHeading
-            id="what-title"
-            eyebrow="What it is"
-            title="An independent studio for ideas that need building."
+            id="studio-story-title"
+            eyebrow="Studio Philosophy"
+            title="Built for people who have a real problem worth solving."
+            description="Great technology does not have to feel intimidating or over-engineered. Khai Space bridges the gap between an early idea and a working, maintainable product."
           />
-          <div className="relative border-l border-foreground/30 pl-6 sm:pl-10">
-            <span
-              aria-hidden
-              className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 bg-accent"
-            />
-            <div className="max-w-xl space-y-6 text-lg leading-relaxed text-muted">
-              <p>
-                Khai Space is an independent technology and innovation studio.
-                It explores and builds solutions across software, engineering
-                and digital innovation.
-              </p>
-              <p>
-                From digital products to physical prototypes, every project
-                begins with an idea and grows through exploration.
-              </p>
-            </div>
+
+          <div className="space-y-5">
+            {studioPrinciples.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div
+                  key={item.title}
+                  className="studio-card flex gap-4 rounded-2xl p-6"
+                >
+                  <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary-soft text-electric">
+                    <Icon className="h-5 w-5" aria-hidden />
+                  </span>
+                  <div>
+                    <h3 className="text-lg font-bold text-navy">
+                      {item.title}
+                    </h3>
+                    <p className="mt-1.5 text-sm leading-relaxed text-muted">
+                      {item.text}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </Container>
       </section>
 
+      {/* Capabilities Snapshot */}
       <section
-        aria-labelledby="philosophy-title"
-        className="border-y border-border bg-surface-muted/60 py-20 sm:py-28"
+        aria-labelledby="about-capabilities-title"
+        className="border-y border-border bg-surface py-16 sm:py-24"
       >
         <Container>
-          <SectionHeading
-            id="philosophy-title"
-            eyebrow="Philosophy"
-            title="Three ideas behind the work."
-          />
-          <ol className="mt-14 grid gap-10 md:grid-cols-3 md:gap-0">
-            {philosophy.map((item, i) => (
-              <li
-                key={item.title}
-                className="border-t border-foreground/30 pt-6 md:pr-8 md:[&:not(:first-child)]:border-l md:[&:not(:first-child)]:border-l-border md:[&:not(:first-child)]:pl-8"
+          <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+            <SectionHeading
+              id="about-capabilities-title"
+              eyebrow="Capabilities"
+              title="Six areas where Khai Space helps."
+            />
+            <Link
+              href="/services"
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-electric hover:text-navy"
+            >
+              <span>See Full Service Details</span>
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+          </div>
+
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {services.map((service) => (
+              <Link
+                key={service.slug}
+                href={`/services#${service.slug}`}
+                className="flex items-start gap-3.5 rounded-2xl border border-border bg-background p-5 transition-colors hover:border-electric/40 hover:bg-primary-soft/30"
               >
-                <span className="font-heading text-sm font-semibold text-primary">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-                <h3 className="mt-6 text-xl font-semibold">{item.title}</h3>
-                <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted">
-                  {item.text}
-                </p>
-              </li>
+                <ServiceIcon name={service.icon} accent={service.accent} />
+                <div>
+                  <h3 className="font-heading text-base font-bold text-navy">
+                    {service.title}
+                  </h3>
+                  <p className="mt-1 text-xs leading-relaxed text-muted">
+                    {service.tagline}
+                  </p>
+                </div>
+              </Link>
             ))}
-          </ol>
+          </div>
         </Container>
       </section>
 
-      <section aria-labelledby="approach-title" className="py-20 sm:py-28">
+      {/* Technology Areas */}
+      <section
+        aria-labelledby="tech-areas-title"
+        className="py-16 sm:py-24"
+      >
         <Container>
           <SectionHeading
-            id="approach-title"
-            eyebrow="Working approach"
-            title="Explore, design, build, refine."
+            id="tech-areas-title"
+            eyebrow="Technology Areas"
+            title="Modern, dependable tools chosen for longevity."
+            description="We pick pragmatic, well-supported technologies that remain fast to iterate on and straightforward to hand over."
           />
-          <ol className="mt-16 ml-1.5 grid gap-0 lg:grid-cols-4 lg:gap-8">
-            {approach.map((item, i) => (
-              <li
-                key={item.step}
-                className="relative border-l border-foreground/30 pb-10 pl-8 last:pb-0 lg:border-l-0 lg:border-t lg:pb-0 lg:pl-0 lg:pt-8"
+
+          <div className="mt-10 grid gap-5 sm:grid-cols-2">
+            {studioTechAreas.map((group) => (
+              <div
+                key={group.area}
+                className="studio-card rounded-2xl p-6"
               >
-                <span
+                <h3 className="text-lg font-bold text-navy">{group.area}</h3>
+                <ul className="mt-4 flex flex-wrap gap-2">
+                  {group.items.map((tech) => (
+                    <li
+                      key={tech}
+                      className="rounded-lg border border-border bg-surface-muted px-3 py-1.5 text-xs font-semibold text-navy"
+                    >
+                      {tech}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      {/* Verified Hands-on Experience */}
+      <section
+        aria-labelledby="verified-experience-title"
+        className="border-t border-border bg-surface-muted/65 py-16 sm:py-24"
+      >
+        <Container className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+          <SectionHeading
+            id="verified-experience-title"
+            eyebrow="Verified Track"
+            title="What has actually been built in the studio."
+            description="Everything showcased on khaispace.com reflects real studio builds, documented experiments, or clearly labeled interactive prototypes."
+          />
+
+          <ul className="studio-card space-y-4 rounded-2xl p-6 sm:p-8">
+            {verifiedFocusTrack.map((item) => (
+              <li
+                key={item}
+                className="flex items-start gap-3 text-sm leading-relaxed text-navy sm:text-base"
+              >
+                <CheckCircle2
+                  className="mt-0.5 h-5 w-5 shrink-0 text-electric"
                   aria-hidden
-                  className={
-                    "absolute -left-[6px] top-0 h-3 w-3 lg:-top-[6px] lg:left-0 " +
-                    (i === approach.length - 1 ? "bg-accent" : "bg-primary")
-                  }
                 />
-                <p className="font-heading text-xs font-semibold text-muted">
-                  Step {String(i + 1).padStart(2, "0")}
-                </p>
-                <h3 className="mt-2 text-2xl font-semibold">{item.step}</h3>
-                <p className="mt-3 max-w-[16rem] text-sm leading-relaxed text-muted">
-                  {item.text}
-                </p>
-              </li>
-            ))}
-          </ol>
-          <p className="mt-12 flex items-center gap-3 text-sm text-muted">
-            <span aria-hidden className="h-px w-8 bg-accent" />
-            Refinement often leads back to exploration.
-          </p>
-        </Container>
-      </section>
-
-      <section
-        aria-labelledby="interests-title"
-        className="border-t border-border pb-20 pt-20 sm:pb-28 sm:pt-28"
-      >
-        <Container className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
-          <SectionHeading
-            id="interests-title"
-            eyebrow="Areas of interest"
-            title="Where the curiosity leads."
-          />
-          <ul className="grid border-t border-foreground/30 sm:grid-cols-2 sm:gap-x-10">
-            {interests.map((item) => (
-              <li
-                key={item.label}
-                className="flex items-center gap-4 border-b border-border py-5"
-              >
-                <span className="h-9 w-9 shrink-0 text-primary">
-                  <DisciplineMarker kind={item.marker} />
-                </span>
-                <span className="font-heading text-lg font-semibold">
-                  {item.label}
-                </span>
+                <span>{item}</span>
               </li>
             ))}
           </ul>
         </Container>
       </section>
 
+      <HowWeWork />
+
       <CollaborationCta
-        title="Curious what we could build together?"
-        copy="If you have an idea, a question or a project in mind, get in touch and let's talk it through."
-        label="Get in Touch"
+        eyebrow="Work With Khai Space"
+        title="Let's explore what we can build together."
+        copy="Whether you are mapping a first prototype or upgrading an existing workflow, start with a quick brief or message us on WhatsApp."
       />
     </>
   );

@@ -1,35 +1,54 @@
 @import "tailwindcss";
 
-/* Design tokens — light theme, soft blue + soft green accents */
+/* KHAI SPACE 2.0 — Interactive Digital Studio Design Tokens */
 :root {
+  --navy: #0c2340;
+  --electric: #2563eb;
+  --electric-dark: #1d4ed8;
+  --violet: #7c3aed;
+  --cyan: #22c3ee;
+
   --background: #faf8f4;
-  --foreground: #0c2340;
-  --surface: #fffefc;
-  --surface-muted: #f2efe8;
-  --muted: #4f5f77;
-  --border: #dde3ea;
-  --primary: #2c6db2;
+  --surface: #ffffff;
+  --surface-muted: #f1f5f9;
+  --foreground: #172033;
+  --muted: #475569;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+
+  --primary: #2563eb;
   --primary-foreground: #ffffff;
-  --primary-soft: #e8f1fa;
-  --accent: #5fb88f;
-  --accent-strong: #2c7a58;
-  --accent-soft: #e6f4ed;
-  --grid-line: rgb(44 109 178 / 0.08);
+  --primary-soft: #eff6ff;
+  --violet-soft: #f5f3ff;
+  --cyan-soft: #ecfeff;
+  --navy-soft: #e6ecf5;
+
+  --grid-line: rgb(12 35 64 / 0.055);
+  --shadow-card: 0 1px 2px rgb(12 35 64 / 0.04), 0 8px 24px -12px rgb(12 35 64 / 0.08);
+  --shadow-card-hover: 0 4px 12px rgb(12 35 64 / 0.06), 0 18px 36px -14px rgb(37 99 235 / 0.14);
 }
 
 @theme inline {
+  --color-navy: var(--navy);
+  --color-electric: var(--electric);
+  --color-electric-dark: var(--electric-dark);
+  --color-violet: var(--violet);
+  --color-cyan: var(--cyan);
+
   --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --color-surface: var(--surface);
   --color-surface-muted: var(--surface-muted);
+  --color-foreground: var(--foreground);
   --color-muted: var(--muted);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary-soft: var(--primary-soft);
-  --color-accent: var(--accent);
-  --color-accent-strong: var(--accent-strong);
-  --color-accent-soft: var(--accent-soft);
+  --color-violet-soft: var(--violet-soft);
+  --color-cyan-soft: var(--cyan-soft);
+  --color-navy-soft: var(--navy-soft);
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-manrope), ui-sans-serif, system-ui, sans-serif;
@@ -37,12 +56,14 @@
 
 html {
   color-scheme: light;
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  overflow-x: clip;
 }
 
 h1,
@@ -50,33 +71,58 @@ h2,
 h3,
 h4 {
   font-family: var(--font-heading);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   text-wrap: balance;
+  color: var(--navy);
 }
 
 p {
   text-wrap: pretty;
 }
 
-/* Blueprint grid backdrop — faint, fades toward the edges */
-.blueprint-grid {
+/* Controlled Studio Visual Utilities */
+.studio-grid {
   background-image:
     linear-gradient(var(--grid-line) 1px, transparent 1px),
     linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 
-.blueprint-fade {
-  -webkit-mask-image: radial-gradient(ellipse 70% 80% at 75% 35%, #000 0%, transparent 75%);
-  mask-image: radial-gradient(ellipse 70% 80% at 75% 35%, #000 0%, transparent 75%);
+.studio-grid-fade {
+  -webkit-mask-image: radial-gradient(ellipse 80% 75% at 65% 30%, #000 0%, transparent 78%);
+  mask-image: radial-gradient(ellipse 80% 75% at 65% 30%, #000 0%, transparent 78%);
+}
+
+.studio-gradient-text {
+  background-image: linear-gradient(120deg, var(--electric) 0%, var(--violet) 65%, #0ea5e9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.studio-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+}
+
+.studio-card-interactive:hover {
+  transform: translateY(-2px);
+  border-color: rgb(37 99 235 / 0.35);
+  box-shadow: var(--shadow-card-hover);
 }
 
 :focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid var(--electric);
   outline-offset: 3px;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
   *,
   *::before,
   *::after {
