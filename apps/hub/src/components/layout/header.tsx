@@ -16,6 +16,7 @@ const SECTION_TITLES: Record<NavSection, string> = {
   projects: "Projects Directory",
   tasks: "Tasks & Milestones",
   finance: "Finance & ROI",
+  "personal-finance": "Kewangan Personal (Jun – Okt 2026)",
   invoices: "Invoice System (MK Venture)",
   subscriptions: "AI Subscriptions",
   tokens: "Token Monitor",

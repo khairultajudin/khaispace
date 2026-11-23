@@ -3,6 +3,7 @@ export type NavSection =
   | "projects"
   | "tasks"
   | "finance"
+  | "personal-finance"
   | "invoices"
   | "subscriptions"
   | "tokens"

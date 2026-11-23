@@ -38,6 +38,13 @@ const SECTION_METADATA: Record<
       "Comprehensive cost modeling for hosting, domains, infrastructure, and revenue tracking across commercial projects.",
     phase: "Phase 2D",
   },
+  "personal-finance": {
+    title: "Kewangan Personal",
+    subtitle: "Audit & Penyata Kewangan Peribadi (Jun – Okt 2026)",
+    description:
+      "Pemantauan aliran tunai CIMB, Our Duit, Dompet Tunai, Touch 'n Go dan rekod silang-semak harian.",
+    phase: "Active",
+  },
   invoices: {
     title: "Invoice System (MK Venture)",
     subtitle: "Official invoicing, expenses, and settlement tracking",
