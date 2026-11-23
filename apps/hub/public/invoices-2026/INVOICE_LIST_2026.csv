@@ -1,0 +1,28 @@
+INVOICE NO,DATE,BILL TO,DESCRIPTION,AMOUNT (RM),STATUS,PAYMENT TERM,PAYMENT DATE,AMOUNT RECEIVED (RM)
+"INV2601001","04-Jan-2026","Clean Green Resources","3D Printing Services",75.00,"PAID","Full Payment","04-Jan-2026",75.00
+"INV2601002","13-Jan-2026","Clean Green Resources","3D Printing Services",83.00,"PAID","Full Payment","13-Jan-2026",83.00
+"INV2603003","13-Mar-2026","Abdul Qayyum","Consultation Services",600.00,"PAID","Full Payment","13-Mar-2026",600.00
+"INV2603004","14-Mar-2026","Fauzi Zain Resources","Design Services + 3D Printing Services",273.00,"PAID","Full Payment","14-Mar-2026",273.00
+"INV2603005","16-Mar-2026","Mohamad Zharif","3D Printing Services",45.50,"PAID","Full Payment","16-Mar-2026",45.50
+"INV2604006","21-Apr-2026","Fauzi Zain Resources","3D Printing Services",21.50,"PAID","Full Payment","21-Apr-2026",21.50
+"INV2604007","29-Apr-2026","Muhammad Aliff Haikal","3D Printing Services",89.00,"PAID","Full Payment","29-Apr-2026",89.00
+"INV2605008","02-May-2026","Fauzi Zain Resources","3D Printing Services",68.00,"PAID","Full Payment","02-May-2026",68.00
+"INV2605009","10-May-2026","Mohamad bin Ayob","Design Services + 3D Printing Services",212.00,"PAID","Full Payment","10-May-2026",212.00
+"INV2606010","12-Jun-2026","Mohamad bin Ayob","Design Services + 3D Printing Services",321.00,"PAID","Full Payment","12-Jun-2026",321.00
+"INV2606011","18-Jun-2026","Mars Dynamic Global","1KG 1.75mm PLA Filament (Random Color) + Delivery Cost",1572.25,"PAID","Full Payment","18-Jun-2026",1572.25
+"INV2607012","08-Jul-2026","Clean Green Resources","3D Printing Services",172.50,"PAID","Full Payment","08-Jul-2026",172.50
+"INV2607013","12-Jul-2026","Ahmad Solehin","3D Printing Services",8.00,"PAID","Full Payment","12-Jul-2026",8.00
+"INV2608014","09-Aug-2026","Mars Dynamic Global","3D Printer Filament",300.00,"PAID","Full Payment","09-Aug-2026",300.00
+"INV2608015","24-Aug-2026","Ahmad Solehin","3D Printing Services",45.00,"PAID","Full Payment","24-Aug-2026",45.00
+"INV2609016","03-Sep-2026","Ahmad Solehin","3D Printing Services",67.00,"PAID","Full Payment","03-Sep-2026",67.00
+"INV2609017","11-Sep-2026","Muhammad Ihsan","3D Printing Services",20.00,"PAID","Full Payment","11-Sep-2026",20.00
+"INV2609018","16-Sep-2026","Puan Norhana Abdul Rani","BizTrack Tuition Management System
+Initial Setup (one-off)",500.00,"PAID","Full Payment","16-Sep-2026",500.00
+"INV2609019","16-Sep-2026","Clean Green Resources","3D Printing Services",31.50,"PAID","Full Payment","16-Sep-2026",31.50
+"INV2609020","27-Sep-2026","Muhammad Ihsan","3D Printing Services",20.00,"PAID","Full Payment","27-Sep-2026",20.00
+"INV2610021","01-Oct-2026","Siti Norbiha A.Aziz","Delivery Cost",30.00,"PAID","Full Payment","01-Oct-2026",30.00
+"INV2610022","05-Oct-2026","BG Oilchem Sdn Bhd","3D Printer Bambu Lab A1 Combo + Training Fee (including transportation & accommodation)",4498.00,"PAID","Full Payment","05-Oct-2026",4498.00
+"INV2610023","12-Oct-2026","BG Oilchem Sdn Bhd","3D Printer Filament",110.00,"PAID","Full Payment","12-Oct-2026",110.00
+"INV2610024","19-Oct-2026","Puan Norhana Abdul Rani","BizTrack Tuition Management System — Monthly Subscription (October 2026)
+Includes: Access to BizTrack system, System maintenance, Bug fixes, System updates, Technical support.
+Note: Subscription does not include new custom features or major system modifications, which may be quoted separately.",69.00,"PAID","Full Payment","19-Oct-2026",69.00

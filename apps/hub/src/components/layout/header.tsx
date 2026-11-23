@@ -16,6 +16,7 @@ const SECTION_TITLES: Record<NavSection, string> = {
   projects: "Projects Directory",
   tasks: "Tasks & Milestones",
   finance: "Finance & ROI",
+  invoices: "Invoice System (MK Venture)",
   subscriptions: "AI Subscriptions",
   tokens: "Token Monitor",
   notes: "Notes & Decisions",

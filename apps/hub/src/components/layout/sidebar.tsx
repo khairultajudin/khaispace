@@ -6,6 +6,7 @@ import {
   FolderKanban,
   CheckSquare,
   TrendingUp,
+  Receipt,
   Bot,
   Gauge,
   FileText,
@@ -57,6 +58,13 @@ const NAV_ITEMS: NavItemConfig[] = [
     id: "finance",
     label: "Finance & ROI",
     icon: TrendingUp,
+    isReady: true,
+  },
+  {
+    id: "invoices",
+    label: "Invoice System",
+    icon: Receipt,
+    badge: "MK",
     isReady: true,
   },
   {

@@ -38,6 +38,13 @@ const SECTION_METADATA: Record<
       "Comprehensive cost modeling for hosting, domains, infrastructure, and revenue tracking across commercial projects.",
     phase: "Phase 2D",
   },
+  invoices: {
+    title: "Invoice System (MK Venture)",
+    subtitle: "Official invoicing, expenses, and settlement tracking",
+    description:
+      "Manage MK Venture Maker Solution invoices, PDF exports, company expenses, and Khai ↔ MK Venture reconciliation.",
+    phase: "Active",
+  },
   subscriptions: {
     title: "AI Subscriptions & Tooling Tracker",
     subtitle: "Recurring tool subscriptions and credit budgets",

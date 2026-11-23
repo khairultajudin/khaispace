@@ -13,6 +13,7 @@ import { ComingSoonView } from "./coming-soon-view";
 import { ProjectsView } from "../projects/projects-view";
 import { TasksView } from "../tasks/tasks-view";
 import { FinanceView } from "../finance/finance-view";
+import { InvoicesView } from "../invoices/invoices-view";
 import { SubscriptionsView } from "../subscriptions/subscriptions-view";
 import { TokenMonitorView } from "../tokens/token-monitor-view";
 import { NotesView } from "../notes/notes-view";
@@ -25,6 +26,7 @@ const VALID_SECTIONS: NavSection[] = [
   "projects",
   "tasks",
   "finance",
+  "invoices",
   "subscriptions",
   "tokens",
   "notes",
@@ -234,6 +236,8 @@ function DashboardShell() {
             <TasksView />
           ) : currentSection === "finance" ? (
             <FinanceView />
+          ) : currentSection === "invoices" ? (
+            <InvoicesView />
           ) : currentSection === "subscriptions" ? (
             <SubscriptionsView />
           ) : currentSection === "tokens" ? (
