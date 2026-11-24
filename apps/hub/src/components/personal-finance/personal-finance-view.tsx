@@ -182,7 +182,7 @@ export function PersonalFinanceView() {
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-lg font-bold text-[#0C2340]">
-                Pengurusan Kewangan Personal (Jun – Okt 2026)
+                Pengurusan Kewangan Personal (Jun – 24 Nov 2026)
               </h2>
               <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[#EBF5F0] text-[#347A63] border border-[#C8E6D7]">
                 <CheckCircle2 className="w-3 h-3" />
@@ -246,7 +246,7 @@ export function PersonalFinanceView() {
                 {fmtRM(DATA.annual.totalCimbIn)}
               </div>
               <div className="text-[11px] text-[#347A63] mt-1 font-medium">
-                5 bulan (Jun – Okt 2026)
+                6 bulan (Jun – 24 Nov 2026)
               </div>
             </div>
 
@@ -259,7 +259,7 @@ export function PersonalFinanceView() {
                 {fmtRM(DATA.annual.totalCimbOut)}
               </div>
               <div className="text-[11px] text-[#536B85] mt-1">
-                Baki akhir CIMB Okt: <span className="font-semibold text-[#0C2340]">{fmtRM(DATA.annual.latestClosingBal)}</span>
+                Baki akhir CIMB 24 Nov: <span className="font-semibold text-[#0C2340]">{fmtRM(DATA.annual.latestClosingBal)}</span>
               </div>
             </div>
 
@@ -285,7 +285,7 @@ export function PersonalFinanceView() {
                 {fmtRM(DATA.annual.latestCashBal)}
               </div>
               <div className="text-[11px] text-[#536B85] mt-1">
-                Baki bawaan akhir 31 Okt 2026
+                Baki bawaan setakat 24 Nov 2026
               </div>
             </div>
           </div>
@@ -294,7 +294,7 @@ export function PersonalFinanceView() {
           <div className="bg-white rounded-xl border border-[#DCD7CC] overflow-hidden">
             <div className="px-5 py-3.5 border-b border-[#DCD7CC] bg-[#FAF8F4] flex items-center justify-between">
               <h3 className="text-sm font-bold text-[#0C2340]">
-                Ringkasan Bulanan (Jun – Okt 2026)
+                Ringkasan Bulanan (Jun – 24 Nov 2026)
               </h3>
               <span className="text-[11px] text-[#536B85]">
                 Klik mana-mana bulan untuk lihat perincian penuh
@@ -354,7 +354,7 @@ export function PersonalFinanceView() {
           {/* Annual Category Breakdown */}
           <div className="bg-white rounded-xl border border-[#DCD7CC] p-5">
             <h3 className="text-sm font-bold text-[#0C2340] mb-4">
-              Pecahan Kategori Perbelanjaan Khai (Jun – Okt 2026)
+              Pecahan Kategori Perbelanjaan Khai (Jun – 24 Nov 2026)
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3">
               {DATA.annual.categoryRows.map((cat) => (
