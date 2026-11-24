@@ -73,7 +73,11 @@ interface InvoiceStore {
   expenses: Expense[];
 }
 
-type SubTab = "invoices" | "expenses" | "customers" | "settlement";
+type SubTab = "invoices" | "receipts" | "expenses" | "customers" | "settlement";
+
+function getReceiptNumber(invNo: string): string {
+  return invNo.replace(/^INV/, "RCP");
+}
 
 const STORAGE_KEY = "khai_hub_mk_invoices_v2";
 
@@ -127,6 +131,7 @@ export function InvoicesView() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
+  const [previewReceipt, setPreviewReceipt] = useState<Invoice | null>(null);
   const [showNewModal, setShowNewModal] = useState<boolean>(false);
 
   // New invoice form state
@@ -402,9 +407,9 @@ export function InvoicesView() {
             <span>Imbangan Khai ↔ MK</span>
             <Scale className="w-4 h-4 text-[#B45309]" />
           </div>
-          <div className="text-2xl font-bold text-[#B45309] mt-1.5">-RM 76.86</div>
+          <div className="text-2xl font-bold text-[#B45309] mt-1.5">-RM 67.99</div>
           <div className="text-[11px] text-[#536B85] mt-1">
-            Claim RM 449.29 − Pulang RM 526.15
+            Claim RM 458.16 − Pulang RM 526.15
           </div>
         </div>
       </div>
@@ -416,6 +421,7 @@ export function InvoicesView() {
             {(
               [
                 { id: "invoices", label: `Invois (${store.invoices.length})`, icon: FileText },
+                { id: "receipts", label: `Resit Rasmi (${store.invoices.filter((i) => i.status === "paid").length})`, icon: Receipt },
                 { id: "expenses", label: `Kos Syarikat (${store.expenses.length})`, icon: Wallet },
                 { id: "customers", label: `Pelanggan (${store.customers.length})`, icon: Users },
                 { id: "settlement", label: "Imbangan Khai ↔ MK", icon: Scale },
@@ -441,7 +447,7 @@ export function InvoicesView() {
             })}
           </div>
 
-          {(subTab === "invoices" || subTab === "expenses") && (
+          {(subTab === "invoices" || subTab === "receipts" || subTab === "expenses") && (
             <div className="flex items-center gap-2 pb-2.5 flex-wrap">
               <div className="relative">
                 <Search className="w-3.5 h-3.5 text-[#536B85] absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -545,6 +551,16 @@ export function InvoicesView() {
                           >
                             Lihat
                           </button>
+                          {inv.status === "paid" && (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewReceipt(inv)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-[#C8E6D7] bg-[#EBF5F0] hover:bg-[#DCF0E6] text-[#347A63] text-[11px] font-semibold cursor-pointer"
+                            >
+                              <Receipt className="w-3 h-3" />
+                              Resit
+                            </button>
+                          )}
                           {hasStaticPdf && (
                             <a
                               href={`/invoices-2026/${inv.invoice_number}.pdf`}
@@ -565,6 +581,87 @@ export function InvoicesView() {
                   <tr>
                     <td colSpan={7} className="py-10 text-center text-[#536B85]">
                       Tiada invois sepadan dengan carian anda.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* SUBTAB 1B: OFFICIAL RECEIPTS (ALL PAID INVOICES) */}
+        {subTab === "receipts" && (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b border-[#DCD7CC] bg-[#EBF5F0]/60 text-[11px] uppercase tracking-wider text-[#347A63]">
+                  <th className="py-3 px-4 font-semibold">No. Resit</th>
+                  <th className="py-3 px-4 font-semibold">Ruj. Invois</th>
+                  <th className="py-3 px-4 font-semibold">Tarikh Bayaran</th>
+                  <th className="py-3 px-4 font-semibold">Diterima Daripada</th>
+                  <th className="py-3 px-4 font-semibold">Perincian</th>
+                  <th className="py-3 px-4 font-semibold text-right">Jumlah Diterima</th>
+                  <th className="py-3 px-4 font-semibold text-right">Tindakan</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#EFECE4] text-xs">
+                {filteredInvoices
+                  .filter((inv) => inv.status === "paid")
+                  .map((inv) => {
+                    const cust = customerMap[inv.customer_id];
+                    const invItems = itemsByInvoice[inv.id] || [];
+                    const summary = invItems.map((i) => i.description.split("\n")[0]).join(" + ");
+                    const rcpNo = getReceiptNumber(inv.invoice_number);
+                    const hasStaticPdf = SEED_INVOICE_NUMBERS.has(inv.invoice_number);
+                    return (
+                      <tr key={inv.id} className="hover:bg-[#FAF8F4] transition-colors">
+                        <td className="py-3 px-4 font-mono font-bold text-[#347A63] whitespace-nowrap">
+                          {rcpNo}
+                        </td>
+                        <td className="py-3 px-4 font-mono text-[#0C2340] whitespace-nowrap">
+                          {inv.invoice_number}
+                        </td>
+                        <td className="py-3 px-4 text-[#536B85] whitespace-nowrap">
+                          {fmtDate(inv.invoice_date)}
+                        </td>
+                        <td className="py-3 px-4 font-medium text-[#0C2340]">
+                          {cust?.customer_name || "-"}
+                        </td>
+                        <td className="py-3 px-4 text-[#536B85] max-w-xs truncate" title={summary}>
+                          {summary}
+                        </td>
+                        <td className="py-3 px-4 text-right font-bold text-[#347A63] whitespace-nowrap">
+                          {fmtRM(inv.paid_amount || inv.total_amount)}
+                        </td>
+                        <td className="py-3 px-4 text-right whitespace-nowrap">
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setPreviewReceipt(inv)}
+                              className="px-2.5 py-1 rounded border border-[#C8E6D7] bg-[#EBF5F0] hover:bg-[#DCF0E6] text-[#347A63] text-[11px] font-semibold cursor-pointer"
+                            >
+                              Lihat Resit
+                            </button>
+                            {hasStaticPdf && (
+                              <a
+                                href={`/receipts-2026/${rcpNo}.pdf`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#347A63] hover:bg-[#28614E] text-white text-[11px] font-medium"
+                              >
+                                <Download className="w-3 h-3" />
+                                PDF Resit
+                              </a>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                {filteredInvoices.filter((inv) => inv.status === "paid").length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="py-10 text-center text-[#536B85]">
+                      Tiada resit (status PAID) sepadan dengan carian anda.
                     </td>
                   </tr>
                 )}
@@ -801,6 +898,167 @@ export function InvoicesView() {
                 <div className="font-bold text-slate-900 font-mono">MAYBANK ACC NO : 5686 0305 3567</div>
                 <div className="pt-2 italic text-[11px] text-slate-500">
                   Returns / exchange will only be entertained within seven (7) days from invoice date. Returns is allowed only once per Invoice. This is computer generated, no signature is required.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* OFFICIAL RECEIPT PREVIEW MODAL */}
+      {previewReceipt && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl max-w-3xl w-full shadow-2xl border border-[#DCD7CC] overflow-hidden my-8">
+            <div className="px-5 py-3 bg-[#EBF5F0] border-b border-[#C8E6D7] flex items-center justify-between print:hidden">
+              <div className="font-semibold text-sm text-[#0C2340]">
+                Pratonton Resit Rasmi — {getReceiptNumber(previewReceipt.invoice_number)}
+              </div>
+              <div className="flex items-center gap-2">
+                {SEED_INVOICE_NUMBERS.has(previewReceipt.invoice_number) && (
+                  <a
+                    href={`/receipts-2026/${getReceiptNumber(previewReceipt.invoice_number)}.pdf`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-[#C8E6D7] bg-white hover:bg-[#FAF8F4] text-[#347A63] text-xs font-semibold"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    PDF Resit Rasmi
+                  </a>
+                )}
+                <button
+                  type="button"
+                  onClick={handlePrintPreview}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#347A63] hover:bg-[#28614E] text-white text-xs font-medium cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  Cetak / Simpan PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewReceipt(null)}
+                  className="p-1.5 rounded-lg text-[#536B85] hover:bg-white cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-8 space-y-6 text-xs text-slate-800">
+              <div className="flex items-start justify-between border-b border-slate-200 pb-5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/mk-venture-logo.svg" alt="MK Venture" className="h-14 w-auto" />
+                <div className="text-right">
+                  <div className="text-2xl font-black tracking-tight text-[#0C2340]">OFFICIAL RECEIPT</div>
+                  <div className="mt-1 inline-block px-2.5 py-0.5 rounded bg-[#EBF5F0] text-[#347A63] border border-[#C8E6D7] font-bold uppercase text-[10px]">
+                    PAID IN FULL
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div>
+                  <div className="text-[11px] font-semibold text-slate-500 uppercase">From :</div>
+                  <div className="font-bold text-sm text-slate-900 mt-0.5">
+                    MK Venture Maker Solution (CA0356505-U)
+                  </div>
+                  <div className="text-slate-600 mt-1 leading-relaxed">
+                    Desa Cemara Blok B, Persiaran Sembilang,<br />
+                    13700 Perai, Pulau Pinang, Malaysia<br />
+                    Phone: 0187604289 | mkventuremakersolution@gmail.com
+                  </div>
+                </div>
+                <div className="space-y-1 sm:text-right">
+                  <div>
+                    <span className="text-slate-500 font-semibold">Receipt No :</span>{" "}
+                    <span className="ml-1 font-mono font-bold text-[#347A63]">
+                      {getReceiptNumber(previewReceipt.invoice_number)}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 font-semibold">Payment Date :</span>{" "}
+                    <span className="ml-1">{fmtDate(previewReceipt.invoice_date)}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 font-semibold">Invoice Ref :</span>{" "}
+                    <span className="ml-1 font-mono font-semibold text-slate-900">
+                      {previewReceipt.invoice_number}
+                    </span>
+                  </div>
+                  {previewReceipt.reference_no && (
+                    <div>
+                      <span className="text-slate-500 font-semibold">Orig. Ref :</span>{" "}
+                      <span className="ml-1 font-mono">{previewReceipt.reference_no}</span>
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-slate-500 font-semibold">Payment Method :</span>{" "}
+                    <span className="ml-1">Bank Transfer (Maybank)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-[11px] font-semibold text-slate-500 uppercase">Received From :</div>
+                <div className="font-bold text-sm text-slate-900 mt-0.5">
+                  {customerMap[previewReceipt.customer_id]?.customer_name || "Customer"}
+                </div>
+                {customerMap[previewReceipt.customer_id]?.address && (
+                  <div className="text-slate-600 mt-0.5">
+                    {customerMap[previewReceipt.customer_id]?.address}
+                  </div>
+                )}
+              </div>
+
+              <table className="w-full border-collapse border border-slate-200">
+                <thead>
+                  <tr className="bg-[#347A63] text-white text-[11px]">
+                    <th className="py-2 px-3 text-left w-10">No.</th>
+                    <th className="py-2 px-3 text-left">Description</th>
+                    <th className="py-2 px-3 text-right w-20">Qty</th>
+                    <th className="py-2 px-3 text-right w-28">Price (RM)</th>
+                    <th className="py-2 px-3 text-right w-28">Amount (RM)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {(itemsByInvoice[previewReceipt.id] || []).map((it, idx) => (
+                    <tr key={it.id}>
+                      <td className="py-2.5 px-3 align-top">{idx + 1}</td>
+                      <td className="py-2.5 px-3 whitespace-pre-line">{it.description}</td>
+                      <td className="py-2.5 px-3 text-right align-top">{it.quantity}</td>
+                      <td className="py-2.5 px-3 text-right align-top font-mono">{it.unit_price.toFixed(2)}</td>
+                      <td className="py-2.5 px-3 text-right align-top font-mono font-semibold">{it.line_total.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div className="flex flex-col items-end gap-1.5">
+                <div className="bg-[#EBF5F0] border border-[#347A63] rounded px-4 py-2.5 flex items-center gap-6">
+                  <span className="font-bold text-[#0C2340]">AMOUNT RECEIVED (RM) :</span>
+                  <span className="font-mono font-black text-base text-[#347A63]">
+                    {(previewReceipt.paid_amount || previewReceipt.total_amount).toLocaleString("en-MY", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-500">
+                  Balance Due (RM) : <span className="font-mono font-bold text-slate-800">0.00</span>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-200 pt-4 space-y-1 text-slate-600">
+                <div className="font-bold text-[#0C2340]">Payment Acknowledgement</div>
+                <div>
+                  Received with thanks the sum of{" "}
+                  <strong>{fmtRM(previewReceipt.paid_amount || previewReceipt.total_amount)}</strong> in full settlement of Invoice{" "}
+                  <strong className="font-mono">{previewReceipt.invoice_number}</strong>.
+                </div>
+                <div className="font-semibold text-slate-800 font-mono text-[11px]">
+                  Account Credited: MK VENTURE MAKER SOLUTION — MAYBANK ACC NO : 5686 0305 3567
+                </div>
+                <div className="pt-2 italic text-[11px] text-slate-500">
+                  This is a computer-generated official receipt. No signature is required.
                 </div>
               </div>
             </div>
