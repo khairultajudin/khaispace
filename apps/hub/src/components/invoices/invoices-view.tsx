@@ -638,7 +638,7 @@ export function InvoicesView() {
               <div className="rounded-lg border border-[#C8E6D7] bg-[#EBF5F0]/50 p-4 space-y-2">
                 <div className="font-bold text-sm text-[#0C2340] flex justify-between">
                   <span>MK Venture → Khai (Pending Claims)</span>
-                  <span className="text-[#347A63]">RM 449.29</span>
+                  <span className="text-[#347A63]">RM 458.16</span>
                 </div>
                 <ul className="space-y-1.5 text-[#536B85]">
                   <li className="flex justify-between line-through opacity-60"><span>06-Jul • Cytron #533938 (2x PETG) — LUNAS 24-Nov</span><span className="font-mono">RM 88.00</span></li>
@@ -646,6 +646,7 @@ export function InvoicesView() {
                   <li className="flex justify-between"><span>29-Sep • Cytron #551142 (Maker ESP32)</span><span className="font-mono text-[#0C2340]">RM 70.24</span></li>
                   <li className="flex justify-between"><span>29-Oct • SPayLater Okt (3D Printer Parts)</span><span className="font-mono text-[#0C2340]">RM 170.35</span></li>
                   <li className="flex justify-between"><span>29-Oct • SPayLater Okt (Creality PLA x6)</span><span className="font-mono text-[#0C2340]">RM 168.70</span></li>
+                  <li className="flex justify-between"><span>19-Nov • DeepSeek API USD 2.12 (Hermes — CIMB Khai)</span><span className="font-mono text-[#0C2340]">RM 8.87</span></li>
                 </ul>
               </div>
 
@@ -668,10 +669,10 @@ export function InvoicesView() {
               <div>
                 <div className="font-bold text-sm">Imbangan Bersih Muktamad (Setakat 24 Nov 2026)</div>
                 <div className="text-slate-300 text-[11px]">
-                  Selepas claim Cytron #533938 (RM 88.00) dibayar pada 24-Nov dan parkir Panaxis (RM 5.00) direkod, Khai perlu bayar baki bersih RM 76.86 kepada MK Venture. Tabung MAE (RM 300 + RM 50) sudah 100% dikeluarkan semula ke M2U.
+                  Selepas claim Cytron #533938 (RM 88.00) dibayar pada 24-Nov, parkir Panaxis (RM 5.00) direkod, dan claim DeepSeek API Hermes (19-Nov, RM 8.87) ditambah, Khai perlu bayar baki bersih RM 67.99 kepada MK Venture. Tabung MAE (RM 300 + RM 50) sudah 100% dikeluarkan semula ke M2U.
                 </div>
               </div>
-              <div className="text-xl font-bold font-mono text-amber-300 shrink-0">-RM 76.86</div>
+              <div className="text-xl font-bold font-mono text-amber-300 shrink-0">-RM 67.99</div>
             </div>
           </div>
         )}
