@@ -13,6 +13,7 @@ import {
   Wallet,
 } from "lucide-react";
 import rawData from "../../data/personal-finance-2026.json";
+import { DecemberBudgetPanel } from "./december-budget-panel";
 
 interface CategoryRow {
   name: string;
@@ -148,7 +149,9 @@ export function PersonalFinanceView() {
   const [ledgerStatus, setLedgerStatus] = useState<string>("all");
 
   const activeMonth: MonthData | null =
-    selectedPeriod === "annual" ? null : DATA.months[selectedPeriod] || null;
+    selectedPeriod === "annual" || selectedPeriod === "budget-dec"
+      ? null
+      : DATA.months[selectedPeriod] || null;
 
   const totalTransactionsAudited = useMemo(
     () => DATA.order.reduce((acc, k) => acc + (DATA.months[k]?.ledger.length || 0), 0),
@@ -230,8 +233,22 @@ export function PersonalFinanceView() {
               </button>
             );
           })}
+          <button
+            type="button"
+            onClick={() => setSelectedPeriod("budget-dec")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
+              selectedPeriod === "budget-dec"
+                ? "bg-[#347A63] text-white shadow-xs"
+                : "bg-[#EBF5F0] text-[#347A63] border border-[#C8E6D7] hover:bg-[#DCF0E6]"
+            }`}
+          >
+            Bajet Dis 2026
+          </button>
         </div>
       </div>
+
+      {/* DECEMBER 2026 BUDGET PLANNER */}
+      {selectedPeriod === "budget-dec" && <DecemberBudgetPanel />}
 
       {/* ANNUAL OVERVIEW */}
       {selectedPeriod === "annual" && (
