@@ -1,0 +1,16 @@
+{
+  "name": "hose_reducer_25_to_19",
+  "description": "Stepped cylindrical reducer adapter from 25 mm End A to 19 mm End B with stepped internal bore",
+  "units": "mm",
+  "overall_length_mm": 60.0,
+  "body_diameter_mm": 32.0,
+  "end_a_diameter_mm": 25.0,
+  "end_b_diameter_mm": 19.0,
+  "end_a_length_mm": 20.0,
+  "end_b_length_mm": 18.0,
+  "bore_a_diameter_mm": 18.0,
+  "bore_b_diameter_mm": 13.0,
+  "chamfer_mm": 1.0,
+  "clearance_mm": 0.15,
+  "fn": 96
+}
