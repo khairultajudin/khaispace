@@ -6,7 +6,7 @@ import hashlib
 import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Tuple
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
 from kai_cad.geometry.primitives import (
     EffectiveAdapterDimensions,
@@ -25,6 +25,9 @@ class CustomAdapterSpec:
     """Immutable parametric specification for a stepped cylindrical Custom Adapter (all mm).
 
     User-specified dimensions are preserved verbatim and never silently modified.
+    Optional per-interface clearance fields (`body_clearance_mm`, `end_a_clearance_mm`,
+    `end_b_clearance_mm`, `bore_a_clearance_mm`, `bore_b_clearance_mm`) override
+    the global `clearance_mm` for their respective surface when explicitly provided.
     """
 
     overall_length_mm: float
@@ -37,6 +40,11 @@ class CustomAdapterSpec:
     bore_b_diameter_mm: float
     chamfer_mm: float = 0.0
     clearance_mm: float = 0.0
+    body_clearance_mm: Optional[float] = None
+    end_a_clearance_mm: Optional[float] = None
+    end_b_clearance_mm: Optional[float] = None
+    bore_a_clearance_mm: Optional[float] = None
+    bore_b_clearance_mm: Optional[float] = None
     name: str = "custom_adapter"
     description: str = "Parametric stepped cylindrical adapter"
     units: str = "mm"
@@ -62,6 +70,11 @@ class CustomAdapterSpec:
             bore_b_diameter_mm=self.bore_b_diameter_mm,
             chamfer_mm=self.chamfer_mm,
             clearance_mm=self.clearance_mm,
+            body_clearance_mm=self.body_clearance_mm,
+            end_a_clearance_mm=self.end_a_clearance_mm,
+            end_b_clearance_mm=self.end_b_clearance_mm,
+            bore_a_clearance_mm=self.bore_a_clearance_mm,
+            bore_b_clearance_mm=self.bore_b_clearance_mm,
             fn=self.fn,
         )
 
@@ -69,6 +82,11 @@ class CustomAdapterSpec:
     def from_dict(cls, data: Mapping[str, Any]) -> "CustomAdapterSpec":
         """Validate a raw dictionary and construct an immutable CustomAdapterSpec."""
         validate_adapter_dict(data)
+
+        def _opt_float(key: str) -> Optional[float]:
+            val = data.get(key)
+            return None if val is None else float(val)
+
         return cls(
             overall_length_mm=float(data["overall_length_mm"]),
             body_diameter_mm=float(data["body_diameter_mm"]),
@@ -78,12 +96,17 @@ class CustomAdapterSpec:
             end_b_length_mm=float(data["end_b_length_mm"]),
             bore_a_diameter_mm=float(data["bore_a_diameter_mm"]),
             bore_b_diameter_mm=float(data["bore_b_diameter_mm"]),
-            chamfer_mm=float(data.get("chamfer_mm", 0.0) if data.get("chamfer_mm") is not None else 0.0),
-            clearance_mm=float(data.get("clearance_mm", 0.0) if data.get("clearance_mm") is not None else 0.0),
+            chamfer_mm=0.0 if data.get("chamfer_mm") is None else float(data["chamfer_mm"]),
+            clearance_mm=0.0 if data.get("clearance_mm") is None else float(data["clearance_mm"]),
+            body_clearance_mm=_opt_float("body_clearance_mm"),
+            end_a_clearance_mm=_opt_float("end_a_clearance_mm"),
+            end_b_clearance_mm=_opt_float("end_b_clearance_mm"),
+            bore_a_clearance_mm=_opt_float("bore_a_clearance_mm"),
+            bore_b_clearance_mm=_opt_float("bore_b_clearance_mm"),
             name=str(data.get("name", "custom_adapter")).strip(),
             description=str(data.get("description", "Parametric stepped cylindrical adapter")),
             units="mm",
-            fn=int(data.get("fn", 96) if data.get("fn") is not None else 96),
+            fn=96 if data.get("fn") is None else int(data["fn"]),
         )
 
     @classmethod
@@ -129,6 +152,11 @@ def _sanitize_comment(text: str) -> str:
     return " ".join(text.replace("\r", " ").replace("\n", " ").split())
 
 
+def _format_optional_mm(value: Optional[float]) -> str:
+    """Format an optional float as OpenSCAD numeric literal or `undef`."""
+    return "undef" if value is None else format_mm(value)
+
+
 def render_custom_adapter_scad(
     spec: CustomAdapterSpec,
     effective: EffectiveAdapterDimensions,
@@ -145,10 +173,11 @@ def render_custom_adapter_scad(
         f"// Description : {desc_comment}",
         "// Units       : millimetres (mm)",
         f"// Spec SHA256 : {spec_hash}",
-        "// Generator   : kai_cad.generators.custom_adapter (Phase 1)",
+        "// Generator   : kai_cad.generators.custom_adapter (Phase 1.1)",
         "// NOTE        : Nominal user dimensions are preserved verbatim below.",
-        "//               Radial clearance_mm reduces outer diameters by 2*clearance_mm",
-        "//               and enlarges non-zero bore diameters by 2*clearance_mm.",
+        "//               Per-interface clearance overrides (when not undef) take",
+        "//               precedence over global clearance_mm. Radial clearance reduces",
+        "//               outer diameters by 2*c and enlarges non-zero bores by 2*c.",
         "// ============================================================================",
         "",
         "// --- Nominal User Parameters (mm) ---",
@@ -162,15 +191,20 @@ def render_custom_adapter_scad(
         f"bore_b_diameter_mm = {format_mm(spec.bore_b_diameter_mm)};",
         f"chamfer_mm         = {format_mm(spec.chamfer_mm)};",
         f"clearance_mm       = {format_mm(spec.clearance_mm)};",
+        f"body_clearance_mm  = {_format_optional_mm(spec.body_clearance_mm)};",
+        f"end_a_clearance_mm = {_format_optional_mm(spec.end_a_clearance_mm)};",
+        f"end_b_clearance_mm = {_format_optional_mm(spec.end_b_clearance_mm)};",
+        f"bore_a_clearance_mm = {_format_optional_mm(spec.bore_a_clearance_mm)};",
+        f"bore_b_clearance_mm = {_format_optional_mm(spec.bore_b_clearance_mm)};",
         f"facet_count        = {spec.fn};",
         "",
         "// --- Derived Effective Dimensions (mm, for audit & inspection) ---",
         f"// body_length_mm          = {format_mm(effective.body_length_mm)}",
-        f"// effective_body_od_mm    = {format_mm(effective.body_diameter_mm)}",
-        f"// effective_end_a_od_mm   = {format_mm(effective.end_a_diameter_mm)}",
-        f"// effective_end_b_od_mm   = {format_mm(effective.end_b_diameter_mm)}",
-        f"// effective_bore_a_mm     = {format_mm(effective.bore_a_diameter_mm)}",
-        f"// effective_bore_b_mm     = {format_mm(effective.bore_b_diameter_mm)}",
+        f"// effective_body_od_mm    = {format_mm(effective.body_diameter_mm)} (clearance={format_mm(effective.body_clearance_mm)})",
+        f"// effective_end_a_od_mm   = {format_mm(effective.end_a_diameter_mm)} (clearance={format_mm(effective.end_a_clearance_mm)})",
+        f"// effective_end_b_od_mm   = {format_mm(effective.end_b_diameter_mm)} (clearance={format_mm(effective.end_b_clearance_mm)})",
+        f"// effective_bore_a_mm     = {format_mm(effective.bore_a_diameter_mm)} (clearance={format_mm(effective.bore_a_clearance_mm)})",
+        f"// effective_bore_b_mm     = {format_mm(effective.bore_b_diameter_mm)} (clearance={format_mm(effective.bore_b_clearance_mm)})",
         f"// profile_vertex_count    = {len(profile_points)}",
         "",
         "module custom_adapter(",
@@ -184,6 +218,11 @@ def render_custom_adapter_scad(
         "    bore_b_diameter = bore_b_diameter_mm,",
         "    chamfer = chamfer_mm,",
         "    clearance = clearance_mm,",
+        "    body_clearance = body_clearance_mm,",
+        "    end_a_clearance = end_a_clearance_mm,",
+        "    end_b_clearance = end_b_clearance_mm,",
+        "    bore_a_clearance = bore_a_clearance_mm,",
+        "    bore_b_clearance = bore_b_clearance_mm,",
         "    fn = facet_count",
         ") {",
         "    body_length = overall_length - (end_a_length + end_b_length);",
@@ -191,11 +230,17 @@ def render_custom_adapter_scad(
         "    z2 = end_a_length + body_length;",
         "    z_mid = end_a_length + (body_length / 2);",
         "",
-        "    eff_end_a_od = end_a_diameter - (2 * clearance);",
-        "    eff_body_od  = body_diameter - (2 * clearance);",
-        "    eff_end_b_od = end_b_diameter - (2 * clearance);",
-        "    eff_bore_a   = bore_a_diameter > 0 ? bore_a_diameter + (2 * clearance) : 0;",
-        "    eff_bore_b   = bore_b_diameter > 0 ? bore_b_diameter + (2 * clearance) : 0;",
+        "    c_body   = is_undef(body_clearance)   ? clearance : body_clearance;",
+        "    c_end_a  = is_undef(end_a_clearance)  ? clearance : end_a_clearance;",
+        "    c_end_b  = is_undef(end_b_clearance)  ? clearance : end_b_clearance;",
+        "    c_bore_a = is_undef(bore_a_clearance) ? clearance : bore_a_clearance;",
+        "    c_bore_b = is_undef(bore_b_clearance) ? clearance : bore_b_clearance;",
+        "",
+        "    eff_end_a_od = end_a_diameter - (2 * c_end_a);",
+        "    eff_body_od  = body_diameter - (2 * c_body);",
+        "    eff_end_b_od = end_b_diameter - (2 * c_end_b);",
+        "    eff_bore_a   = bore_a_diameter > 0 ? bore_a_diameter + (2 * c_bore_a) : 0;",
+        "    eff_bore_b   = bore_b_diameter > 0 ? bore_b_diameter + (2 * c_bore_b) : 0;",
         "",
         "    ra_out    = eff_end_a_od / 2;",
         "    rbody_out = eff_body_od / 2;",
@@ -239,6 +284,11 @@ def generate_custom_adapter(spec: CustomAdapterSpec | Mapping[str, Any]) -> Cust
         bore_b_diameter_mm=validated_spec.bore_b_diameter_mm,
         chamfer_mm=validated_spec.chamfer_mm,
         clearance_mm=validated_spec.clearance_mm,
+        body_clearance_mm=validated_spec.body_clearance_mm,
+        end_a_clearance_mm=validated_spec.end_a_clearance_mm,
+        end_b_clearance_mm=validated_spec.end_b_clearance_mm,
+        bore_a_clearance_mm=validated_spec.bore_a_clearance_mm,
+        bore_b_clearance_mm=validated_spec.bore_b_clearance_mm,
         fn=validated_spec.fn,
     )
     profile_points = build_stepped_adapter_profile(effective)

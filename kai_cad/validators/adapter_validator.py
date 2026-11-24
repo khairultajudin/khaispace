@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import math
-from typing import Any, List, Mapping, Sequence, Tuple
+from typing import Any, List, Mapping, Optional, Sequence, Tuple
 
 from kai_cad.geometry.primitives import (
+    MIN_FEATURE_EPSILON_MM,
     EffectiveAdapterDimensions,
+    build_stepped_adapter_profile,
     compute_effective_adapter_dimensions,
+    validate_profile_polygon,
 )
 from kai_cad.validators.errors import GeometryValidationError, ValidationIssue
 
@@ -22,10 +25,18 @@ REQUIRED_ADAPTER_FIELDS: Tuple[str, ...] = (
     "bore_b_diameter_mm",
 )
 
+PER_INTERFACE_CLEARANCE_FIELDS: Tuple[str, ...] = (
+    "body_clearance_mm",
+    "end_a_clearance_mm",
+    "end_b_clearance_mm",
+    "bore_a_clearance_mm",
+    "bore_b_clearance_mm",
+)
+
 OPTIONAL_NUMERIC_FIELDS: Tuple[str, ...] = (
     "chamfer_mm",
     "clearance_mm",
-)
+) + PER_INTERFACE_CLEARANCE_FIELDS
 
 ALLOWED_SPEC_FIELDS = frozenset(
     REQUIRED_ADAPTER_FIELDS
@@ -120,6 +131,10 @@ def validate_adapter_dict(raw: Mapping[str, Any]) -> None:
     if issues:
         raise GeometryValidationError(issues)
 
+    def _opt_float(key: str) -> Optional[float]:
+        val = raw.get(key)
+        return None if val is None else float(val)
+
     validate_adapter_dimensions(
         overall_length_mm=float(raw["overall_length_mm"]),
         body_diameter_mm=float(raw["body_diameter_mm"]),
@@ -129,9 +144,14 @@ def validate_adapter_dict(raw: Mapping[str, Any]) -> None:
         end_b_length_mm=float(raw["end_b_length_mm"]),
         bore_a_diameter_mm=float(raw["bore_a_diameter_mm"]),
         bore_b_diameter_mm=float(raw["bore_b_diameter_mm"]),
-        chamfer_mm=float(raw.get("chamfer_mm", 0.0) or 0.0),
-        clearance_mm=float(raw.get("clearance_mm", 0.0) or 0.0),
-        fn=int(raw.get("fn", 96) if raw.get("fn") is not None else 96),
+        chamfer_mm=0.0 if raw.get("chamfer_mm") is None else float(raw["chamfer_mm"]),
+        clearance_mm=0.0 if raw.get("clearance_mm") is None else float(raw["clearance_mm"]),
+        body_clearance_mm=_opt_float("body_clearance_mm"),
+        end_a_clearance_mm=_opt_float("end_a_clearance_mm"),
+        end_b_clearance_mm=_opt_float("end_b_clearance_mm"),
+        bore_a_clearance_mm=_opt_float("bore_a_clearance_mm"),
+        bore_b_clearance_mm=_opt_float("bore_b_clearance_mm"),
+        fn=96 if raw.get("fn") is None else int(raw["fn"]),
     )
 
 
@@ -147,12 +167,17 @@ def validate_adapter_dimensions(
     bore_b_diameter_mm: float,
     chamfer_mm: float = 0.0,
     clearance_mm: float = 0.0,
+    body_clearance_mm: Optional[float] = None,
+    end_a_clearance_mm: Optional[float] = None,
+    end_b_clearance_mm: Optional[float] = None,
+    bore_a_clearance_mm: Optional[float] = None,
+    bore_b_clearance_mm: Optional[float] = None,
     fn: int = 96,
 ) -> EffectiveAdapterDimensions:
     """Validate all Custom Adapter dimensions and return computed effective dimensions.
 
     Never mutates or clamps user-specified dimensions. Raises GeometryValidationError
-    with all detected issues when geometry is invalid or physically impossible.
+    with all detected issues when geometry is invalid, degenerate, or physically impossible.
     """
     issues: List[ValidationIssue] = []
 
@@ -171,6 +196,14 @@ def validate_adapter_dimensions(
             issues.append(
                 ValidationIssue(name, "NON_POSITIVE_DIMENSION", f"'{name}' must be > 0 mm; got {val}.")
             )
+        elif float(val) < MIN_FEATURE_EPSILON_MM:
+            issues.append(
+                ValidationIssue(
+                    name,
+                    "DEGENERATE_DIMENSION",
+                    f"'{name}' ({val} mm) is below minimum geometric resolution ({MIN_FEATURE_EPSILON_MM} mm).",
+                )
+            )
 
     non_negative: Sequence[Tuple[str, float]] = (
         ("bore_a_diameter_mm", bore_a_diameter_mm),
@@ -179,6 +212,31 @@ def validate_adapter_dimensions(
         ("clearance_mm", clearance_mm),
     )
     for name, val in non_negative:
+        if not _is_valid_number(val):
+            issues.append(ValidationIssue(name, "INVALID_NUMBER", f"'{name}' must be a finite number."))
+        elif float(val) < 0.0:
+            issues.append(
+                ValidationIssue(name, "NEGATIVE_DIMENSION", f"'{name}' must be >= 0 mm; got {val}.")
+            )
+        elif 0.0 < float(val) < MIN_FEATURE_EPSILON_MM and name in ("bore_a_diameter_mm", "bore_b_diameter_mm", "chamfer_mm"):
+            issues.append(
+                ValidationIssue(
+                    name,
+                    "DEGENERATE_DIMENSION",
+                    f"Non-zero '{name}' ({val} mm) is below minimum geometric resolution ({MIN_FEATURE_EPSILON_MM} mm).",
+                )
+            )
+
+    optional_clearances: Sequence[Tuple[str, Optional[float]]] = (
+        ("body_clearance_mm", body_clearance_mm),
+        ("end_a_clearance_mm", end_a_clearance_mm),
+        ("end_b_clearance_mm", end_b_clearance_mm),
+        ("bore_a_clearance_mm", bore_a_clearance_mm),
+        ("bore_b_clearance_mm", bore_b_clearance_mm),
+    )
+    for name, val in optional_clearances:
+        if val is None:
+            continue
         if not _is_valid_number(val):
             issues.append(ValidationIssue(name, "INVALID_NUMBER", f"'{name}' must be a finite number."))
         elif float(val) < 0.0:
@@ -195,8 +253,27 @@ def validate_adapter_dimensions(
     if issues:
         raise GeometryValidationError(issues)
 
+    # Reject explicit positive bore clearance on a solid (0 mm) bore to avoid silently ignoring input.
+    if bore_a_diameter_mm == 0.0 and bore_a_clearance_mm is not None and bore_a_clearance_mm > 0.0:
+        issues.append(
+            ValidationIssue(
+                "bore_a_clearance_mm",
+                "CLEARANCE_ON_ZERO_BORE",
+                "Explicit bore_a_clearance_mm > 0 cannot be applied when bore_a_diameter_mm is 0.",
+            )
+        )
+    if bore_b_diameter_mm == 0.0 and bore_b_clearance_mm is not None and bore_b_clearance_mm > 0.0:
+        issues.append(
+            ValidationIssue(
+                "bore_b_clearance_mm",
+                "CLEARANCE_ON_ZERO_BORE",
+                "Explicit bore_b_clearance_mm > 0 cannot be applied when bore_b_diameter_mm is 0.",
+            )
+        )
+
     # Shoulder & overall length feasibility
     combined_shoulders = end_a_length_mm + end_b_length_mm
+    body_length = overall_length_mm - combined_shoulders
     if combined_shoulders >= overall_length_mm:
         issues.append(
             ValidationIssue(
@@ -206,6 +283,17 @@ def validate_adapter_dimensions(
                     f"Sum of shoulder lengths (end_a_length_mm={end_a_length_mm} + "
                     f"end_b_length_mm={end_b_length_mm} = {combined_shoulders} mm) must be strictly "
                     f"less than overall_length_mm ({overall_length_mm} mm) to leave a positive central body."
+                ),
+            )
+        )
+    elif body_length < MIN_FEATURE_EPSILON_MM:
+        issues.append(
+            ValidationIssue(
+                "overall_length_mm",
+                "DEGENERATE_BODY_LENGTH",
+                (
+                    f"Remaining central body length ({body_length} mm) is below minimum geometric "
+                    f"resolution ({MIN_FEATURE_EPSILON_MM} mm)."
                 ),
             )
         )
@@ -271,78 +359,115 @@ def validate_adapter_dimensions(
         bore_b_diameter_mm=bore_b_diameter_mm,
         chamfer_mm=chamfer_mm,
         clearance_mm=clearance_mm,
+        body_clearance_mm=body_clearance_mm,
+        end_a_clearance_mm=end_a_clearance_mm,
+        end_b_clearance_mm=end_b_clearance_mm,
+        bore_a_clearance_mm=bore_a_clearance_mm,
+        bore_b_clearance_mm=bore_b_clearance_mm,
     )
 
-    if eff.end_a_diameter_mm <= 0.0:
+    if eff.end_a_diameter_mm < MIN_FEATURE_EPSILON_MM:
         issues.append(
             ValidationIssue(
-                "clearance_mm",
+                "end_a_clearance_mm" if end_a_clearance_mm is not None else "clearance_mm",
                 "CLEARANCE_COLLAPSES_DIAMETER",
-                f"clearance_mm ({clearance_mm} mm) collapses effective end_a_diameter_mm to {eff.end_a_diameter_mm} mm.",
+                f"Resolved End A clearance ({eff.end_a_clearance_mm} mm) collapses effective end_a_diameter_mm to {eff.end_a_diameter_mm} mm.",
             )
         )
-    if eff.body_diameter_mm <= 0.0:
+    if eff.body_diameter_mm < MIN_FEATURE_EPSILON_MM:
         issues.append(
             ValidationIssue(
-                "clearance_mm",
+                "body_clearance_mm" if body_clearance_mm is not None else "clearance_mm",
                 "CLEARANCE_COLLAPSES_DIAMETER",
-                f"clearance_mm ({clearance_mm} mm) collapses effective body_diameter_mm to {eff.body_diameter_mm} mm.",
+                f"Resolved body clearance ({eff.body_clearance_mm} mm) collapses effective body_diameter_mm to {eff.body_diameter_mm} mm.",
             )
         )
-    if eff.end_b_diameter_mm <= 0.0:
+    if eff.end_b_diameter_mm < MIN_FEATURE_EPSILON_MM:
         issues.append(
             ValidationIssue(
-                "clearance_mm",
+                "end_b_clearance_mm" if end_b_clearance_mm is not None else "clearance_mm",
                 "CLEARANCE_COLLAPSES_DIAMETER",
-                f"clearance_mm ({clearance_mm} mm) collapses effective end_b_diameter_mm to {eff.end_b_diameter_mm} mm.",
+                f"Resolved End B clearance ({eff.end_b_clearance_mm} mm) collapses effective end_b_diameter_mm to {eff.end_b_diameter_mm} mm.",
             )
         )
 
-    if eff.bore_a_diameter_mm > 0.0 and eff.end_a_diameter_mm > 0.0:
+    if eff.bore_a_diameter_mm > 0.0 and eff.end_a_diameter_mm >= MIN_FEATURE_EPSILON_MM:
         if eff.bore_a_diameter_mm >= eff.end_a_diameter_mm:
             issues.append(
                 ValidationIssue(
-                    "clearance_mm",
+                    "bore_a_clearance_mm" if bore_a_clearance_mm is not None else "clearance_mm",
                     "EFFECTIVE_BORE_EXCEEDS_OUTER_DIAMETER",
                     (
-                        f"After applying clearance_mm={clearance_mm} mm, effective bore_a ({eff.bore_a_diameter_mm} mm) "
+                        f"After applying clearances, effective bore_a ({eff.bore_a_diameter_mm} mm) "
                         f"meets or exceeds effective end_a OD ({eff.end_a_diameter_mm} mm)."
                     ),
+                )
+            )
+        elif (eff.end_a_diameter_mm - eff.bore_a_diameter_mm) / 2.0 < MIN_FEATURE_EPSILON_MM:
+            issues.append(
+                ValidationIssue(
+                    "bore_a_diameter_mm",
+                    "DEGENERATE_WALL_THICKNESS",
+                    "Effective End A radial wall thickness is below minimum geometric resolution.",
                 )
             )
         if eff.bore_a_diameter_mm >= eff.body_diameter_mm:
             issues.append(
                 ValidationIssue(
-                    "clearance_mm",
+                    "bore_a_clearance_mm" if bore_a_clearance_mm is not None else "clearance_mm",
                     "EFFECTIVE_BORE_EXCEEDS_BODY_DIAMETER",
                     (
-                        f"After applying clearance_mm={clearance_mm} mm, effective bore_a ({eff.bore_a_diameter_mm} mm) "
+                        f"After applying clearances, effective bore_a ({eff.bore_a_diameter_mm} mm) "
                         f"meets or exceeds effective body OD ({eff.body_diameter_mm} mm)."
                     ),
                 )
             )
+        elif (eff.body_diameter_mm - eff.bore_a_diameter_mm) / 2.0 < MIN_FEATURE_EPSILON_MM:
+            issues.append(
+                ValidationIssue(
+                    "bore_a_diameter_mm",
+                    "DEGENERATE_WALL_THICKNESS",
+                    "Effective body radial wall thickness at Bore A is below minimum geometric resolution.",
+                )
+            )
 
-    if eff.bore_b_diameter_mm > 0.0 and eff.end_b_diameter_mm > 0.0:
+    if eff.bore_b_diameter_mm > 0.0 and eff.end_b_diameter_mm >= MIN_FEATURE_EPSILON_MM:
         if eff.bore_b_diameter_mm >= eff.end_b_diameter_mm:
             issues.append(
                 ValidationIssue(
-                    "clearance_mm",
+                    "bore_b_clearance_mm" if bore_b_clearance_mm is not None else "clearance_mm",
                     "EFFECTIVE_BORE_EXCEEDS_OUTER_DIAMETER",
                     (
-                        f"After applying clearance_mm={clearance_mm} mm, effective bore_b ({eff.bore_b_diameter_mm} mm) "
+                        f"After applying clearances, effective bore_b ({eff.bore_b_diameter_mm} mm) "
                         f"meets or exceeds effective end_b OD ({eff.end_b_diameter_mm} mm)."
                     ),
+                )
+            )
+        elif (eff.end_b_diameter_mm - eff.bore_b_diameter_mm) / 2.0 < MIN_FEATURE_EPSILON_MM:
+            issues.append(
+                ValidationIssue(
+                    "bore_b_diameter_mm",
+                    "DEGENERATE_WALL_THICKNESS",
+                    "Effective End B radial wall thickness is below minimum geometric resolution.",
                 )
             )
         if eff.bore_b_diameter_mm >= eff.body_diameter_mm:
             issues.append(
                 ValidationIssue(
-                    "clearance_mm",
+                    "bore_b_clearance_mm" if bore_b_clearance_mm is not None else "clearance_mm",
                     "EFFECTIVE_BORE_EXCEEDS_BODY_DIAMETER",
                     (
-                        f"After applying clearance_mm={clearance_mm} mm, effective bore_b ({eff.bore_b_diameter_mm} mm) "
+                        f"After applying clearances, effective bore_b ({eff.bore_b_diameter_mm} mm) "
                         f"meets or exceeds effective body OD ({eff.body_diameter_mm} mm)."
                     ),
+                )
+            )
+        elif (eff.body_diameter_mm - eff.bore_b_diameter_mm) / 2.0 < MIN_FEATURE_EPSILON_MM:
+            issues.append(
+                ValidationIssue(
+                    "bore_b_diameter_mm",
+                    "DEGENERATE_WALL_THICKNESS",
+                    "Effective body radial wall thickness at Bore B is below minimum geometric resolution.",
                 )
             )
 
@@ -356,12 +481,28 @@ def validate_adapter_dimensions(
                     f"chamfer_mm ({chamfer_mm} mm) must be strictly less than end_a_length_mm ({end_a_length_mm} mm).",
                 )
             )
+        elif (end_a_length_mm - chamfer_mm) < MIN_FEATURE_EPSILON_MM:
+            issues.append(
+                ValidationIssue(
+                    "chamfer_mm",
+                    "DEGENERATE_CHAMFER_MARGIN",
+                    "Remaining End A straight shoulder length after chamfer is below minimum geometric resolution.",
+                )
+            )
         if chamfer_mm >= end_b_length_mm:
             issues.append(
                 ValidationIssue(
                     "chamfer_mm",
                     "CHAMFER_EXCEEDS_SHOULDER_LENGTH",
                     f"chamfer_mm ({chamfer_mm} mm) must be strictly less than end_b_length_mm ({end_b_length_mm} mm).",
+                )
+            )
+        elif (end_b_length_mm - chamfer_mm) < MIN_FEATURE_EPSILON_MM:
+            issues.append(
+                ValidationIssue(
+                    "chamfer_mm",
+                    "DEGENERATE_CHAMFER_MARGIN",
+                    "Remaining End B straight shoulder length after chamfer is below minimum geometric resolution.",
                 )
             )
         end_a_radial_wall = (eff.end_a_diameter_mm - eff.bore_a_diameter_mm) / 2.0
@@ -376,6 +517,14 @@ def validate_adapter_dimensions(
                     ),
                 )
             )
+        elif (end_a_radial_wall - chamfer_mm) < MIN_FEATURE_EPSILON_MM:
+            issues.append(
+                ValidationIssue(
+                    "chamfer_mm",
+                    "DEGENERATE_CHAMFER_MARGIN",
+                    "Remaining End A face width after chamfer is below minimum geometric resolution.",
+                )
+            )
         end_b_radial_wall = (eff.end_b_diameter_mm - eff.bore_b_diameter_mm) / 2.0
         if chamfer_mm >= end_b_radial_wall:
             issues.append(
@@ -388,8 +537,25 @@ def validate_adapter_dimensions(
                     ),
                 )
             )
+        elif (end_b_radial_wall - chamfer_mm) < MIN_FEATURE_EPSILON_MM:
+            issues.append(
+                ValidationIssue(
+                    "chamfer_mm",
+                    "DEGENERATE_CHAMFER_MARGIN",
+                    "Remaining End B face width after chamfer is below minimum geometric resolution.",
+                )
+            )
 
     if issues:
         raise GeometryValidationError(issues)
+
+    # Final 2D polygon integrity check (non-degenerate, positive CCW area, non-self-intersecting).
+    profile = build_stepped_adapter_profile(eff)
+    try:
+        validate_profile_polygon(profile)
+    except ValueError as exc:
+        raise GeometryValidationError(
+            [ValidationIssue("profile", "DEGENERATE_PROFILE", str(exc))]
+        ) from exc
 
     return eff

@@ -3,6 +3,7 @@
 from .adapter_validator import (
     ALLOWED_SPEC_FIELDS,
     OPTIONAL_NUMERIC_FIELDS,
+    PER_INTERFACE_CLEARANCE_FIELDS,
     REQUIRED_ADAPTER_FIELDS,
     validate_adapter_dict,
     validate_adapter_dimensions,
@@ -15,6 +16,7 @@ __all__ = [
     "GeometryValidationError",
     "KaiCadError",
     "OPTIONAL_NUMERIC_FIELDS",
+    "PER_INTERFACE_CLEARANCE_FIELDS",
     "REQUIRED_ADAPTER_FIELDS",
     "ValidationIssue",
     "validate_adapter_dict",

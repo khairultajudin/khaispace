@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Dict, FrozenSet, List, Optional
+from typing import Dict, FrozenSet, List, Optional, Tuple
 
 
 class DesignState(str, Enum):
@@ -41,6 +41,8 @@ HUB_STATUS_MAP: Dict[DesignState, str] = {
 
 def can_transition(current: DesignState, target: DesignState) -> bool:
     """Return True when transitioning from *current* to *target* is permitted."""
+    if not isinstance(current, DesignState) or not isinstance(target, DesignState):
+        return False
     return target in VALID_TRANSITIONS.get(current, frozenset())
 
 
@@ -61,7 +63,12 @@ class LifecycleEvent:
 
 @dataclass
 class DesignRecord:
-    """Tracks a CAD design's identity, lifecycle state, artifacts, and audit history."""
+    """Tracks a CAD design's identity, lifecycle state, artifacts, and immutable audit trail.
+
+    Audit history is private and exposed strictly as a read-only tuple of immutable
+    `LifecycleEvent` objects; external callers cannot append, clear, replace, or
+    inject history entries outside `transition()`.
+    """
 
     design_id: str
     component_type: str
@@ -69,21 +76,29 @@ class DesignRecord:
     scad_path: Optional[str] = None
     stl_path: Optional[str] = None
     spec_sha256: Optional[str] = None
-    history: List[LifecycleEvent] = field(default_factory=list)
+    _history: List[LifecycleEvent] = field(default_factory=list, init=False, repr=False)
+
+    @property
+    def history(self) -> Tuple[LifecycleEvent, ...]:
+        """Return an immutable snapshot of all recorded lifecycle transitions."""
+        return tuple(self._history)
 
     def transition(self, target: DesignState, *, note: str = "") -> DesignState:
-        """Advance the record to *target* if permitted; raise ValueError otherwise."""
+        """Advance the record to *target* if permitted; raise ValueError without mutating state or history."""
+        if not isinstance(target, DesignState):
+            raise ValueError(
+                f"Invalid KAI CAD lifecycle target state: expected DesignState, got {target!r}."
+            )
         if not can_transition(self.state, target):
             raise ValueError(
                 f"Invalid KAI CAD lifecycle transition: '{self.state.value}' -> '{target.value}'."
             )
-        self.history.append(
-            LifecycleEvent(
-                from_state=self.state.value,
-                to_state=target.value,
-                timestamp_utc=datetime.now(timezone.utc).isoformat(),
-                note=note,
-            )
+        event = LifecycleEvent(
+            from_state=self.state.value,
+            to_state=target.value,
+            timestamp_utc=datetime.now(timezone.utc).isoformat(),
+            note=note,
         )
+        self._history.append(event)
         self.state = target
         return self.state

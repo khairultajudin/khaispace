@@ -10,7 +10,9 @@ from pathlib import Path
 from typing import Any, List, Optional
 
 _WINDOWS_OPENSCAD_CANDIDATES = (
+    Path(r"C:\Program Files\OpenSCAD\openscad.com"),
     Path(r"C:\Program Files\OpenSCAD\openscad.exe"),
+    Path(r"C:\Program Files (x86)\OpenSCAD\openscad.com"),
     Path(r"C:\Program Files (x86)\OpenSCAD\openscad.exe"),
 )
 

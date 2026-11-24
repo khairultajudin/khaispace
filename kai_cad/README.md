@@ -29,13 +29,19 @@ python -m kai_cad custom-adapter \
   --stl build/hose_reducer_25_to_19.stl
 ```
 
+## Key Guarantees (Phase 1.1 Hardened)
+
+- **Lifecycle Audit Integrity:** `DesignRecord.history` is a read-only `tuple` of frozen `LifecycleEvent` entries with UTC timestamps. External callers cannot mutate, reassign, or inject audit history; invalid transitions leave state and history unchanged.
+- **Clearance Semantics:** Global `clearance_mm` remains backward-compatible across all 5 surfaces. Optional per-interface radial overrides (`body_clearance_mm`, `end_a_clearance_mm`, `end_b_clearance_mm`, `bore_a_clearance_mm`, `bore_b_clearance_mm`) take precedence over `clearance_mm` for their specific surface without ever mutating nominal dimensions.
+- **Geometry Validation:** Enforces finite millimetre inputs, `0.0001 mm` minimum feature resolution, nominal and effective bore-vs-OD wall checks, chamfer bounds, and a 2D closed-polygon integrity check (positive CCW area, no duplicate vertices, no self-intersections) before emitting OpenSCAD source.
+
 ## Module Layout
 
 - `kai_cad/generators/` — Parametric component generators (`custom_adapter.py`)
-- `kai_cad/geometry/` — Deterministic 2D/3D geometry math & formatting primitives
+- `kai_cad/geometry/` — Deterministic 2D/3D geometry math, polygon integrity checks & formatting primitives
 - `kai_cad/validators/` — Strict schema & geometric feasibility validation (never silently mutates user dimensions)
 - `kai_cad/exporters/` — `.scad` file writer and optional OpenSCAD CLI STL exporter
-- `kai_cad/lifecycle.py` — 6-state design lifecycle (`Draft -> Generated -> Validated -> Exported -> Imported -> Completed`)
+- `kai_cad/lifecycle.py` — 6-state design lifecycle (`Draft -> Generated -> Validated -> Exported -> Imported -> Completed`) with immutable audit history
 - `kai_cad/mcp_interface.py` — Typed protocol and local reference adapter for future KAI CAD MCP integration
 - `kai_cad/tests/` — Automated `unittest` suite (runs without OpenSCAD installed)
 
