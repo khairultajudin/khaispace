@@ -75,14 +75,14 @@ interface InvoiceStore {
 
 type SubTab = "invoices" | "expenses" | "customers" | "settlement";
 
-const STORAGE_KEY = "khai_hub_mk_invoices_v1";
+const STORAGE_KEY = "khai_hub_mk_invoices_v2";
 
 const SEED_INVOICE_NUMBERS = new Set(
   (seedData.invoices as Invoice[]).map((inv) => inv.invoice_number)
 );
 
 const MONTH_OPTIONS = [
-  { value: "all", label: "Semua Bulan (Jan – Okt 2026)" },
+  { value: "all", label: "Semua Bulan (Jan – Nov 2026)" },
   { value: "2026-01", label: "Januari 2026" },
   { value: "2026-02", label: "Februari 2026" },
   { value: "2026-03", label: "Mac 2026" },
@@ -337,7 +337,7 @@ export function InvoicesView() {
               </span>
             </div>
             <p className="text-xs text-[#536B85] mt-1">
-              Rekod invois rasmi (format <span className="font-mono font-semibold text-[#0C2340]">INV26MMNNN</span>), kos operasi syarikat &amp; imbangan Khai ↔ MK Venture (Jan – Okt 2026 diaudit 100%).
+              Rekod invois rasmi (format <span className="font-mono font-semibold text-[#0C2340]">INV26MMNNN</span>), kos operasi syarikat &amp; imbangan Khai ↔ MK Venture (Jan – 24 Nov 2026 diaudit 100%).
             </p>
           </div>
         </div>
@@ -371,7 +371,7 @@ export function InvoicesView() {
           </div>
           <div className="text-2xl font-bold text-[#0C2340] mt-1.5">{fmtRM(totalRevenue)}</div>
           <div className="text-[11px] text-[#347A63] mt-1 font-medium">
-            {store.invoices.length} invois • 100% dibayar (Jan–Okt)
+            {store.invoices.length} invois • 100% dibayar (Jan–24 Nov)
           </div>
         </div>
 
@@ -393,18 +393,18 @@ export function InvoicesView() {
           </div>
           <div className="text-2xl font-bold text-[#347A63] mt-1.5">{fmtRM(netProfitAfterRefunds)}</div>
           <div className="text-[11px] text-[#536B85] mt-1">
-            Baki M2U 31 Okt: RM 80.38 (+RM 325 Tabung MAE)
+            Anggaran Baki M2U 24 Nov: RM 788.33 (Tabung MAE lunas)
           </div>
         </div>
 
         <div className="bg-white rounded-xl border border-[#DCD7CC] p-4">
           <div className="flex items-center justify-between text-xs text-[#536B85] font-medium">
             <span>Imbangan Khai ↔ MK</span>
-            <Scale className="w-4 h-4 text-[#347A63]" />
+            <Scale className="w-4 h-4 text-[#B45309]" />
           </div>
-          <div className="text-2xl font-bold text-[#0C2340] mt-1.5">+RM 16.14</div>
+          <div className="text-2xl font-bold text-[#B45309] mt-1.5">-RM 76.86</div>
           <div className="text-[11px] text-[#536B85] mt-1">
-            Claim RM 537.29 − Pulang RM 521.15
+            Claim RM 449.29 − Pulang RM 526.15
           </div>
         </div>
       </div>
@@ -638,10 +638,10 @@ export function InvoicesView() {
               <div className="rounded-lg border border-[#C8E6D7] bg-[#EBF5F0]/50 p-4 space-y-2">
                 <div className="font-bold text-sm text-[#0C2340] flex justify-between">
                   <span>MK Venture → Khai (Pending Claims)</span>
-                  <span className="text-[#347A63]">RM 537.29</span>
+                  <span className="text-[#347A63]">RM 449.29</span>
                 </div>
                 <ul className="space-y-1.5 text-[#536B85]">
-                  <li className="flex justify-between"><span>06-Jul • Cytron #533938 (2x PETG Filament)</span><span className="font-mono text-[#0C2340]">RM 88.00</span></li>
+                  <li className="flex justify-between line-through opacity-60"><span>06-Jul • Cytron #533938 (2x PETG) — LUNAS 24-Nov</span><span className="font-mono">RM 88.00</span></li>
                   <li className="flex justify-between"><span>22-Jul • Sign House Advertising (Cop Company)</span><span className="font-mono text-[#0C2340]">RM 40.00</span></li>
                   <li className="flex justify-between"><span>29-Sep • Cytron #551142 (Maker ESP32)</span><span className="font-mono text-[#0C2340]">RM 70.24</span></li>
                   <li className="flex justify-between"><span>29-Oct • SPayLater Okt (3D Printer Parts)</span><span className="font-mono text-[#0C2340]">RM 170.35</span></li>
@@ -652,26 +652,26 @@ export function InvoicesView() {
               <div className="rounded-lg border border-[#DCD7CC] bg-[#FAF8F4] p-4 space-y-2">
                 <div className="font-bold text-sm text-[#0C2340] flex justify-between">
                   <span>Khai → MK Venture (Pelanggan / Refund / Pulang)</span>
-                  <span className="text-[#B45309]">RM 521.15</span>
+                  <span className="text-[#B45309]">RM 526.15</span>
                 </div>
                 <ul className="space-y-1.5 text-[#536B85]">
                   <li className="flex justify-between"><span>Pelanggan di CIMB Khai (Ahmad Solehin RM8 + Clean Green RM31.50 + M. Ihsan RM20)</span><span className="font-mono text-[#0C2340]">RM 59.50</span></li>
                   <li className="flex justify-between"><span>09-Oct • Refund Shipping Cytron SO-552817</span><span className="font-mono text-[#0C2340]">RM 105.00</span></li>
                   <li className="flex justify-between"><span>29-Oct • Refund TM Unifi (bil 21-Sep)</span><span className="font-mono text-[#0C2340]">RM 78.15</span></li>
                   <li className="flex justify-between"><span>Sep &amp; Okt • Pulang Komisen (RM200) + Transport (RM50)</span><span className="font-mono text-[#0C2340]">RM 250.00</span></li>
-                  <li className="flex justify-between"><span>Apr &amp; Mei • Drawings Makan M2U (9.50 + 10.90 + 8.10)</span><span className="font-mono text-[#0C2340]">RM 28.50</span></li>
+                  <li className="flex justify-between"><span>Apr, Mei &amp; Nov • Drawings Peribadi M2U (9.50 + 10.90 + 8.10 + 5.00)</span><span className="font-mono text-[#0C2340]">RM 33.50</span></li>
                 </ul>
               </div>
             </div>
 
             <div className="rounded-lg border border-[#0C2340] bg-[#0C2340] text-white p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
-                <div className="font-bold text-sm">Imbangan Bersih Muktamad (Jan – Okt 2026)</div>
+                <div className="font-bold text-sm">Imbangan Bersih Muktamad (Setakat 24 Nov 2026)</div>
                 <div className="text-slate-300 text-[11px]">
-                  MK Venture hanya perlu bayar baki bersih RM 16.14 kepada Khai untuk melangsaikan 100% semua tuntutan &amp; pulangan. (Tabung MAE dalaman untuk dikeluarkan semula ke M2U: RM 325.00).
+                  Selepas claim Cytron #533938 (RM 88.00) dibayar pada 24-Nov dan parkir Panaxis (RM 5.00) direkod, Khai perlu bayar baki bersih RM 76.86 kepada MK Venture. Tabung MAE (RM 300 + RM 50) sudah 100% dikeluarkan semula ke M2U.
                 </div>
               </div>
-              <div className="text-xl font-bold font-mono text-emerald-300 shrink-0">+RM 16.14</div>
+              <div className="text-xl font-bold font-mono text-amber-300 shrink-0">-RM 76.86</div>
             </div>
           </div>
         )}
