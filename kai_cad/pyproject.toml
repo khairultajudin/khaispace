@@ -4,14 +4,20 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kai-cad"
-version = "0.1.0"
-description = "KAI CAD Studio — Deterministic Parametric CAD Engine (OpenSCAD) for Khaispace"
+version = "0.2.0"
+description = "KAI CAD Studio — Deterministic Parametric CAD Engine (OpenSCAD) and MCP Server for Khaispace"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = []
 
+[project.optional-dependencies]
+mcp = [
+    "mcp>=1.9.0,<2.0",
+]
+
 [project.scripts]
 kai-cad = "kai_cad.cli:main"
+kai-cad-mcp = "kai_cad.mcp_server:main"
 
 [tool.setuptools.packages.find]
 where = [".."]

@@ -1,7 +1,7 @@
 # KAI CAD Studio — System Architecture
 
 **Module:** `kai_cad/` (inside `khairultajudin/khaispace` monorepo)  
-**Scope:** Phase 0 (Architecture & Specification), Phase 1 (Parametric CAD Engine), and Phase 1.1 (Engine Hardening)  
+**Scope:** Phase 0 (Architecture), Phase 1/1.1 (Parametric CAD Engine & Hardening), and Phase 2 (Live STDIO MCP Server & Local Persistence)  
 **Primary CAD Kernel Target:** OpenSCAD (`.scad` source + optional `.stl` CLI export)  
 **Unit System:** Millimetres (`mm`) exclusively
 

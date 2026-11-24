@@ -20,6 +20,13 @@ from kai_cad.lifecycle import (
     map_to_hub_status,
 )
 from kai_cad.mcp_interface import KaiCadMcpProvider, LocalKaiCadMcpAdapter, McpToolResponse
+from kai_cad.mcp_service import KaiCadMcpService
+from kai_cad.storage import (
+    CorruptedRecordError,
+    FileDesignRepository,
+    PathSecurityError,
+    PersistedDesign,
+)
 from kai_cad.validators import (
     ExportDependencyError,
     GeometryValidationError,
@@ -30,17 +37,22 @@ from kai_cad.validators import (
 )
 
 __all__ = [
+    "CorruptedRecordError",
     "CustomAdapterResult",
     "CustomAdapterSpec",
     "DesignRecord",
     "DesignState",
     "ExportDependencyError",
+    "FileDesignRepository",
     "GeometryValidationError",
     "KaiCadError",
     "KaiCadMcpProvider",
+    "KaiCadMcpService",
     "LifecycleEvent",
     "LocalKaiCadMcpAdapter",
     "McpToolResponse",
+    "PathSecurityError",
+    "PersistedDesign",
     "StlExportResult",
     "ValidationIssue",
     "can_transition",

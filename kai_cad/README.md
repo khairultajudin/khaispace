@@ -51,8 +51,20 @@ python -m kai_cad custom-adapter \
 python -m unittest discover -s kai_cad/tests -v
 ```
 
+## Live STDIO MCP Server (Phase 2)
+
+Install the optional official Python MCP SDK (`mcp>=1.9.0,<2.0`) and launch the STDIO server:
+
+```bash
+pip install "mcp>=1.9.0,<2.0"
+python -m kai_cad.mcp_server --workspace ./.kai_cad_workspace
+```
+
+Exposed MCP tools: `cad_generate_design`, `cad_validate_design`, `cad_export_stl`, `cad_get_design`, `cad_list_designs`, `cad_get_design_artifact`.
+
 ## Architecture & Specifications
 
 - [ARCHITECTURE.md](../docs/kai-cad-studio/ARCHITECTURE.md)
 - [PHASE_0_SPECIFICATION.md](../docs/kai-cad-studio/PHASE_0_SPECIFICATION.md)
 - [PHASE_1_CAD_ENGINE.md](../docs/kai-cad-studio/PHASE_1_CAD_ENGINE.md)
+- [PHASE_2_MCP_SERVER.md](../docs/kai-cad-studio/PHASE_2_MCP_SERVER.md)

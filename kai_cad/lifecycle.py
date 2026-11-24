@@ -1,11 +1,11 @@
-"""KAI CAD Studio — Phase 0/1 Design Lifecycle State Machine."""
+"""KAI CAD Studio — Phase 0/1/2 Design Lifecycle State Machine."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Dict, FrozenSet, List, Optional, Tuple
+from typing import Any, Dict, FrozenSet, List, Mapping, Optional, Sequence, Tuple
 
 
 class DesignState(str, Enum):
@@ -102,3 +102,59 @@ class DesignRecord:
         self._history.append(event)
         self.state = target
         return self.state
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize record fields and immutable audit trail to a JSON-compatible dict."""
+        return {
+            "design_id": self.design_id,
+            "component_type": self.component_type,
+            "state": self.state.value,
+            "scad_path": self.scad_path,
+            "stl_path": self.stl_path,
+            "spec_sha256": self.spec_sha256,
+            "history": [asdict(ev) for ev in self._history],
+        }
+
+    @classmethod
+    def from_persisted(cls, data: Mapping[str, Any]) -> "DesignRecord":
+        """Rehydrate a persisted DesignRecord while validating state and audit event integrity."""
+        if not isinstance(data, Mapping):
+            raise ValueError("Persisted design record must be a mapping.")
+        design_id = data.get("design_id")
+        component_type = data.get("component_type")
+        raw_state = data.get("state")
+        if not isinstance(design_id, str) or not design_id.strip():
+            raise ValueError("Persisted design record missing valid 'design_id'.")
+        if not isinstance(component_type, str) or not component_type.strip():
+            raise ValueError("Persisted design record missing valid 'component_type'.")
+        if not isinstance(raw_state, str):
+            raise ValueError("Persisted design record missing valid 'state'.")
+
+        state = DesignState(raw_state)
+        raw_history = data.get("history", [])
+        if not isinstance(raw_history, Sequence) or isinstance(raw_history, (str, bytes)):
+            raise ValueError("Persisted design record 'history' must be a list of events.")
+
+        events: List[LifecycleEvent] = []
+        for idx, item in enumerate(raw_history):
+            if not isinstance(item, Mapping):
+                raise ValueError(f"Persisted audit event at index {idx} is not an object.")
+            from_s = DesignState(str(item.get("from_state", ""))).value
+            to_s = DesignState(str(item.get("to_state", ""))).value
+            ts = item.get("timestamp_utc")
+            if not isinstance(ts, str) or not ts.strip():
+                raise ValueError(f"Persisted audit event at index {idx} missing 'timestamp_utc'.")
+            datetime.fromisoformat(ts)
+            note = str(item.get("note", ""))
+            events.append(LifecycleEvent(from_state=from_s, to_state=to_s, timestamp_utc=ts, note=note))
+
+        record = cls(
+            design_id=design_id,
+            component_type=component_type,
+            state=state,
+            scad_path=data.get("scad_path") if isinstance(data.get("scad_path"), str) else None,
+            stl_path=data.get("stl_path") if isinstance(data.get("stl_path"), str) else None,
+            spec_sha256=data.get("spec_sha256") if isinstance(data.get("spec_sha256"), str) else None,
+        )
+        record._history = events
+        return record
