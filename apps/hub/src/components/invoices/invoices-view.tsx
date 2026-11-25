@@ -3,83 +3,51 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Building2,
+  CheckCircle2,
   Download,
+  FileCheck2,
   FileSpreadsheet,
   FileText,
+  FolderArchive,
   Plus,
   Printer,
   Receipt,
   Scale,
   Search,
+  ShieldCheck,
   Trash2,
   Users,
   Wallet,
   X,
 } from "lucide-react";
 import seedData from "../../data/mk-venture-invoices-2026.json";
+import {
+  Customer,
+  DEFAULT_LHDN_PROFILE,
+  Expense,
+  Invoice,
+  InvoiceItem,
+  InvoiceStore,
+  LhdnProfile,
+  Quotation,
+  fmtDate,
+  fmtRM,
+  getReceiptNumber,
+} from "./types";
+import { QuotationsTab } from "./quotations-tab";
+import { ExpenseVaultTab } from "./expense-vault-tab";
+import { LhdnReportsTab } from "./lhdn-reports-tab";
 
-interface Customer {
-  id: string;
-  customer_name: string;
-  company_name?: string;
-  address?: string;
-  notes?: string;
-}
+type SubTab =
+  | "invoices"
+  | "quotations"
+  | "receipts"
+  | "expenses"
+  | "customers"
+  | "lhdn"
+  | "settlement";
 
-interface Invoice {
-  id: string;
-  customer_id: string;
-  invoice_number: string;
-  invoice_date: string;
-  due_date: string;
-  status: string;
-  payment_terms: string;
-  subtotal: number;
-  discount_amount: number;
-  tax_amount: number;
-  total_amount: number;
-  paid_amount: number;
-  outstanding_amount: number;
-  notes?: string;
-  reference_no?: string;
-}
-
-interface InvoiceItem {
-  id: string;
-  invoice_id: string;
-  item_order: number;
-  description: string;
-  quantity: number;
-  unit_price: number;
-  line_total: number;
-}
-
-interface Expense {
-  id: string;
-  expense_number: string;
-  expense_date: string;
-  category: string;
-  recipient_name: string;
-  amount: number;
-  payment_method: string;
-  reference_number?: string;
-  description?: string;
-}
-
-interface InvoiceStore {
-  customers: Customer[];
-  invoices: Invoice[];
-  items: InvoiceItem[];
-  expenses: Expense[];
-}
-
-type SubTab = "invoices" | "receipts" | "expenses" | "customers" | "settlement";
-
-function getReceiptNumber(invNo: string): string {
-  return invNo.replace(/^INV/, "RCP");
-}
-
-const STORAGE_KEY = "khai_hub_mk_invoices_v2";
+const STORAGE_KEY = "khai_hub_mk_invoices_v3";
 
 const SEED_INVOICE_NUMBERS = new Set(
   (seedData.invoices as Invoice[]).map((inv) => inv.invoice_number)
@@ -101,26 +69,14 @@ const MONTH_OPTIONS = [
   { value: "2026-12", label: "Disember 2026" },
 ];
 
-function fmtRM(val: number): string {
-  return `RM ${Number(val || 0).toLocaleString("en-MY", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
-}
-
-function fmtDate(iso: string): string {
-  if (!iso || !iso.includes("-")) return iso || "-";
-  const [y, m, d] = iso.split("-");
-  const mons = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  return `${d}-${mons[Math.max(0, parseInt(m, 10) - 1)] || m}-${y}`;
-}
-
 function getDefaultStore(): InvoiceStore {
   return {
     customers: seedData.customers as Customer[],
     invoices: seedData.invoices as Invoice[],
     items: seedData.items as InvoiceItem[],
     expenses: seedData.expenses as Expense[],
+    quotations: [],
+    lhdnProfile: DEFAULT_LHDN_PROFILE,
   };
 }
 
@@ -132,6 +88,7 @@ export function InvoicesView() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [previewInvoice, setPreviewInvoice] = useState<Invoice | null>(null);
   const [previewReceipt, setPreviewReceipt] = useState<Invoice | null>(null);
+  const [statementCustomer, setStatementCustomer] = useState<Customer | null>(null);
   const [showNewModal, setShowNewModal] = useState<boolean>(false);
 
   // New invoice form state
@@ -151,11 +108,20 @@ export function InvoicesView() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem("khai_hub_mk_invoices_v2");
       if (saved) {
-        const parsed = JSON.parse(saved) as InvoiceStore;
+        const parsed = JSON.parse(saved) as Partial<InvoiceStore>;
         if (parsed && Array.isArray(parsed.invoices) && parsed.invoices.length >= seedData.invoices.length) {
-          setStore(parsed);
+          setStore({
+            customers: parsed.customers || (seedData.customers as Customer[]),
+            invoices: parsed.invoices,
+            items: parsed.items || (seedData.items as InvoiceItem[]),
+            expenses: parsed.expenses || (seedData.expenses as Expense[]),
+            quotations: Array.isArray(parsed.quotations) ? parsed.quotations : [],
+            lhdnProfile: parsed.lhdnProfile
+              ? { ...DEFAULT_LHDN_PROFILE, ...parsed.lhdnProfile }
+              : DEFAULT_LHDN_PROFILE,
+          });
         }
       }
     } catch {
@@ -321,6 +287,134 @@ export function InvoicesView() {
     window.print();
   };
 
+  const handleMarkInvoicePaid = (invId: string) => {
+    const nextInvoices = store.invoices.map((inv) =>
+      inv.id === invId
+        ? { ...inv, status: "paid", paid_amount: inv.total_amount, outstanding_amount: 0 }
+        : inv
+    );
+    persistStore({ ...store, invoices: nextInvoices });
+  };
+
+  const handleCreateQuotation = (qt: Quotation, newCustomer?: Customer) => {
+    const nextCustomers = newCustomer ? [...store.customers, newCustomer] : store.customers;
+    persistStore({
+      ...store,
+      customers: nextCustomers,
+      quotations: [qt, ...store.quotations],
+    });
+  };
+
+  const handleUpdateQuotationStatus = (id: string, status: Quotation["status"]) => {
+    persistStore({
+      ...store,
+      quotations: store.quotations.map((q) => (q.id === id ? { ...q, status } : q)),
+    });
+  };
+
+  const handleDeleteQuotation = (id: string) => {
+    persistStore({
+      ...store,
+      quotations: store.quotations.filter((q) => q.id !== id),
+    });
+  };
+
+  const handleConvertQuotationToInvoice = (qt: Quotation) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const mm = today.slice(5, 7);
+    const yy = today.slice(2, 4);
+    const maxSeq = store.invoices.reduce((max, inv) => {
+      const m = inv.invoice_number.match(/(\d{3})$/);
+      return m ? Math.max(max, parseInt(m[1], 10)) : max;
+    }, 0);
+    const invNo = `INV${yy}${mm}${String(maxSeq + 1).padStart(3, "0")}`;
+    const invId = `inv-${Date.now()}`;
+
+    const newInv: Invoice = {
+      id: invId,
+      invoice_number: invNo,
+      customer_id: qt.customer_id,
+      invoice_date: today,
+      due_date: today,
+      payment_terms: "Full Payment",
+      status: "unpaid",
+      subtotal: qt.subtotal,
+      discount_amount: qt.discount_amount,
+      total_amount: qt.total_amount,
+      paid_amount: 0,
+      outstanding_amount: qt.total_amount,
+      reference_no: qt.quotation_number,
+      notes: qt.notes,
+    };
+
+    const newInvItems: InvoiceItem[] = qt.items.map((it, idx) => ({
+      id: `item-${Date.now()}-${idx}`,
+      invoice_id: invId,
+      item_order: idx + 1,
+      description: it.description,
+      quantity: it.quantity,
+      unit_price: it.unit_price,
+      line_total: it.line_total,
+    }));
+
+    persistStore({
+      ...store,
+      invoices: [...store.invoices, newInv],
+      items: [...store.items, ...newInvItems],
+      quotations: store.quotations.map((q) =>
+        q.id === qt.id ? { ...q, status: "converted", converted_invoice_number: invNo } : q
+      ),
+    });
+    setSubTab("invoices");
+    setPreviewInvoice(newInv);
+  };
+
+  const handleAttachExpenseReceipt = (
+    expenseId: string,
+    meta: { id: string; name: string; type: string }
+  ) => {
+    persistStore({
+      ...store,
+      expenses: store.expenses.map((e) =>
+        e.id === expenseId
+          ? { ...e, receipt_file_id: meta.id, receipt_file_name: meta.name, receipt_file_type: meta.type }
+          : e
+      ),
+    });
+  };
+
+  const handleRemoveExpenseReceipt = (expenseId: string) => {
+    persistStore({
+      ...store,
+      expenses: store.expenses.map((e) =>
+        e.id === expenseId
+          ? { ...e, receipt_file_id: undefined, receipt_file_name: undefined, receipt_file_type: undefined }
+          : e
+      ),
+    });
+  };
+
+  const handleAddExpense = (exp: Expense) => {
+    persistStore({
+      ...store,
+      expenses: [exp, ...store.expenses],
+    });
+  };
+
+  const handleUpdateCustomerField = (custId: string, field: "tin" | "brn", val: string) => {
+    persistStore({
+      ...store,
+      customers: store.customers.map((c) => (c.id === custId ? { ...c, [field]: val } : c)),
+    });
+  };
+
+  const handleUpdateLhdnProfile = (profile: LhdnProfile) => {
+    persistStore({
+      ...store,
+      lhdnProfile: profile,
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Banner */}
@@ -421,9 +515,11 @@ export function InvoicesView() {
             {(
               [
                 { id: "invoices", label: `Invois (${store.invoices.length})`, icon: FileText },
+                { id: "quotations", label: `Sebut Harga (${store.quotations.length})`, icon: FileCheck2 },
                 { id: "receipts", label: `Resit Rasmi (${store.invoices.filter((i) => i.status === "paid").length})`, icon: Receipt },
-                { id: "expenses", label: `Kos Syarikat (${store.expenses.length})`, icon: Wallet },
+                { id: "expenses", label: `Kos & Peti Resit (${store.expenses.length})`, icon: FolderArchive },
                 { id: "customers", label: `Pelanggan (${store.customers.length})`, icon: Users },
+                { id: "lhdn", label: "LHDN & Laporan P&L", icon: ShieldCheck },
                 { id: "settlement", label: "Imbangan Khai ↔ MK", icon: Scale },
               ] as const
             ).map((t) => {
@@ -551,7 +647,7 @@ export function InvoicesView() {
                           >
                             Lihat
                           </button>
-                          {inv.status === "paid" && (
+                          {inv.status === "paid" ? (
                             <button
                               type="button"
                               onClick={() => setPreviewReceipt(inv)}
@@ -559,6 +655,16 @@ export function InvoicesView() {
                             >
                               <Receipt className="w-3 h-3" />
                               Resit
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleMarkInvoicePaid(inv.id)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-800 text-[11px] font-semibold cursor-pointer"
+                              title="Tanda dibayar untuk menjana Resit Rasmi"
+                            >
+                              <CheckCircle2 className="w-3 h-3" />
+                              Tanda Paid
                             </button>
                           )}
                           {hasStaticPdf && (
@@ -587,6 +693,19 @@ export function InvoicesView() {
               </tbody>
             </table>
           </div>
+        )}
+
+        {/* SUBTAB 1A: QUOTATIONS */}
+        {subTab === "quotations" && (
+          <QuotationsTab
+            quotations={store.quotations}
+            customers={store.customers}
+            customerMap={customerMap}
+            onCreateQuotation={handleCreateQuotation}
+            onUpdateQuotationStatus={handleUpdateQuotationStatus}
+            onConvertToInvoice={handleConvertQuotationToInvoice}
+            onDeleteQuotation={handleDeleteQuotation}
+          />
         )}
 
         {/* SUBTAB 1B: OFFICIAL RECEIPTS (ALL PAID INVOICES) */}
@@ -670,55 +789,55 @@ export function InvoicesView() {
           </div>
         )}
 
-        {/* SUBTAB 2: EXPENSES */}
+        {/* SUBTAB 2: EXPENSES & RECEIPT VAULT */}
         {subTab === "expenses" && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-[#DCD7CC] bg-[#FAF8F4]/60 text-[11px] uppercase tracking-wider text-[#536B85]">
-                  <th className="py-3 px-4 font-semibold">Tarikh</th>
-                  <th className="py-3 px-4 font-semibold">Kategori</th>
-                  <th className="py-3 px-4 font-semibold">Penerima / Pembekal</th>
-                  <th className="py-3 px-4 font-semibold">Perincian</th>
-                  <th className="py-3 px-4 font-semibold">Kaedah</th>
-                  <th className="py-3 px-4 font-semibold text-right">Jumlah</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#EFECE4] text-xs">
-                {filteredExpenses.map((exp) => (
-                  <tr key={exp.id} className="hover:bg-[#FAF8F4] transition-colors">
-                    <td className="py-3 px-4 text-[#536B85] whitespace-nowrap">
-                      {fmtDate(exp.expense_date)}
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
-                      <span className="px-2 py-0.5 rounded bg-[#FAF8F4] border border-[#DCD7CC] text-[#0C2340] text-[11px] font-medium">
-                        {exp.category}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 font-medium text-[#0C2340]">{exp.recipient_name}</td>
-                    <td className="py-3 px-4 text-[#536B85] max-w-md">{exp.description || "-"}</td>
-                    <td className="py-3 px-4 text-[#536B85] whitespace-nowrap">{exp.payment_method}</td>
-                    <td className="py-3 px-4 text-right font-semibold text-[#0C2340] whitespace-nowrap">
-                      {fmtRM(exp.amount)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <ExpenseVaultTab
+            expenses={store.expenses}
+            filteredExpenses={filteredExpenses}
+            onAttachReceipt={handleAttachExpenseReceipt}
+            onRemoveReceipt={handleRemoveExpenseReceipt}
+            onAddExpense={handleAddExpense}
+          />
         )}
 
-        {/* SUBTAB 3: CUSTOMERS */}
+        {/* SUBTAB 3: CUSTOMERS (with LHDN TIN/BRN & Statement of Account) */}
         {subTab === "customers" && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
             {store.customers.map((c) => {
               const cInvs = store.invoices.filter((i) => i.customer_id === c.id);
               const cSum = cInvs.reduce((s, i) => s + Number(i.total_amount || 0), 0);
               return (
-                <div key={c.id} className="rounded-lg border border-[#DCD7CC] bg-[#FAF8F4]/50 p-4">
-                  <div className="font-semibold text-sm text-[#0C2340]">{c.customer_name}</div>
-                  {c.address && <div className="text-[11px] text-[#536B85] mt-1">{c.address}</div>}
-                  <div className="mt-3 pt-2.5 border-t border-[#DCD7CC] flex items-center justify-between text-xs">
+                <div key={c.id} className="rounded-lg border border-[#DCD7CC] bg-[#FAF8F4]/50 p-4 space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-semibold text-sm text-[#0C2340]">{c.customer_name}</div>
+                      {c.address && <div className="text-[11px] text-[#536B85] mt-0.5">{c.address}</div>}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setStatementCustomer(c)}
+                      className="px-2 py-1 rounded border border-[#DCD7CC] bg-white hover:bg-[#EFECE4] text-[#0C2340] text-[10px] font-semibold shrink-0 cursor-pointer"
+                    >
+                      Penyata (SOA)
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    <input
+                      type="text"
+                      placeholder="TIN LHDN"
+                      value={c.tin || ""}
+                      onChange={(e) => handleUpdateCustomerField(c.id, "tin", e.target.value)}
+                      className="px-2 py-1 rounded border border-[#DCD7CC] bg-white font-mono text-[10px]"
+                    />
+                    <input
+                      type="text"
+                      placeholder="SSM / BRN / IC"
+                      value={c.brn || ""}
+                      onChange={(e) => handleUpdateCustomerField(c.id, "brn", e.target.value)}
+                      className="px-2 py-1 rounded border border-[#DCD7CC] bg-white font-mono text-[10px]"
+                    />
+                  </div>
+                  <div className="pt-2 border-t border-[#DCD7CC] flex items-center justify-between text-xs">
                     <span className="text-[#536B85]">{cInvs.length} invois</span>
                     <span className="font-bold text-[#347A63]">{fmtRM(cSum)}</span>
                   </div>
@@ -726,6 +845,18 @@ export function InvoicesView() {
               );
             })}
           </div>
+        )}
+
+        {/* SUBTAB 3B: LHDN & P&L REPORTS */}
+        {subTab === "lhdn" && (
+          <LhdnReportsTab
+            invoices={store.invoices}
+            itemsByInvoice={itemsByInvoice}
+            expenses={store.expenses}
+            customerMap={customerMap}
+            lhdnProfile={store.lhdnProfile}
+            onUpdateLhdnProfile={handleUpdateLhdnProfile}
+          />
         )}
 
         {/* SUBTAB 4: SETTLEMENT */}
@@ -1059,6 +1190,92 @@ export function InvoicesView() {
                 </div>
                 <div className="pt-2 italic text-[11px] text-slate-500">
                   This is a computer-generated official receipt. No signature is required.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CUSTOMER STATEMENT OF ACCOUNT (SOA) MODAL */}
+      {statementCustomer && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl max-w-3xl w-full shadow-2xl border border-[#DCD7CC] overflow-hidden my-8">
+            <div className="px-5 py-3 bg-[#FAF8F4] border-b border-[#DCD7CC] flex items-center justify-between print:hidden">
+              <div className="font-semibold text-sm text-[#0C2340]">
+                Penyata Akaun Pelanggan (SOA) — {statementCustomer.customer_name}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#0C2340] text-white text-xs font-medium cursor-pointer"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  Cetak / Simpan PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStatementCustomer(null)}
+                  className="p-1.5 rounded-lg text-[#536B85] hover:bg-[#EFECE4] cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="p-8 space-y-5 text-xs text-slate-800">
+              <div className="flex items-start justify-between border-b border-slate-200 pb-4">
+                <div>
+                  <div className="font-bold text-base text-[#0C2340]">MK Venture Maker Solution (CA0356505-U)</div>
+                  <div className="text-slate-500">Desa Cemara Blok B, Persiaran Sembilang, 13700 Perai, Pulau Pinang</div>
+                </div>
+                <div className="text-right">
+                  <div className="text-lg font-black text-[#0C2340]">STATEMENT OF ACCOUNT</div>
+                  <div className="text-[11px] text-slate-500">Tahun 2026</div>
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-semibold uppercase text-slate-500">Pelanggan:</div>
+                <div className="font-bold text-sm text-slate-900">{statementCustomer.customer_name}</div>
+                {statementCustomer.tin && <div className="text-slate-600 font-mono">TIN: {statementCustomer.tin}</div>}
+                {statementCustomer.brn && <div className="text-slate-600 font-mono">BRN/SSM: {statementCustomer.brn}</div>}
+              </div>
+              <table className="w-full border-collapse border border-slate-200">
+                <thead>
+                  <tr className="bg-[#0C2340] text-white text-[11px]">
+                    <th className="py-2 px-3 text-left">Tarikh</th>
+                    <th className="py-2 px-3 text-left">No. Invois</th>
+                    <th className="py-2 px-3 text-left">Status</th>
+                    <th className="py-2 px-3 text-right">Dibilkan (RM)</th>
+                    <th className="py-2 px-3 text-right">Dibayar (RM)</th>
+                    <th className="py-2 px-3 text-right">Baki (RM)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200">
+                  {store.invoices
+                    .filter((i) => i.customer_id === statementCustomer.id)
+                    .map((i) => (
+                      <tr key={i.id}>
+                        <td className="py-2 px-3">{fmtDate(i.invoice_date)}</td>
+                        <td className="py-2 px-3 font-mono font-semibold">{i.invoice_number}</td>
+                        <td className="py-2 px-3 uppercase">{i.status}</td>
+                        <td className="py-2 px-3 text-right font-mono">{i.total_amount.toFixed(2)}</td>
+                        <td className="py-2 px-3 text-right font-mono text-[#347A63]">{i.paid_amount.toFixed(2)}</td>
+                        <td className="py-2 px-3 text-right font-mono font-semibold">{i.outstanding_amount.toFixed(2)}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+              <div className="flex justify-end">
+                <div className="bg-slate-100 border border-slate-300 rounded px-4 py-2 font-bold">
+                  Baki Tertunggak:{" "}
+                  <span className="font-mono text-[#0C2340] ml-2">
+                    {fmtRM(
+                      store.invoices
+                        .filter((i) => i.customer_id === statementCustomer.id)
+                        .reduce((s, i) => s + i.outstanding_amount, 0)
+                    )}
+                  </span>
                 </div>
               </div>
             </div>
