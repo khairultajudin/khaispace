@@ -54,27 +54,40 @@ def _enforce_strict_tool_schemas(mcp: Any) -> None:
             fn_meta.arg_model = strict_model
 
 
+def _load_mcp_server_class() -> Any:
+    """Import high-level MCP server class across official Python MCP SDK v1.x and v2.x."""
+    try:
+        from mcp.server.fastmcp import FastMCP
+
+        return FastMCP
+    except ImportError:
+        pass
+    try:
+        from mcp.server.mcpserver import MCPServer
+
+        return MCPServer
+    except ImportError as exc:
+        raise RuntimeError(
+            "The official Python MCP SDK ('mcp') is required to run the KAI CAD MCP server. "
+            "Install it with: pip install 'mcp>=1.9.0,<3.0'"
+        ) from exc
+
+
 def create_mcp_server(
     workspace_root: Optional[Path | str] = None,
     *,
     openscad_bin: Optional[str] = None,
     stl_runner: Any = subprocess.run,
 ) -> Any:
-    """Build and configure the FastMCP server exposing the six KAI CAD Studio tools."""
-    try:
-        from mcp.server.fastmcp import FastMCP
-    except ImportError as exc:
-        raise RuntimeError(
-            "The official Python MCP SDK ('mcp') is required to run the KAI CAD MCP server. "
-            "Install it with: pip install 'mcp>=1.9.0,<2.0'"
-        ) from exc
+    """Build and configure the MCP server exposing the six KAI CAD Studio tools."""
+    server_cls = _load_mcp_server_class()
 
     service = KaiCadMcpService(
         workspace_root=workspace_root,
         openscad_bin=openscad_bin,
         stl_runner=stl_runner,
     )
-    mcp = FastMCP(
+    mcp = server_cls(
         name="kai-cad-studio",
         instructions=(
             "KAI CAD Studio parametric CAD engine (OpenSCAD, all dimensions in mm). "

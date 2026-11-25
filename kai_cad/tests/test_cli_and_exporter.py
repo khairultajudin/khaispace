@@ -16,7 +16,11 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from kai_cad.cli import run_cli
-from kai_cad.exporters.openscad_exporter import export_stl_with_openscad, write_scad_file
+from kai_cad.exporters.openscad_exporter import (
+    _to_openscad_cli_path,
+    export_stl_with_openscad,
+    write_scad_file,
+)
 
 EXAMPLE_CONFIG = ROOT / "kai_cad" / "examples" / "custom_adapter.example.json"
 
@@ -147,6 +151,18 @@ class TestCliAndExporter(unittest.TestCase):
             self.assertTrue(res.openscad_available)
             self.assertEqual(res.stl_path, stl_path)
             self.assertTrue(stl_path.is_file())
+
+    def test_wsl2_to_win32_openscad_path_translation(self) -> None:
+        win_bin = "/mnt/c/Program Files/OpenSCAD/openscad.com"
+        self.assertEqual(
+            _to_openscad_cli_path("/mnt/e/KhaiSpace/ws/part.scad", win_bin, os_name="posix"),
+            r"E:\KhaiSpace\ws\part.scad",
+        )
+        # Native POSIX OpenSCAD binary leaves POSIX paths untouched
+        self.assertEqual(
+            _to_openscad_cli_path("/mnt/e/KhaiSpace/ws/part.scad", "/usr/bin/openscad", os_name="posix"),
+            "/mnt/e/KhaiSpace/ws/part.scad",
+        )
 
 
 if __name__ == "__main__":

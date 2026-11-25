@@ -53,13 +53,13 @@ python -m kai_cad custom-adapter \
 python -m unittest discover -s kai_cad/tests -v
 ```
 
-## Live STDIO MCP Server (Phase 2)
+## Live STDIO MCP Server & Hermes Integration (Phase 2 & Phase 3)
 
-Install the optional official Python MCP SDK (`mcp>=1.9.0,<2.0`) and launch the STDIO server:
+Install the optional official Python MCP SDK (`mcp>=1.9.0,<3.0`, compatible with both v1.x `FastMCP` and v2.x `MCPServer`) and launch the STDIO server:
 
 ```bash
-pip install "mcp>=1.9.0,<2.0"
-python -m kai_cad.mcp_server --workspace ./.kai_cad_workspace
+pip install "mcp>=1.9.0,<3.0"
+python -m kai_cad.mcp_server --workspace ./kai_cad/.workspace
 ```
 
 Exposed MCP tools: `cad_generate_design`, `cad_validate_design`, `cad_export_stl`, `cad_get_design`, `cad_list_designs`, `cad_get_design_artifact`.
@@ -71,3 +71,4 @@ Exposed MCP tools: `cad_generate_design`, `cad_validate_design`, `cad_export_stl
 - [PHASE_1_CAD_ENGINE.md](../docs/kai-cad-studio/PHASE_1_CAD_ENGINE.md)
 - [PHASE_2_MCP_SERVER.md](../docs/kai-cad-studio/PHASE_2_MCP_SERVER.md)
 - [PHASE_2_1_HARDENING.md](../docs/kai-cad-studio/PHASE_2_1_HARDENING.md)
+- [PHASE_3_HERMES_INTEGRATION.md](../docs/kai-cad-studio/PHASE_3_HERMES_INTEGRATION.md)

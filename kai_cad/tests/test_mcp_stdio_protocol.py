@@ -37,9 +37,11 @@ EXPECTED_TOOLS = {
 
 
 def _extract_tool_payload(call_result) -> dict:
-    """Decode structured JSON payload from an MCP CallToolResult."""
-    if getattr(call_result, "structuredContent", None) is not None:
-        sc = call_result.structuredContent
+    """Decode structured JSON payload from an MCP CallToolResult across SDK v1.x and v2.x."""
+    sc = getattr(call_result, "structured_content", None)
+    if sc is None:
+        sc = getattr(call_result, "structuredContent", None)
+    if sc is not None:
         if isinstance(sc, dict) and "result" in sc and isinstance(sc["result"], dict):
             return sc["result"]
         if isinstance(sc, dict):
@@ -49,6 +51,15 @@ def _extract_tool_payload(call_result) -> dict:
         if text:
             return json.loads(text)
     raise AssertionError(f"Could not extract JSON payload from CallToolResult: {call_result!r}")
+
+
+def _input_schema(tool) -> dict:
+    schema = getattr(tool, "input_schema", None)
+    return schema if schema is not None else getattr(tool, "inputSchema")
+
+
+def _is_error(call_result) -> bool:
+    return bool(getattr(call_result, "is_error", False) or getattr(call_result, "isError", False))
 
 
 @unittest.skipUnless(MCP_SDK_AVAILABLE, "Official Python MCP SDK ('mcp') is not installed.")
@@ -73,18 +84,20 @@ class TestMcpStdioProtocol(unittest.TestCase):
             async with stdio_client(server_params) as (read, write):
                 async with ClientSession(read, write) as session:
                     init_res = await session.initialize()
-                    self.assertEqual(init_res.serverInfo.name, "kai-cad-studio")
+                    server_info = getattr(init_res, "server_info", None) or getattr(init_res, "serverInfo")
+                    self.assertEqual(server_info.name, "kai-cad-studio")
 
                     tools_res = await session.list_tools()
                     discovered = {t.name: t for t in tools_res.tools}
                     self.assertEqual(set(discovered.keys()), EXPECTED_TOOLS)
                     for name, tool in discovered.items():
                         self.assertTrue(tool.description, f"Tool '{name}' missing description.")
-                        self.assertIsInstance(tool.inputSchema, dict)
-                        self.assertEqual(tool.inputSchema.get("additionalProperties"), False)
+                        schema = _input_schema(tool)
+                        self.assertIsInstance(schema, dict)
+                        self.assertEqual(schema.get("additionalProperties"), False)
 
                     # Verify cad_export_stl schema strictly forbids client executable selection
-                    export_schema = discovered["cad_export_stl"].inputSchema
+                    export_schema = _input_schema(discovered["cad_export_stl"])
                     self.assertNotIn("openscad_bin", export_schema.get("properties", {}))
                     self.assertEqual(
                         set(export_schema.get("properties", {}).keys()),
@@ -124,7 +137,7 @@ class TestMcpStdioProtocol(unittest.TestCase):
                             "openscad_bin": "/bin/sh",
                         },
                     )
-                    self.assertTrue(injected_call.isError)
+                    self.assertTrue(_is_error(injected_call))
 
                     # Valid export call with missing server OPENSCAD_BIN returns structured error & preserves state
                     unavail_call = await session.call_tool(

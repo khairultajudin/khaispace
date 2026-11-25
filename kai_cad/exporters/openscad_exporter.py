@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, List, Optional
+
+_WSL_MNT_RE = re.compile(r"^/mnt/([a-zA-Z])(?:/(.*))?$")
 
 _WINDOWS_OPENSCAD_CANDIDATES = (
     Path(r"C:\Program Files\OpenSCAD\openscad.com"),
@@ -66,6 +69,37 @@ def resolve_openscad_binary(explicit_bin: Optional[str] = None) -> Optional[str]
                 return str(path)
 
     return None
+
+
+def _to_openscad_cli_path(path: Path | os.PathLike[str] | str, binary: str, *, os_name: Optional[str] = None) -> str:
+    """Format file path for OpenSCAD CLI, translating WSL2 paths when invoking Win32 binaries."""
+    raw = str(path)
+    effective_os = os.name if os_name is None else os_name
+    if effective_os == "posix" and binary.lower().endswith((".exe", ".com")):
+        posix_raw = raw.replace("\\", "/")
+        resolved_str = (
+            str(Path(path).resolve()).replace("\\", "/")
+            if os.name == "posix" and (Path(path).exists() or Path(path).parent.exists())
+            else posix_raw
+        )
+        match = _WSL_MNT_RE.match(resolved_str) or _WSL_MNT_RE.match(posix_raw)
+        if match:
+            drive = match.group(1).upper()
+            rest = (match.group(2) or "").replace("/", "\\")
+            return f"{drive}:\\{rest}" if rest else f"{drive}:\\"
+        wslpath_bin = shutil.which("wslpath")
+        if wslpath_bin:
+            proc = subprocess.run(
+                [wslpath_bin, "-w", resolved_str],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                stdin=subprocess.DEVNULL,
+                shell=False,
+            )
+            if proc.returncode == 0 and proc.stdout.strip():
+                return proc.stdout.strip()
+    return raw
 
 
 def write_scad_file(scad_source: str, output_path: Path | str) -> Path:
@@ -131,7 +165,9 @@ def export_stl_with_openscad(
         )
 
     dst.parent.mkdir(parents=True, exist_ok=True)
-    cmd: List[str] = [binary, "-o", str(dst), str(src)]
+    cli_dst = _to_openscad_cli_path(dst, binary)
+    cli_src = _to_openscad_cli_path(src, binary)
+    cmd: List[str] = [binary, "-o", cli_dst, cli_src]
 
     try:
         proc = runner(
