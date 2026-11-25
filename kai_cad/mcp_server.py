@@ -112,7 +112,14 @@ def create_mcp_server(
             "vertical_hole_diameter_mm, vertical_hole_count, vertical_hole_spacing_mm, vertical_edge_margin_mm, "
             "inside_corner_radius_mm, clearance_mm); "
             "(4) 'spacer_bushing': outer_diameter_mm, inner_diameter_mm, height_mm "
-            "(optional: top_chamfer_mm, bottom_chamfer_mm, clearance_mm)."
+            "(optional: top_chamfer_mm, bottom_chamfer_mm, clearance_mm); "
+            "(5) 'enclosure_base': length_mm, width_mm, height_mm, wall_thickness_mm, floor_thickness_mm "
+            "(optional: corner_radius_mm, boss_count [0|2|4], boss_outer_diameter_mm, boss_hole_diameter_mm, "
+            "boss_offset_x_mm, boss_offset_y_mm, cable_openings); "
+            "(6) 'enclosure_lid': length_mm, width_mm, lid_thickness_mm "
+            "(optional: corner_radius_mm, skirt_depth_mm, skirt_thickness_mm, skirt_clearance_mm, "
+            "wall_thickness_mm [required when skirt_depth_mm > 0], screw_hole_diameter_mm, screw_hole_count, "
+            "boss_offset_x_mm, boss_offset_y_mm)."
         ),
     )
     def cad_generate_design(

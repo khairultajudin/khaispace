@@ -6,10 +6,14 @@ from dataclasses import dataclass
 from typing import Any, Callable, Dict, Mapping, Protocol, Tuple
 
 from kai_cad.generators.custom_adapter import CustomAdapterSpec, generate_custom_adapter
+from kai_cad.generators.enclosure_base import EnclosureBaseSpec, generate_enclosure_base
+from kai_cad.generators.enclosure_lid import EnclosureLidSpec, generate_enclosure_lid
 from kai_cad.generators.mounting_bracket import MountingBracketSpec, generate_mounting_bracket
 from kai_cad.generators.rectangular_block import RectangularBlockSpec, generate_rectangular_block
 from kai_cad.generators.spacer_bushing import SpacerBushingSpec, generate_spacer_bushing
 from kai_cad.validators.adapter_validator import validate_adapter_dict
+from kai_cad.validators.enclosure_base_validator import validate_enclosure_base_dict
+from kai_cad.validators.enclosure_lid_validator import validate_enclosure_lid_dict
 from kai_cad.validators.errors import KaiCadError
 from kai_cad.validators.mounting_bracket_validator import validate_mounting_bracket_dict
 from kai_cad.validators.rectangular_block_validator import validate_rectangular_block_dict
@@ -71,6 +75,18 @@ COMPONENT_REGISTRY: Dict[str, ComponentRegistration] = {
         dict_validator=validate_spacer_bushing_dict,
         generator=generate_spacer_bushing,
     ),
+    "enclosure_base": ComponentRegistration(
+        component_type="enclosure_base",
+        spec_cls=EnclosureBaseSpec,
+        dict_validator=validate_enclosure_base_dict,
+        generator=generate_enclosure_base,
+    ),
+    "enclosure_lid": ComponentRegistration(
+        component_type="enclosure_lid",
+        spec_cls=EnclosureLidSpec,
+        dict_validator=validate_enclosure_lid_dict,
+        generator=generate_enclosure_lid,
+    ),
 }
 
 SUPPORTED_COMPONENTS: Tuple[str, ...] = tuple(COMPONENT_REGISTRY.keys())
@@ -96,4 +112,3 @@ def generate_component(component_type: str, spec: Any) -> ComponentResultProtoco
     """Dispatch *spec* (dict or typed spec) to the registered component generator."""
     reg = get_component_registration(component_type)
     return reg.generator(spec)
-

@@ -1,0 +1,27 @@
+{
+  "name": "enclosure_electronics_100x70x35",
+  "description": "Electronics enclosure (100x70x35 mm) with 4 M3 internal screw bosses and front USB-C cable opening",
+  "units": "mm",
+  "length_mm": 100.0,
+  "width_mm": 70.0,
+  "height_mm": 35.0,
+  "wall_thickness_mm": 2.0,
+  "floor_thickness_mm": 2.5,
+  "corner_radius_mm": 4.0,
+  "boss_count": 4,
+  "boss_outer_diameter_mm": 8.0,
+  "boss_hole_diameter_mm": 3.0,
+  "boss_offset_x_mm": 9.0,
+  "boss_offset_y_mm": 9.0,
+  "cable_openings": [
+    {
+      "wall": "front",
+      "shape": "rectangular",
+      "width_mm": 12.0,
+      "height_mm": 6.5,
+      "offset_mm": 0.0,
+      "center_z_mm": 12.0
+    }
+  ],
+  "fn": 64
+}

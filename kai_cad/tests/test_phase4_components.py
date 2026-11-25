@@ -50,12 +50,19 @@ class TestComponentRegistryDispatch(unittest.TestCase):
     def test_supported_components_and_dispatch(self) -> None:
         self.assertEqual(
             SUPPORTED_COMPONENTS,
-            ("custom_adapter", "rectangular_block", "mounting_bracket", "spacer_bushing"),
+            (
+                "custom_adapter",
+                "rectangular_block",
+                "mounting_bracket",
+                "spacer_bushing",
+                "enclosure_base",
+                "enclosure_lid",
+            ),
         )
         with self.assertRaises(UnsupportedComponentError):
             validate_component_spec("worm_gear", {})
         with self.assertRaises(UnsupportedComponentError):
-            generate_component("enclosure_box", {})
+            generate_component("planetary_carrier", {})
 
 
 class TestRectangularBlock(unittest.TestCase):

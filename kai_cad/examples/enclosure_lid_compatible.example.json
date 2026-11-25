@@ -1,0 +1,16 @@
+{
+  "name": "enclosure_lid_100x70",
+  "description": "Compatible 100x70 mm enclosure lid with 3 mm locating skirt (0.2 mm radial clearance) and 4 M3 screw holes",
+  "units": "mm",
+  "length_mm": 100.0,
+  "width_mm": 70.0,
+  "lid_thickness_mm": 2.5,
+  "wall_thickness_mm": 2.0,
+  "skirt_depth_mm": 3.0,
+  "skirt_thickness_mm": 1.6,
+  "skirt_clearance_mm": 0.2,
+  "screw_hole_diameter_mm": 3.4,
+  "boss_offset_x_mm": 9.0,
+  "boss_offset_y_mm": 9.0,
+  "fn": 64
+}

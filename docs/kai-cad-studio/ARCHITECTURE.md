@@ -1,7 +1,7 @@
 # KAI CAD Studio — System Architecture
 
 **Module:** `kai_cad/` (inside `khairultajudin/khaispace` monorepo)  
-**Scope:** Phase 0 (Architecture), Phase 1/1.1 (Parametric CAD Engine & Hardening), Phase 2/2.1 (Live STDIO MCP Server & Security Hardening), Phase 3 (Hermes Integration), and Phase 4 Batch 1 (Component Library: `custom_adapter`, `rectangular_block`, `mounting_bracket`, `spacer_bushing`)  
+**Scope:** Phase 0 (Architecture), Phase 1/1.1 (Parametric CAD Engine & Hardening), Phase 2/2.1 (Live STDIO MCP Server & Security Hardening), Phase 3 (Hermes Integration), and Phase 4 Batch 1 & Batch 2 (Component Library: `custom_adapter`, `rectangular_block`, `mounting_bracket`, `spacer_bushing`, `enclosure_base`, `enclosure_lid`)  
 **Primary CAD Kernel Target:** OpenSCAD (`.scad` canonical source + `.stl` mesh exchange for [TinkerCAD](https://www.tinkercad.com/))  
 **Unit System:** Millimetres (`mm`) exclusively
 

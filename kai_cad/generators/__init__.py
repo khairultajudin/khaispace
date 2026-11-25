@@ -6,6 +6,18 @@ from .custom_adapter import (
     generate_custom_adapter,
     render_custom_adapter_scad,
 )
+from .enclosure_base import (
+    EnclosureBaseResult,
+    EnclosureBaseSpec,
+    generate_enclosure_base,
+    render_enclosure_base_scad,
+)
+from .enclosure_lid import (
+    EnclosureLidResult,
+    EnclosureLidSpec,
+    generate_enclosure_lid,
+    render_enclosure_lid_scad,
+)
 from .mounting_bracket import (
     MountingBracketResult,
     MountingBracketSpec,
@@ -39,6 +51,10 @@ __all__ = [
     "ComponentRegistration",
     "CustomAdapterResult",
     "CustomAdapterSpec",
+    "EnclosureBaseResult",
+    "EnclosureBaseSpec",
+    "EnclosureLidResult",
+    "EnclosureLidSpec",
     "MountingBracketResult",
     "MountingBracketSpec",
     "RectangularBlockResult",
@@ -49,11 +65,15 @@ __all__ = [
     "UnsupportedComponentError",
     "generate_component",
     "generate_custom_adapter",
+    "generate_enclosure_base",
+    "generate_enclosure_lid",
     "generate_mounting_bracket",
     "generate_rectangular_block",
     "generate_spacer_bushing",
     "get_component_registration",
     "render_custom_adapter_scad",
+    "render_enclosure_base_scad",
+    "render_enclosure_lid_scad",
     "render_mounting_bracket_scad",
     "render_rectangular_block_scad",
     "render_spacer_bushing_scad",
