@@ -1,0 +1,19 @@
+{
+  "name": "l_bracket_60x40x40_t5",
+  "description": "L-shaped mounting bracket (60 mm base, 40 mm width, 40 mm vertical height, 5 mm thickness) with 2 M4 base holes, 2 M4 vertical holes, and 3 mm inside fillet",
+  "units": "mm",
+  "base_length_mm": 60.0,
+  "base_width_mm": 40.0,
+  "vertical_height_mm": 40.0,
+  "thickness_mm": 5.0,
+  "base_hole_diameter_mm": 4.2,
+  "base_hole_count": 2,
+  "base_hole_spacing_mm": 22.0,
+  "vertical_hole_diameter_mm": 4.2,
+  "vertical_hole_count": 2,
+  "vertical_hole_spacing_mm": 22.0,
+  "inside_corner_radius_mm": 3.0,
+  "clearance_mm": 0.1,
+  "fn": 64
+}
+

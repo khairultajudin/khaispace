@@ -27,6 +27,8 @@ from kai_cad.validators.errors import KaiCadError
 logger = logging.getLogger(__name__)
 
 _SAFE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
+_WSL_MNT_RE = re.compile(r"^/mnt/([a-zA-Z])(?:/(.*))?$")
+_WIN_DRIVE_RE = re.compile(r"^([a-zA-Z]):[\\/](.*)$")
 DEFAULT_WORKSPACE_ENV = "KAI_CAD_WORKSPACE"
 
 
@@ -56,6 +58,23 @@ def validate_output_name(output_name: str) -> str:
             "(no path separators, dots, or spaces)."
         )
     return output_name
+
+
+def _coerce_local_os_path(raw_path: str) -> Path:
+    """Translate WSL2 `/mnt/<drive>/...` <-> Windows `<D>:\\...` paths across shared workspaces."""
+    if os.name == "nt":
+        m = _WSL_MNT_RE.match(raw_path)
+        if m:
+            drive = m.group(1).upper()
+            rest = (m.group(2) or "").replace("/", "\\")
+            return Path(f"{drive}:\\{rest}" if rest else f"{drive}:\\")
+    elif os.name == "posix":
+        m = _WIN_DRIVE_RE.match(raw_path)
+        if m:
+            drive = m.group(1).lower()
+            rest = m.group(2).replace("\\", "/")
+            return Path(f"/mnt/{drive}/{rest}" if rest else f"/mnt/{drive}")
+    return Path(raw_path)
 
 
 def ensure_within_workspace(path: Path, workspace_root: Path) -> Path:
@@ -195,14 +214,19 @@ class FileDesignRepository:
         try:
             record = DesignRecord.from_persisted(raw["record"])
             output_name = validate_output_name(str(raw.get("output_name", "")))
-            spec_path = str(raw.get("spec_path", ""))
-            if not spec_path:
+            raw_spec_path = str(raw.get("spec_path", ""))
+            if not raw_spec_path:
                 raise ValueError("Missing 'spec_path'.")
-            ensure_within_workspace(Path(spec_path), self._workspace_root)
+            spec_resolved = ensure_within_workspace(_coerce_local_os_path(raw_spec_path), self._workspace_root)
+            spec_path = str(spec_resolved)
             if record.scad_path:
-                ensure_within_workspace(Path(record.scad_path), self._workspace_root)
+                record.scad_path = str(
+                    ensure_within_workspace(_coerce_local_os_path(record.scad_path), self._workspace_root)
+                )
             if record.stl_path:
-                ensure_within_workspace(Path(record.stl_path), self._workspace_root)
+                record.stl_path = str(
+                    ensure_within_workspace(_coerce_local_os_path(record.stl_path), self._workspace_root)
+                )
             created_at = str(raw.get("created_at_utc", ""))
             updated_at = str(raw.get("updated_at_utc", ""))
             datetime.fromisoformat(created_at)

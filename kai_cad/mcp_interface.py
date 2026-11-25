@@ -12,7 +12,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional, Protocol, runtime_checkable
 
 from kai_cad.exporters.openscad_exporter import export_stl_with_openscad, write_scad_file
-from kai_cad.generators.custom_adapter import CustomAdapterSpec, generate_custom_adapter
+from kai_cad.generators.registry import (
+    SUPPORTED_COMPONENTS,
+    generate_component,
+    validate_component_spec,
+)
 from kai_cad.lifecycle import DesignRecord, DesignState
 from kai_cad.validators.errors import GeometryValidationError
 
@@ -75,20 +79,20 @@ class KaiCadMcpProvider(Protocol):
 class LocalKaiCadMcpAdapter:
     """In-process reference implementation of `KaiCadMcpProvider` (zero external deps)."""
 
-    SUPPORTED_COMPONENTS = ("custom_adapter",)
+    SUPPORTED_COMPONENTS = SUPPORTED_COMPONENTS
 
     def __init__(self) -> None:
         self._records: Dict[str, DesignRecord] = {}
 
     def cad_validate_spec(self, component_type: str, params: Mapping[str, Any]) -> McpToolResponse:
-        if component_type != "custom_adapter":
+        if component_type not in self.SUPPORTED_COMPONENTS:
             return McpToolResponse(
                 ok=False,
                 tool="cad_validate_spec",
                 errors=[{"code": "UNSUPPORTED_COMPONENT", "message": f"Unknown component '{component_type}'."}],
             )
         try:
-            spec = CustomAdapterSpec.from_dict(params)
+            spec = validate_component_spec(component_type, params)
         except GeometryValidationError as exc:
             return McpToolResponse(
                 ok=False,
@@ -108,14 +112,14 @@ class LocalKaiCadMcpAdapter:
         params: Mapping[str, Any],
         output_scad_path: str,
     ) -> McpToolResponse:
-        if component_type != "custom_adapter":
+        if component_type not in self.SUPPORTED_COMPONENTS:
             return McpToolResponse(
                 ok=False,
                 tool="cad_generate_scad",
                 errors=[{"code": "UNSUPPORTED_COMPONENT", "message": f"Unknown component '{component_type}'."}],
             )
         try:
-            result = generate_custom_adapter(params)
+            result = generate_component(component_type, params)
         except GeometryValidationError as exc:
             return McpToolResponse(
                 ok=False,

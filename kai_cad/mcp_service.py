@@ -12,7 +12,11 @@ from pathlib import Path
 from typing import Any, Dict, List, Mapping, Optional
 
 from kai_cad.exporters.openscad_exporter import export_stl_with_openscad, write_scad_file
-from kai_cad.generators.custom_adapter import CustomAdapterSpec, generate_custom_adapter
+from kai_cad.generators.registry import (
+    SUPPORTED_COMPONENTS,
+    generate_component,
+    validate_component_spec,
+)
 from kai_cad.lifecycle import DesignRecord, DesignState, can_transition
 from kai_cad.storage.repository import (
     CorruptedRecordError,
@@ -23,10 +27,8 @@ from kai_cad.storage.repository import (
     validate_design_id,
     validate_output_name,
 )
-from kai_cad.validators.adapter_validator import validate_adapter_dict
 from kai_cad.validators.errors import GeometryValidationError
 
-SUPPORTED_COMPONENTS = ("custom_adapter",)
 MAX_TEXT_ARTIFACT_BYTES = 262_144  # 256 KiB cap for inline text artifact retrieval
 MIN_EXPORT_TIMEOUT_S = 1
 MAX_EXPORT_TIMEOUT_S = 600
@@ -119,7 +121,7 @@ class KaiCadMcpService:
             return _error_response(tool, "CORRUPTED_RECORD", str(exc))
 
         try:
-            result = generate_custom_adapter(spec)
+            result = generate_component(component_type, spec)
         except GeometryValidationError as exc:
             return {
                 "ok": False,
@@ -206,8 +208,7 @@ class KaiCadMcpService:
             return _error_response(tool, "CORRUPTED_RECORD", str(exc))
 
         try:
-            validate_adapter_dict(spec_data)
-            spec = CustomAdapterSpec.from_dict(spec_data)
+            spec = validate_component_spec(persisted.record.component_type, spec_data)
         except GeometryValidationError as exc:
             return {
                 "ok": False,

@@ -16,9 +16,15 @@ python -m kai_cad custom-adapter --config kai_cad/examples/custom_adapter.exampl
 
 ### 2. Generate an OpenSCAD (`.scad`) file
 ```bash
+# Custom Adapter (legacy shortcut or generic subcommand)
 python -m kai_cad custom-adapter \
   --config kai_cad/examples/custom_adapter.example.json \
   --output build/hose_reducer_25_to_19.scad
+
+# Generic component dispatcher (custom_adapter | rectangular_block | mounting_bracket | spacer_bushing)
+python -m kai_cad generate --type mounting_bracket \
+  --config kai_cad/examples/mounting_bracket.example.json \
+  --output build/l_bracket.scad
 ```
 
 ### 3. Generate `.scad` and export `.stl` (when OpenSCAD CLI is installed)
@@ -72,3 +78,4 @@ Exposed MCP tools: `cad_generate_design`, `cad_validate_design`, `cad_export_stl
 - [PHASE_2_MCP_SERVER.md](../docs/kai-cad-studio/PHASE_2_MCP_SERVER.md)
 - [PHASE_2_1_HARDENING.md](../docs/kai-cad-studio/PHASE_2_1_HARDENING.md)
 - [PHASE_3_HERMES_INTEGRATION.md](../docs/kai-cad-studio/PHASE_3_HERMES_INTEGRATION.md)
+- [PHASE_4_COMPONENT_LIBRARY.md](../docs/kai-cad-studio/PHASE_4_COMPONENT_LIBRARY.md)

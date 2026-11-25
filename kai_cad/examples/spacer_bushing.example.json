@@ -1,0 +1,13 @@
+{
+  "name": "spacer_20x10x8",
+  "description": "20 mm OD x 10 mm ID x 8 mm height cylindrical spacer bushing with 0.5 mm top and bottom chamfers",
+  "units": "mm",
+  "outer_diameter_mm": 20.0,
+  "inner_diameter_mm": 10.0,
+  "height_mm": 8.0,
+  "top_chamfer_mm": 0.5,
+  "bottom_chamfer_mm": 0.5,
+  "clearance_mm": 0.1,
+  "fn": 96
+}
+

@@ -1,0 +1,17 @@
+{
+  "name": "base_plate_60x40x5",
+  "description": "60x40x5 mm rectangular mounting plate with rounded corners and 4 M4 through-holes",
+  "units": "mm",
+  "length_mm": 60.0,
+  "width_mm": 40.0,
+  "height_mm": 5.0,
+  "corner_radius_mm": 4.0,
+  "hole_diameter_mm": 4.2,
+  "hole_count_x": 2,
+  "hole_count_y": 2,
+  "hole_spacing_x_mm": 44.0,
+  "hole_spacing_y_mm": 24.0,
+  "clearance_mm": 0.1,
+  "fn": 64
+}
+

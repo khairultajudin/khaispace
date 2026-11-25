@@ -100,7 +100,19 @@ def create_mcp_server(
         name="cad_generate_design",
         description=(
             "Generate a deterministic parametric OpenSCAD (.scad) CAD design from a JSON "
-            "specification in millimetres and persist the design record in 'Generated' state."
+            "specification in millimetres and persist the design record in 'Generated' state. "
+            "Supported component_type values and required parameters: "
+            "(1) 'custom_adapter': overall_length_mm, body_diameter_mm, end_a_diameter_mm, "
+            "end_b_diameter_mm, end_a_length_mm, end_b_length_mm, bore_a_diameter_mm, bore_b_diameter_mm; "
+            "(2) 'rectangular_block': length_mm, width_mm, height_mm (optional: corner_radius_mm, "
+            "hole_diameter_mm, hole_count_x, hole_count_y, hole_spacing_x_mm, hole_spacing_y_mm, "
+            "edge_margin_x_mm, edge_margin_y_mm, clearance_mm); "
+            "(3) 'mounting_bracket': base_length_mm, base_width_mm, vertical_height_mm, thickness_mm "
+            "(optional: base_hole_diameter_mm, base_hole_count, base_hole_spacing_mm, base_edge_margin_mm, "
+            "vertical_hole_diameter_mm, vertical_hole_count, vertical_hole_spacing_mm, vertical_edge_margin_mm, "
+            "inside_corner_radius_mm, clearance_mm); "
+            "(4) 'spacer_bushing': outer_diameter_mm, inner_diameter_mm, height_mm "
+            "(optional: top_chamfer_mm, bottom_chamfer_mm, clearance_mm)."
         ),
     )
     def cad_generate_design(
