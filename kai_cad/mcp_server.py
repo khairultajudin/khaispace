@@ -2,6 +2,8 @@
 
 Stdout is reserved exclusively for MCP JSON-RPC protocol frames.
 All diagnostics and logging are directed strictly to stderr.
+OpenSCAD executable selection is strictly server-controlled (OPENSCAD_BIN or safe auto-detection)
+and is never exposed as an MCP tool argument.
 """
 
 from __future__ import annotations
@@ -26,9 +28,36 @@ def _configure_stderr_logging(level: str = "WARNING") -> None:
     )
 
 
+def _enforce_strict_tool_schemas(mcp: Any) -> None:
+    """Forbid undeclared extra arguments on all registered MCP tools (additionalProperties=false)."""
+    try:
+        from pydantic import ConfigDict
+    except ImportError:
+        return
+
+    tool_manager = getattr(mcp, "_tool_manager", None)
+    if tool_manager is None or not hasattr(tool_manager, "list_tools"):
+        return
+
+    for tool in tool_manager.list_tools():
+        if isinstance(getattr(tool, "parameters", None), dict):
+            tool.parameters["additionalProperties"] = False
+        fn_meta = getattr(tool, "fn_metadata", None)
+        arg_model = getattr(fn_meta, "arg_model", None)
+        if arg_model is not None and hasattr(arg_model, "model_config"):
+            strict_model = type(
+                arg_model.__name__,
+                (arg_model,),
+                {"model_config": ConfigDict(extra="forbid")},
+            )
+            strict_model.model_rebuild(force=True)
+            fn_meta.arg_model = strict_model
+
+
 def create_mcp_server(
     workspace_root: Optional[Path | str] = None,
     *,
+    openscad_bin: Optional[str] = None,
     stl_runner: Any = subprocess.run,
 ) -> Any:
     """Build and configure the FastMCP server exposing the six KAI CAD Studio tools."""
@@ -40,13 +69,17 @@ def create_mcp_server(
             "Install it with: pip install 'mcp>=1.9.0,<2.0'"
         ) from exc
 
-    service = KaiCadMcpService(workspace_root=workspace_root, stl_runner=stl_runner)
+    service = KaiCadMcpService(
+        workspace_root=workspace_root,
+        openscad_bin=openscad_bin,
+        stl_runner=stl_runner,
+    )
     mcp = FastMCP(
         name="kai-cad-studio",
         instructions=(
             "KAI CAD Studio parametric CAD engine (OpenSCAD, all dimensions in mm). "
             "Lifecycle: Draft -> Generated -> Validated -> Exported -> Imported -> Completed. "
-            "Generate a design first, validate it, then export STL."
+            "Generate a design (.scad canonical source), validate it, then export STL mesh."
         ),
     )
 
@@ -83,18 +116,16 @@ def create_mcp_server(
     @mcp.tool(
         name="cad_export_stl",
         description=(
-            "Export a validated CAD design to an STL mesh using the local OpenSCAD CLI "
-            "and advance its lifecycle to 'Exported' on success."
+            "Export a validated CAD design to an STL mesh using the server-configured OpenSCAD CLI "
+            "(OPENSCAD_BIN or auto-detected system OpenSCAD) and advance its lifecycle to 'Exported'."
         ),
     )
     def cad_export_stl(
         design_id: str,
-        openscad_bin: Optional[str] = None,
         timeout_seconds: int = 120,
     ) -> Dict[str, Any]:
         return service.cad_export_stl(
             design_id=design_id,
-            openscad_bin=openscad_bin,
             timeout_seconds=timeout_seconds,
         )
 
@@ -144,6 +175,7 @@ def create_mcp_server(
             include_content=include_content,
         )
 
+    _enforce_strict_tool_schemas(mcp)
     return mcp
 
 

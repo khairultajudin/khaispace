@@ -1,4 +1,4 @@
-"""Unit tests for KAI CAD 6-state lifecycle audit protection and MCP provider interface."""
+"""Unit tests for KAI CAD 6-state lifecycle audit protection, persisted chain integrity, and MCP interface."""
 
 from __future__ import annotations
 
@@ -104,6 +104,128 @@ class TestDesignLifecycle(unittest.TestCase):
         # External callers cannot inject forged history via constructor
         with self.assertRaises(TypeError):
             DesignRecord(design_id="CAD-FORGE", component_type="custom_adapter", history=[])  # type: ignore[call-arg]
+
+
+class TestPersistedAuditHistoryValidation(unittest.TestCase):
+    def _ev(self, from_s: str, to_s: str, ts: str = "2026-11-25T00:00:00+00:00", note: str = "ok") -> dict:
+        return {"from_state": from_s, "to_state": to_s, "timestamp_utc": ts, "note": note}
+
+    def test_valid_persisted_histories_roundtrip_and_stay_immutable(self) -> None:
+        # 0. Initial Draft with empty history
+        draft = DesignRecord.from_persisted(
+            {"design_id": "d0", "component_type": "custom_adapter", "state": "Draft", "history": []}
+        )
+        self.assertEqual(draft.state, DesignState.DRAFT)
+        self.assertEqual(draft.history, ())
+
+        # 1. Valid Generated history
+        gen_rec = DesignRecord(design_id="d1", component_type="custom_adapter")
+        gen_rec.transition(DesignState.GENERATED, note="gen")
+        re_gen = DesignRecord.from_persisted(gen_rec.to_dict())
+        self.assertEqual(re_gen.state, DesignState.GENERATED)
+        self.assertEqual(len(re_gen.history), 1)
+        self.assertIsInstance(re_gen.history, tuple)
+
+        # 2. Valid Generated -> Validated history
+        gen_rec.transition(DesignState.VALIDATED, note="val")
+        re_val = DesignRecord.from_persisted(gen_rec.to_dict())
+        self.assertEqual(re_val.state, DesignState.VALIDATED)
+        self.assertEqual([e.to_state for e in re_val.history], ["Generated", "Validated"])
+
+        # 3. Valid Generated -> Validated -> Exported history
+        gen_rec.transition(DesignState.EXPORTED, note="exp")
+        re_exp = DesignRecord.from_persisted(gen_rec.to_dict())
+        self.assertEqual(re_exp.state, DesignState.EXPORTED)
+        self.assertEqual([e.to_state for e in re_exp.history], ["Generated", "Validated", "Exported"])
+
+    def test_rejects_invalid_transition_sequence(self) -> None:
+        # Draft -> Exported is illegal in VALID_TRANSITIONS
+        payload = {
+            "design_id": "bad-seq",
+            "component_type": "custom_adapter",
+            "state": "Exported",
+            "history": [self._ev("Draft", "Exported")],
+        }
+        with self.assertRaises(ValueError):
+            DesignRecord.from_persisted(payload)
+
+        # Non-Draft starting from_state
+        payload2 = {
+            "design_id": "bad-start",
+            "component_type": "custom_adapter",
+            "state": "Validated",
+            "history": [self._ev("Generated", "Validated")],
+        }
+        with self.assertRaises(ValueError):
+            DesignRecord.from_persisted(payload2)
+
+    def test_rejects_disconnected_event_chain(self) -> None:
+        payload = {
+            "design_id": "bad-chain",
+            "component_type": "custom_adapter",
+            "state": "Exported",
+            "history": [
+                self._ev("Draft", "Generated"),
+                self._ev("Validated", "Exported"),  # Skips Generated -> Validated!
+            ],
+        }
+        with self.assertRaises(ValueError):
+            DesignRecord.from_persisted(payload)
+
+    def test_rejects_final_history_state_inconsistent_with_record_state(self) -> None:
+        payload = {
+            "design_id": "bad-final",
+            "component_type": "custom_adapter",
+            "state": "Exported",
+            "history": [
+                self._ev("Draft", "Generated"),
+                self._ev("Generated", "Validated"),
+            ],
+        }
+        with self.assertRaises(ValueError):
+            DesignRecord.from_persisted(payload)
+
+    def test_rejects_empty_history_with_non_initial_state(self) -> None:
+        for non_initial in ("Generated", "Validated", "Exported", "Imported", "Completed"):
+            with self.subTest(state=non_initial):
+                with self.assertRaises(ValueError):
+                    DesignRecord.from_persisted(
+                        {
+                            "design_id": "bad-empty",
+                            "component_type": "custom_adapter",
+                            "state": non_initial,
+                            "history": [],
+                        }
+                    )
+
+    def test_rejects_invalid_timestamps_and_malformed_event_structures(self) -> None:
+        bad_events = [
+            # Invalid ISO string
+            [self._ev("Draft", "Generated", ts="not-a-timestamp")],
+            # Naive timestamp (no timezone)
+            [self._ev("Draft", "Generated", ts="2026-11-25T00:00:00")],
+            # Non-UTC offset
+            [self._ev("Draft", "Generated", ts="2026-11-25T08:00:00+08:00")],
+            # Missing 'note' field
+            [{"from_state": "Draft", "to_state": "Generated", "timestamp_utc": "2026-11-25T00:00:00+00:00"}],
+            # Extra unexpected field
+            [{**self._ev("Draft", "Generated"), "injected": True}],
+            # Non-string 'note'
+            [{**self._ev("Draft", "Generated"), "note": 123}],
+            # Non-dict event entry
+            ["Draft -> Generated"],
+        ]
+        for events in bad_events:
+            with self.subTest(events=events):
+                with self.assertRaises(ValueError):
+                    DesignRecord.from_persisted(
+                        {
+                            "design_id": "bad-ev",
+                            "component_type": "custom_adapter",
+                            "state": "Generated",
+                            "history": events,
+                        }
+                    )
 
 
 class TestMcpInterface(unittest.TestCase):

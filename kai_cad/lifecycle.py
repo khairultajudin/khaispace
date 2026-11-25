@@ -1,9 +1,9 @@
-"""KAI CAD Studio — Phase 0/1/2 Design Lifecycle State Machine."""
+"""KAI CAD Studio — Phase 0/1/2/2.1 Design Lifecycle State Machine."""
 
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Dict, FrozenSet, List, Mapping, Optional, Sequence, Tuple
 
@@ -37,6 +37,8 @@ HUB_STATUS_MAP: Dict[DesignState, str] = {
     DesignState.IMPORTED: "In Progress",
     DesignState.COMPLETED: "Completed",
 }
+
+_REQUIRED_EVENT_KEYS = frozenset({"from_state", "to_state", "timestamp_utc", "note"})
 
 
 def can_transition(current: DesignState, target: DesignState) -> bool:
@@ -117,7 +119,16 @@ class DesignRecord:
 
     @classmethod
     def from_persisted(cls, data: Mapping[str, Any]) -> "DesignRecord":
-        """Rehydrate a persisted DesignRecord while validating state and audit event integrity."""
+        """Rehydrate a persisted DesignRecord with full audit-chain integrity validation.
+
+        Validates:
+        1. Every event contains valid string `from_state`, `to_state`, `timestamp_utc` (UTC), and `note`.
+        2. Every transition is permitted by `VALID_TRANSITIONS`.
+        3. Empty history is accepted strictly when `state == Draft`.
+        4. Non-empty history starts from `Draft`, forms a contiguous chain (`ev[i].from_state == ev[i-1].to_state`),
+           and ends at `ev[-1].to_state == record.state`.
+        Never silently repairs or rewrites malformed history.
+        """
         if not isinstance(data, Mapping):
             raise ValueError("Persisted design record must be a mapping.")
         design_id = data.get("design_id")
@@ -131,7 +142,9 @@ class DesignRecord:
             raise ValueError("Persisted design record missing valid 'state'.")
 
         state = DesignState(raw_state)
-        raw_history = data.get("history", [])
+        if "history" not in data:
+            raise ValueError("Persisted design record missing required 'history' field.")
+        raw_history = data["history"]
         if not isinstance(raw_history, Sequence) or isinstance(raw_history, (str, bytes)):
             raise ValueError("Persisted design record 'history' must be a list of events.")
 
@@ -139,22 +152,89 @@ class DesignRecord:
         for idx, item in enumerate(raw_history):
             if not isinstance(item, Mapping):
                 raise ValueError(f"Persisted audit event at index {idx} is not an object.")
-            from_s = DesignState(str(item.get("from_state", ""))).value
-            to_s = DesignState(str(item.get("to_state", ""))).value
-            ts = item.get("timestamp_utc")
-            if not isinstance(ts, str) or not ts.strip():
-                raise ValueError(f"Persisted audit event at index {idx} missing 'timestamp_utc'.")
-            datetime.fromisoformat(ts)
-            note = str(item.get("note", ""))
-            events.append(LifecycleEvent(from_state=from_s, to_state=to_s, timestamp_utc=ts, note=note))
+            if set(item.keys()) != _REQUIRED_EVENT_KEYS:
+                missing = sorted(_REQUIRED_EVENT_KEYS - set(item.keys()))
+                extra = sorted(set(item.keys()) - _REQUIRED_EVENT_KEYS)
+                raise ValueError(
+                    f"Persisted audit event at index {idx} has malformed fields "
+                    f"(missing={missing}, unexpected={extra})."
+                )
+            raw_from = item["from_state"]
+            raw_to = item["to_state"]
+            raw_ts = item["timestamp_utc"]
+            raw_note = item["note"]
+            if not isinstance(raw_from, str) or not isinstance(raw_to, str):
+                raise ValueError(f"Persisted audit event at index {idx} state fields must be strings.")
+            if not isinstance(raw_ts, str) or not raw_ts.strip():
+                raise ValueError(f"Persisted audit event at index {idx} missing valid 'timestamp_utc'.")
+            if not isinstance(raw_note, str):
+                raise ValueError(f"Persisted audit event at index {idx} 'note' must be a string.")
+
+            from_enum = DesignState(raw_from)
+            to_enum = DesignState(raw_to)
+            if not can_transition(from_enum, to_enum):
+                raise ValueError(
+                    f"Persisted audit event at index {idx} contains illegal transition "
+                    f"'{from_enum.value}' -> '{to_enum.value}'."
+                )
+
+            parsed_ts = datetime.fromisoformat(raw_ts)
+            if parsed_ts.tzinfo is None or parsed_ts.utcoffset() != timedelta(0):
+                raise ValueError(
+                    f"Persisted audit event at index {idx} timestamp '{raw_ts}' must be timezone-aware UTC."
+                )
+
+            events.append(
+                LifecycleEvent(
+                    from_state=from_enum.value,
+                    to_state=to_enum.value,
+                    timestamp_utc=raw_ts,
+                    note=raw_note,
+                )
+            )
+
+        if not events:
+            if state != DesignState.DRAFT:
+                raise ValueError(
+                    f"Persisted design record has empty audit history but non-initial state '{state.value}'."
+                )
+        else:
+            if events[0].from_state != DesignState.DRAFT.value:
+                raise ValueError(
+                    f"Persisted audit history must start from '{DesignState.DRAFT.value}', "
+                    f"got '{events[0].from_state}'."
+                )
+            for idx in range(1, len(events)):
+                prev_to = events[idx - 1].to_state
+                curr_from = events[idx].from_state
+                if curr_from != prev_to:
+                    raise ValueError(
+                        f"Disconnected persisted audit chain at index {idx}: "
+                        f"event[{idx - 1}].to_state='{prev_to}' != event[{idx}].from_state='{curr_from}'."
+                    )
+            if events[-1].to_state != state.value:
+                raise ValueError(
+                    f"Persisted audit history final state '{events[-1].to_state}' does not match "
+                    f"record state '{state.value}'."
+                )
+
+        scad_path = data.get("scad_path")
+        if scad_path is not None and not isinstance(scad_path, str):
+            raise ValueError("Persisted design record 'scad_path' must be a string or null.")
+        stl_path = data.get("stl_path")
+        if stl_path is not None and not isinstance(stl_path, str):
+            raise ValueError("Persisted design record 'stl_path' must be a string or null.")
+        spec_sha = data.get("spec_sha256")
+        if spec_sha is not None and not isinstance(spec_sha, str):
+            raise ValueError("Persisted design record 'spec_sha256' must be a string or null.")
 
         record = cls(
             design_id=design_id,
             component_type=component_type,
             state=state,
-            scad_path=data.get("scad_path") if isinstance(data.get("scad_path"), str) else None,
-            stl_path=data.get("stl_path") if isinstance(data.get("stl_path"), str) else None,
-            spec_sha256=data.get("spec_sha256") if isinstance(data.get("spec_sha256"), str) else None,
+            scad_path=scad_path,
+            stl_path=stl_path,
+            spec_sha256=spec_sha,
         )
         record._history = events
         return record

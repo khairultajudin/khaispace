@@ -1,9 +1,10 @@
-"""Real end-to-end MCP client/server STDIO protocol tests for KAI CAD Studio."""
+"""Real end-to-end MCP client/server STDIO protocol tests for KAI CAD Studio (Phase 2 & 2.1)."""
 
 from __future__ import annotations
 
 import asyncio
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -52,19 +53,23 @@ def _extract_tool_payload(call_result) -> dict:
 
 @unittest.skipUnless(MCP_SDK_AVAILABLE, "Official Python MCP SDK ('mcp') is not installed.")
 class TestMcpStdioProtocol(unittest.TestCase):
-    def test_live_stdio_server_discovery_workflow_and_restart_persistence(self) -> None:
+    def test_live_stdio_server_discovery_schema_security_and_restart_persistence(self) -> None:
         asyncio.run(self._run_stdio_e2e())
 
     async def _run_stdio_e2e(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             workspace = str(Path(tmp) / "mcp_ws")
+            missing_openscad = str(Path(tmp) / "missing_openscad_cli")
+            env_no_openscad = dict(os.environ, OPENSCAD_BIN=missing_openscad)
+
             server_params = StdioServerParameters(
                 command=sys.executable,
                 args=["-m", "kai_cad.mcp_server", "--workspace", workspace],
                 cwd=str(ROOT),
+                env=env_no_openscad,
             )
 
-            # Session 1: Initialize, discover all 6 tools, generate, validate, inspect, test error
+            # Session 1: Initialize, verify schemas & executable restriction, generate, validate, inspect
             async with stdio_client(server_params) as (read, write):
                 async with ClientSession(read, write) as session:
                     init_res = await session.initialize()
@@ -76,6 +81,15 @@ class TestMcpStdioProtocol(unittest.TestCase):
                     for name, tool in discovered.items():
                         self.assertTrue(tool.description, f"Tool '{name}' missing description.")
                         self.assertIsInstance(tool.inputSchema, dict)
+                        self.assertEqual(tool.inputSchema.get("additionalProperties"), False)
+
+                    # Verify cad_export_stl schema strictly forbids client executable selection
+                    export_schema = discovered["cad_export_stl"].inputSchema
+                    self.assertNotIn("openscad_bin", export_schema.get("properties", {}))
+                    self.assertEqual(
+                        set(export_schema.get("properties", {}).keys()),
+                        {"design_id", "timeout_seconds"},
+                    )
 
                     # Generate design over STDIO
                     gen_call = await session.call_tool(
@@ -101,6 +115,26 @@ class TestMcpStdioProtocol(unittest.TestCase):
                     self.assertTrue(val["ok"])
                     self.assertTrue(val["valid"])
                     self.assertEqual(val["state"], "Validated")
+
+                    # Attempted client injection of openscad_bin must be rejected at MCP boundary
+                    injected_call = await session.call_tool(
+                        "cad_export_stl",
+                        arguments={
+                            "design_id": "stdio-adapter-01",
+                            "openscad_bin": "/bin/sh",
+                        },
+                    )
+                    self.assertTrue(injected_call.isError)
+
+                    # Valid export call with missing server OPENSCAD_BIN returns structured error & preserves state
+                    unavail_call = await session.call_tool(
+                        "cad_export_stl",
+                        arguments={"design_id": "stdio-adapter-01"},
+                    )
+                    unavail = _extract_tool_payload(unavail_call)
+                    self.assertFalse(unavail["ok"])
+                    self.assertEqual(unavail["error"]["code"], "OPENSCAD_UNAVAILABLE")
+                    self.assertEqual(unavail["state"], "Validated")
 
                     # Retrieve artifact metadata + text content over STDIO
                     art_call = await session.call_tool(

@@ -1,8 +1,8 @@
 # KAI CAD Studio — System Architecture
 
 **Module:** `kai_cad/` (inside `khairultajudin/khaispace` monorepo)  
-**Scope:** Phase 0 (Architecture), Phase 1/1.1 (Parametric CAD Engine & Hardening), and Phase 2 (Live STDIO MCP Server & Local Persistence)  
-**Primary CAD Kernel Target:** OpenSCAD (`.scad` source + optional `.stl` CLI export)  
+**Scope:** Phase 0 (Architecture), Phase 1/1.1 (Parametric CAD Engine & Hardening), Phase 2 (Live STDIO MCP Server), and Phase 2.1 (Security & Audit-Chain Hardening)  
+**Primary CAD Kernel Target:** OpenSCAD (`.scad` canonical source + `.stl` mesh exchange for [TinkerCAD](https://www.tinkercad.com/))  
 **Unit System:** Millimetres (`mm`) exclusively
 
 ---
@@ -10,10 +10,13 @@
 ## 1. Architectural Goals & Principles
 
 1. **Monorepo Native, Zero Disruption:** `kai_cad` lives beside `kai_orchestration/` and `apps/hub/` in `khaispace`, adopting the repository's existing Python 3.12 stdlib-first and `unittest` conventions without touching unrelated modules.
-2. **Source-of-Truth Reproducibility:** Every part is defined by an immutable JSON specification (`CustomAdapterSpec`) hashed with SHA-256. Identical JSON inputs always produce byte-for-byte identical OpenSCAD (`.scad`) source.
+2. **Source-of-Truth Reproducibility & TinkerCAD Artifact Roles:**
+   - **`.json` (`spec.json`):** Canonical design parameters and nominal dimensions.
+   - **`.scad`:** Canonical, editable parametric OpenSCAD source of truth (deterministic SHA-256).
+   - **`.stl`:** Watertight mesh exchange format intended for manual import into [TinkerCAD](https://www.tinkercad.com/). Importing `.stl` into TinkerCAD creates an imported mesh object and does **not** restore OpenSCAD parametric primitives or construction history — therefore `.json` and `.scad` are always preserved alongside `.stl` for future parametric edits.
 3. **Zero Silent Dimension Mutation:** Validators check both nominal and clearance-adjusted effective geometry before any `.scad` code is generated. Impossible, sub-resolution, or unsafe geometry is rejected with structured error codes — never silently clamped or adjusted.
-4. **Independence from TinkerCAD:** Geometry generation depends strictly on deterministic Python math and OpenSCAD syntax. No proprietary cloud CAD or TinkerCAD APIs are used.
-5. **Honest Optional Binary Dependencies:** `.scad` generation requires zero third-party packages or external binaries. `.stl` export delegates to the local OpenSCAD CLI when present (preferring console-subsystem `openscad.com` on Windows for reliable stderr capture); if unavailable, it reports the missing dependency explicitly and never creates an empty or placeholder STL file.
+4. **Independence from TinkerCAD Automation:** Geometry generation depends strictly on deterministic Python math and OpenSCAD syntax. No proprietary cloud CAD or TinkerCAD browser automation is coupled into the engine.
+5. **Server-Controlled Optional Binary Dependencies:** `.scad` generation requires zero third-party packages or external binaries. `.stl` export delegates to the server-configured OpenSCAD CLI (`OPENSCAD_BIN` or safe system auto-detection; MCP clients cannot select an executable path). If unavailable, it reports the missing dependency explicitly and never creates an empty or placeholder STL file.
 
 ---
 
@@ -89,12 +92,13 @@ Defined in `kai_cad/lifecycle.py`:
 | `Imported` | Exported artifact imported into downstream slicer / CAM / review tool | `In Progress` | `Completed`, `Draft` |
 | `Completed` | Final verified design archived | `Completed` | *(terminal)* |
 
-### Audit Protection Guarantees (Phase 1.1)
+### Audit Protection Guarantees (Phase 1.1 & Phase 2.1)
 - `DesignRecord._history` is private (`init=False`) and cannot be injected via the constructor.
 - `DesignRecord.history` is a read-only `@property` returning an immutable `Tuple[LifecycleEvent, ...]`.
-- Each `LifecycleEvent` is `@dataclass(frozen=True)` with a UTC ISO-8601 timestamp (`timezone.utc`).
+- Each `LifecycleEvent` is `@dataclass(frozen=True)` with a timezone-aware UTC ISO-8601 timestamp (`timezone.utc`).
 - Invalid or non-`DesignState` transitions raise `ValueError` without mutating `state` or `_history`.
 - Every valid transition appends exactly one `LifecycleEvent`.
+- `DesignRecord.from_persisted()` validates the complete persisted event chain on reload: exact event fields, UTC offsets, `VALID_TRANSITIONS` legality, empty history allowed strictly for `Draft`, contiguous `Draft -> ... -> current_state` chain, and zero silent repair of tampered histories.
 
 ---
 

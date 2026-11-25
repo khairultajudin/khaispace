@@ -21,34 +21,35 @@ _MACOS_OPENSCAD_CANDIDATES = (
 )
 
 
+def _resolve_candidate(candidate: str) -> Optional[str]:
+    """Resolve an explicit binary name or file path without falling back to other paths."""
+    cleaned = candidate.strip()
+    if not cleaned:
+        return None
+    resolved = shutil.which(cleaned)
+    if resolved:
+        return resolved
+    p = Path(cleaned)
+    if p.is_file():
+        return str(p)
+    return None
+
+
 def resolve_openscad_binary(explicit_bin: Optional[str] = None) -> Optional[str]:
     """Locate the OpenSCAD CLI executable, returning None if unavailable.
 
     Resolution order:
-      1. Explicit `explicit_bin` argument (if provided and exists/executable)
-      2. `OPENSCAD_BIN` environment variable
+      1. Explicit `explicit_bin` argument (internal Python callers only; authoritative if provided)
+      2. `OPENSCAD_BIN` environment variable (authoritative server-side configuration if set and non-empty)
       3. `PATH` lookup (`openscad`, `openscad.exe`, `openscad.com`)
       4. Standard OS install locations (Windows Program Files, macOS Applications)
     """
     if explicit_bin is not None:
-        candidate = explicit_bin.strip()
-        if not candidate:
-            return None
-        resolved = shutil.which(candidate)
-        if resolved:
-            return resolved
-        p = Path(candidate)
-        if p.is_file():
-            return str(p)
-        return None
+        return _resolve_candidate(explicit_bin)
 
     env_bin = os.environ.get("OPENSCAD_BIN", "").strip()
     if env_bin:
-        resolved = shutil.which(env_bin)
-        if resolved:
-            return resolved
-        if Path(env_bin).is_file():
-            return env_bin
+        return _resolve_candidate(env_bin)
 
     for name in ("openscad", "openscad.exe", "openscad.com"):
         found = shutil.which(name)
@@ -139,6 +140,7 @@ def export_stl_with_openscad(
             text=True,
             timeout=timeout_seconds,
             stdin=subprocess.DEVNULL,
+            shell=False,
         )
     except Exception as exc:
         return StlExportResult(

@@ -1,13 +1,15 @@
-"""Unit and integration tests for KAI CAD Phase 2 persistence and MCP service layer."""
+"""Unit and integration tests for KAI CAD Phase 2 & 2.1 persistence, security, and MCP service layer."""
 
 from __future__ import annotations
 
 import json
+import os
 import sys
 import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
@@ -22,18 +24,24 @@ EXAMPLE_SPEC = json.loads(
 
 
 class TestMcpServiceWorkflowAndPersistence(unittest.TestCase):
-    def test_full_cad_workflow_and_restart_persistence(self) -> None:
+    def test_full_cad_workflow_tinkercad_artifacts_and_restart_persistence(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             workspace = Path(tmp) / "cad_ws"
             fake_openscad = Path(tmp) / "fake_openscad"
             fake_openscad.write_text("stub", encoding="utf-8")
 
             def fake_stl_runner(cmd, **kwargs):
+                self.assertEqual(cmd[0], str(fake_openscad))
+                self.assertFalse(kwargs.get("shell", False))
                 stl_out = Path(cmd[cmd.index("-o") + 1])
                 stl_out.write_bytes(b"solid adapter\nfacet normal 0 0 1\nendsolid adapter\n")
                 return SimpleNamespace(returncode=0, stdout="", stderr="")
 
-            svc = KaiCadMcpService(workspace_root=workspace, stl_runner=fake_stl_runner)
+            svc = KaiCadMcpService(
+                workspace_root=workspace,
+                openscad_bin=str(fake_openscad),
+                stl_runner=fake_stl_runner,
+            )
 
             # 1. Generate design
             gen = svc.cad_generate_design(
@@ -49,7 +57,7 @@ class TestMcpServiceWorkflowAndPersistence(unittest.TestCase):
             self.assertTrue(Path(gen["spec_path"]).is_file())
 
             # 2. Exporting before validation must fail (invalid lifecycle transition)
-            early_export = svc.cad_export_stl("adapter-001", openscad_bin=str(fake_openscad))
+            early_export = svc.cad_export_stl("adapter-001")
             self.assertFalse(early_export["ok"])
             self.assertEqual(early_export["error"]["code"], "INVALID_LIFECYCLE_TRANSITION")
 
@@ -67,7 +75,7 @@ class TestMcpServiceWorkflowAndPersistence(unittest.TestCase):
             self.assertEqual(val2["state"], "Validated")
 
             # 4. Export STL (advances Validated -> Exported)
-            exp = svc.cad_export_stl("adapter-001", openscad_bin=str(fake_openscad))
+            exp = svc.cad_export_stl("adapter-001")
             self.assertTrue(exp["ok"])
             self.assertEqual(exp["state"], "Exported")
             self.assertGreater(exp["stl_size_bytes"], 0)
@@ -79,14 +87,19 @@ class TestMcpServiceWorkflowAndPersistence(unittest.TestCase):
             self.assertTrue(got["ok"])
             self.assertEqual(got["state"], "Exported")
             self.assertEqual(got["spec_sha256"], gen["spec_sha256"])
+            self.assertEqual(got["scad_sha256"], gen["scad_sha256"])
             self.assertEqual(len(got["history"]), 3)
             self.assertEqual(
                 [h["to_state"] for h in got["history"]],
                 ["Generated", "Validated", "Exported"],
             )
+            # TinkerCAD-ready artifacts: original JSON spec, canonical .scad, and non-empty .stl all preserved
             self.assertTrue(got["artifacts"]["spec_json"]["exists"])
+            self.assertGreater(got["artifacts"]["spec_json"]["size_bytes"], 0)
             self.assertTrue(got["artifacts"]["scad"]["exists"])
+            self.assertGreater(got["artifacts"]["scad"]["size_bytes"], 0)
             self.assertTrue(got["artifacts"]["stl"]["exists"])
+            self.assertGreater(got["artifacts"]["stl"]["size_bytes"], 0)
 
             # 6. List designs with filters
             listed_all = restarted_svc.cad_list_designs()
@@ -120,6 +133,42 @@ class TestMcpServiceWorkflowAndPersistence(unittest.TestCase):
             stl_text = restarted_svc.cad_get_design_artifact("adapter-001", "stl", include_content=True)
             self.assertFalse(stl_text["ok"])
             self.assertEqual(stl_text["error"]["code"], "BINARY_ARTIFACT_CONTENT_NOT_SUPPORTED")
+
+    def test_openscad_executable_selection_restricted_to_server_config_and_env(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            # Public service method must NOT accept client-supplied openscad_bin
+            svc = KaiCadMcpService(workspace_root=tmp)
+            with self.assertRaises(TypeError):
+                svc.cad_export_stl("any-id", openscad_bin="/bin/sh")  # type: ignore[call-arg]
+
+            gen = svc.cad_generate_design("custom_adapter", EXAMPLE_SPEC, design_id="env-bin-test")
+            self.assertTrue(gen["ok"])
+            self.assertTrue(svc.cad_validate_design("env-bin-test")["ok"])
+
+            # Authoritative OPENSCAD_BIN pointing to missing path -> OPENSCAD_UNAVAILABLE without fallback
+            missing_bin = str(Path(tmp) / "missing_openscad_exe")
+            with patch.dict(os.environ, {"OPENSCAD_BIN": missing_bin}):
+                unavail = svc.cad_export_stl("env-bin-test")
+                self.assertFalse(unavail["ok"])
+                self.assertEqual(unavail["error"]["code"], "OPENSCAD_UNAVAILABLE")
+                self.assertEqual(svc.cad_get_design("env-bin-test")["state"], "Validated")
+
+            # Authoritative OPENSCAD_BIN pointing to configured binary -> used by server resolver
+            configured_bin = Path(tmp) / "configured_openscad"
+            configured_bin.write_text("stub", encoding="utf-8")
+
+            def env_runner(cmd, **kwargs):
+                self.assertEqual(cmd[0], str(configured_bin))
+                stl_out = Path(cmd[cmd.index("-o") + 1])
+                stl_out.write_bytes(b"solid ok\nendsolid ok\n")
+                return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+            svc_env = KaiCadMcpService(workspace_root=tmp, stl_runner=env_runner)
+            with patch.dict(os.environ, {"OPENSCAD_BIN": str(configured_bin)}):
+                ok_exp = svc_env.cad_export_stl("env-bin-test")
+                self.assertTrue(ok_exp["ok"])
+                self.assertEqual(ok_exp["openscad_binary"], str(configured_bin))
+                self.assertEqual(ok_exp["state"], "Exported")
 
 
 class TestMcpServiceFailureScenarios(unittest.TestCase):
@@ -155,19 +204,19 @@ class TestMcpServiceFailureScenarios(unittest.TestCase):
 
     def test_missing_scad_and_openscad_failures_do_not_advance_lifecycle(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            svc = KaiCadMcpService(workspace_root=tmp)
-            gen = svc.cad_generate_design("custom_adapter", EXAMPLE_SPEC, design_id="exp-fail-1")
-            self.assertTrue(gen["ok"])
-            self.assertTrue(svc.cad_validate_design("exp-fail-1")["ok"])
-
-            # OpenSCAD unavailable
-            unavail = svc.cad_export_stl(
-                "exp-fail-1",
+            svc_unavail = KaiCadMcpService(
+                workspace_root=tmp,
                 openscad_bin=str(Path(tmp) / "nonexistent_openscad"),
             )
+            gen = svc_unavail.cad_generate_design("custom_adapter", EXAMPLE_SPEC, design_id="exp-fail-1")
+            self.assertTrue(gen["ok"])
+            self.assertTrue(svc_unavail.cad_validate_design("exp-fail-1")["ok"])
+
+            # OpenSCAD unavailable
+            unavail = svc_unavail.cad_export_stl("exp-fail-1")
             self.assertFalse(unavail["ok"])
             self.assertEqual(unavail["error"]["code"], "OPENSCAD_UNAVAILABLE")
-            self.assertEqual(svc.cad_get_design("exp-fail-1")["state"], "Validated")
+            self.assertEqual(svc_unavail.cad_get_design("exp-fail-1")["state"], "Validated")
 
             # OpenSCAD fails with non-zero exit code
             fake_bin = Path(tmp) / "failing_openscad"
@@ -176,8 +225,12 @@ class TestMcpServiceFailureScenarios(unittest.TestCase):
             def failing_runner(cmd, **kwargs):
                 return SimpleNamespace(returncode=1, stdout="", stderr="CGAL error: non-manifold")
 
-            svc_fail = KaiCadMcpService(workspace_root=tmp, stl_runner=failing_runner)
-            fail_res = svc_fail.cad_export_stl("exp-fail-1", openscad_bin=str(fake_bin))
+            svc_fail = KaiCadMcpService(
+                workspace_root=tmp,
+                openscad_bin=str(fake_bin),
+                stl_runner=failing_runner,
+            )
+            fail_res = svc_fail.cad_export_stl("exp-fail-1")
             self.assertFalse(fail_res["ok"])
             self.assertEqual(fail_res["error"]["code"], "STL_EXPORT_FAILED")
             self.assertIn("CGAL error", fail_res["stderr"])
@@ -185,7 +238,7 @@ class TestMcpServiceFailureScenarios(unittest.TestCase):
 
             # Delete SCAD file -> export & validate detect missing SCAD
             Path(gen["scad_path"]).unlink()
-            missing_res = svc_fail.cad_export_stl("exp-fail-1", openscad_bin=str(fake_bin))
+            missing_res = svc_fail.cad_export_stl("exp-fail-1")
             self.assertFalse(missing_res["ok"])
             self.assertEqual(missing_res["error"]["code"], "MISSING_SCAD_ARTIFACT")
 
@@ -207,7 +260,7 @@ class TestMcpServiceFailureScenarios(unittest.TestCase):
             self.assertFalse(bad_out["ok"])
             self.assertEqual(bad_out["error"]["code"], "INVALID_OUTPUT_NAME")
 
-            # Create a healthy design, then corrupt its record.json
+            # Create a healthy design, then test both broken JSON and tampered audit chains
             ok_gen = svc.cad_generate_design("custom_adapter", EXAMPLE_SPEC, design_id="healthy-1")
             self.assertTrue(ok_gen["ok"])
 
@@ -216,9 +269,18 @@ class TestMcpServiceFailureScenarios(unittest.TestCase):
             corrupt_dir.mkdir(parents=True, exist_ok=True)
             (corrupt_dir / "record.json").write_text("{broken json", encoding="utf-8")
 
-            corrupt_get = svc.cad_get_design("corrupt-1")
-            self.assertFalse(corrupt_get["ok"])
-            self.assertEqual(corrupt_get["error"]["code"], "CORRUPTED_RECORD")
+            # Also create a record with valid JSON syntax but tampered/disconnected audit history
+            tampered_gen = svc.cad_generate_design("custom_adapter", EXAMPLE_SPEC, design_id="tampered-1")
+            self.assertTrue(tampered_gen["ok"])
+            tampered_rec_path = repo.design_dir("tampered-1") / "record.json"
+            tampered_data = json.loads(tampered_rec_path.read_text(encoding="utf-8"))
+            tampered_data["record"]["state"] = "Exported"  # Mismatches history ending at Generated!
+            tampered_rec_path.write_text(json.dumps(tampered_data), encoding="utf-8")
+
+            for bad_rec_id in ("corrupt-1", "tampered-1"):
+                corrupt_get = svc.cad_get_design(bad_rec_id)
+                self.assertFalse(corrupt_get["ok"])
+                self.assertEqual(corrupt_get["error"]["code"], "CORRUPTED_RECORD")
 
             # Listing still returns healthy designs without crashing
             listed = svc.cad_list_designs()

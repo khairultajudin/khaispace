@@ -77,9 +77,11 @@ class KaiCadMcpService:
         self,
         workspace_root: Optional[Path | str] = None,
         *,
+        openscad_bin: Optional[str] = None,
         stl_runner: Any = subprocess.run,
     ) -> None:
         self.repository = FileDesignRepository(workspace_root=workspace_root)
+        self._openscad_bin = openscad_bin
         self._stl_runner = stl_runner
 
     def cad_generate_design(
@@ -256,10 +258,9 @@ class KaiCadMcpService:
     def cad_export_stl(
         self,
         design_id: str,
-        openscad_bin: Optional[str] = None,
         timeout_seconds: int = 120,
     ) -> Dict[str, Any]:
-        """Tool C: Export a validated design to STL via local OpenSCAD CLI."""
+        """Tool C: Export a validated design to STL via server-configured OpenSCAD CLI."""
         tool = "cad_export_stl"
         if isinstance(timeout_seconds, bool) or not isinstance(timeout_seconds, int) or not (
             MIN_EXPORT_TIMEOUT_S <= timeout_seconds <= MAX_EXPORT_TIMEOUT_S
@@ -316,7 +317,7 @@ class KaiCadMcpService:
         export = export_stl_with_openscad(
             scad_path,
             stl_path,
-            openscad_bin=openscad_bin,
+            openscad_bin=self._openscad_bin,
             timeout_seconds=timeout_seconds,
             runner=self._stl_runner,
         )

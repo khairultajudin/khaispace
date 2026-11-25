@@ -53,7 +53,7 @@ All tools return structured JSON envelopes containing `"ok": true | false`, `"to
 | :--- | :--- | :--- |
 | `cad_generate_design` | `component_type` (`"custom_adapter"`), `spec` (object, mm), `design_id?`, `output_name?` | Validates component & spec via existing engine, writes `spec.json` + `.scad`, persists `record.json` in `Generated` state. Fails without creating a record on invalid input. |
 | `cad_validate_design` | `design_id` | Loads persisted `spec.json` and verifies `.scad` presence; runs existing validator. Advances `Generated -> Validated` on success. Never exports STL automatically. |
-| `cad_export_stl` | `design_id`, `openscad_bin?`, `timeout_seconds?` (`1..600`, default `120`) | Requires `Validated` state (`can_transition(..., Exported)`). Runs existing OpenSCAD exporter. Advances `Validated -> Exported` only if a non-empty STL file is produced. |
+| `cad_export_stl` | `design_id`, `timeout_seconds?` (`1..600`, default `120`) | Requires `Validated` state (`can_transition(..., Exported)`). Uses server-configured OpenSCAD (`OPENSCAD_BIN` or safe auto-detection; client executable selection is forbidden). Advances `Validated -> Exported` only if a non-empty STL file is produced. |
 | `cad_get_design` | `design_id` | Returns `design_id`, `component_type`, `state`, `spec_sha256`, `scad_sha256`, paths, UTC timestamps, immutable audit `history`, and artifact availability (`spec_json`, `scad`, `stl`). |
 | `cad_list_designs` | `component_type?`, `state?`, `limit?` (`1..500`, default `50`) | Lists persisted designs sorted by `updated_at_utc` descending with artifact presence summaries. Skips corrupted directories safely without crashing. |
 | `cad_get_design_artifact` | `design_id`, `artifact_type` (`"spec_json" \| "scad" \| "stl"`), `include_content?` (`false`) | Returns metadata (`path`, `exists`, `size_bytes`, `sha256`, `mime_type`). Optional UTF-8 text content is allowed for `spec_json`/`scad` up to `256 KiB` (`262,144` bytes). Binary `stl` text content is refused (`BINARY_ARTIFACT_CONTENT_NOT_SUPPORTED`). |
@@ -74,13 +74,15 @@ All tools return structured JSON envelopes containing `"ok": true | false`, `"to
       <output_name>.stl  # exported STL mesh (after cad_export_stl)
 ```
 
-- **Restart survival:** Persisted records rehydrate via `DesignRecord.from_persisted()`, preserving the immutable read-only `history` tuple and validating all states and UTC timestamps.
-- **Corruption resilience:** Malformed `record.json` or `spec.json` returns `CORRUPTED_RECORD` cleanly without crashing the MCP server or corrupting other designs.
+- **Restart survival & full chain validation:** Persisted records rehydrate via `DesignRecord.from_persisted()`, preserving the immutable read-only `history` tuple and verifying the complete contiguous `Draft -> ... -> current_state` transition chain and UTC timestamps.
+- **TinkerCAD-ready artifact preservation:** Every exported design preserves `spec.json` (canonical parameters) and `<output_name>.scad` (canonical editable OpenSCAD source) alongside `<output_name>.stl` (mesh exchange artifact for manual import into [TinkerCAD](https://www.tinkercad.com/)). Importing `.stl` into TinkerCAD transfers triangulated mesh geometry only and does not restore parametric OpenSCAD construction history.
+- **Corruption resilience:** Malformed or tampered `record.json` or `spec.json` returns `CORRUPTED_RECORD` cleanly without crashing the MCP server or corrupting other designs.
 
 ---
 
 ## 5. Security Boundaries
 
+- **Server-only executable selection (Phase 2.1):** `cad_export_stl` never exposes `openscad_bin` to MCP clients, and all six MCP tools enforce `"additionalProperties": false` (`extra="forbid"`). OpenSCAD is resolved strictly on the server via authoritative `OPENSCAD_BIN` or safe system auto-detection.
 - **Strict identifier regex:** `design_id` and `output_name` must match `^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$` (blocks `..`, `/`, `\`, spaces, hidden names).
 - **Workspace containment:** Every read/write path is resolved and verified with `ensure_within_workspace()`.
 - **No arbitrary execution:** Only the six CAD tools are exposed; no shell, Python, or arbitrary filesystem tools exist. Subprocess calls to OpenSCAD use argument lists (`shell=False`), `stdin=subprocess.DEVNULL`, and bounded timeouts (`1..600s`).
@@ -144,7 +146,7 @@ mcp_servers:
     connect_timeout: 30
 ```
 
-*(On native Windows, use `command: python` and Windows paths such as `E:\KhaiSpace` and `E:\KhaiSpace\.kai_cad_workspace`. If OpenSCAD is installed on Windows while Hermes runs in WSL2, pass `OPENSCAD_BIN=/mnt/c/Program Files/OpenSCAD/openscad.com` in `env` or pass `openscad_bin` per call.)*
+*(On native Windows, use `command: python` and Windows paths such as `E:\KhaiSpace` and `E:\KhaiSpace\.kai_cad_workspace`. If OpenSCAD is installed on Windows while Hermes runs in WSL2, configure `OPENSCAD_BIN: "/mnt/c/Program Files/OpenSCAD/openscad.com"` in the server's `env` block — executable selection is strictly server-side and cannot be passed per tool call.)*
 
 ### Verify Tool Discovery in Hermes
 
