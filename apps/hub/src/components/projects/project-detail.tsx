@@ -24,6 +24,7 @@ import { HubProject } from "../../types/dashboard";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { fetchProjectContext, type ProjectContextSummary } from "@/lib/supabase/projects-service";
 import { formatMYR } from "@/utils/finance-utils";
+import { MemburuJejakWorkspace } from "./memburu-jejak-workspace";
 
 interface ProjectDetailProps {
   project: HubProject;
@@ -50,6 +51,9 @@ export function ProjectDetail({
   const [contextSummary, setContextSummary] = useState<ProjectContextSummary | null>(null);
   const [isContextLoading, setIsContextLoading] = useState(true);
   const isArchived = Boolean(project.metadata?.archived);
+  const isMemburuJejak =
+    project.title.toLowerCase().includes("memburu jejak") ||
+    Boolean(project.metadata?.archiveUrl?.includes("memburu-jejak"));
   const isPlanned =
     project.status === "Planning" ||
     project.metadata?.verificationStatus === "Planned / Not Yet Implemented";
@@ -146,6 +150,9 @@ export function ProjectDetail({
           </div>
         )}
       </div>
+
+      {/* Merged Memburu Jejak Studio Workspace (replaces separate Preserved Archive) */}
+      {isMemburuJejak && <MemburuJejakWorkspace />}
 
       {/* Main Project Header Card */}
       <div className="p-6 sm:p-8 rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs space-y-4">
@@ -247,7 +254,7 @@ export function ProjectDetail({
               </div>
             )}
 
-            {project.metadata?.archiveUrl && (
+            {project.metadata?.archiveUrl && !isMemburuJejak && (
               <div>
                 <div className="text-[#536B85] font-medium mb-1.5">
                   Preserved Private Portfolio Archive:
