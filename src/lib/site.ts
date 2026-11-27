@@ -20,7 +20,6 @@ export const siteConfig = {
 export const mainNav: readonly NavItem[] = [
   { label: "Home", href: "/" },
   { label: "Services", href: "/services" },
-  { label: "Projects", href: "/projects" },
   { label: "Lab", href: "/lab" },
   { label: "About", href: "/about" },
 ];

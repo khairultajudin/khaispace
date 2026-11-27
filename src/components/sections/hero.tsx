@@ -57,9 +57,6 @@ export function Hero() {
               <span>Start a Project</span>
               <ArrowRight className="h-4 w-4" aria-hidden />
             </ButtonLink>
-            <ButtonLink href="/projects" variant="secondary" size="lg">
-              Explore Projects
-            </ButtonLink>
             <WhatsAppCta
               label="WhatsApp Directly"
               variant="outline"

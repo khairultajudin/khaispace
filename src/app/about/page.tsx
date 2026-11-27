@@ -52,15 +52,10 @@ export default function AboutPage() {
         title="Turning practical ideas into reliable digital solutions."
         lead="Khai Space is an independent interactive digital studio based in Malaysia — built around hands-on software engineering, applied AI workflows, and physical-digital prototyping."
         actions={
-          <>
-            <ButtonLink href="/start-a-project">
-              <span>Start a Project</span>
-              <ArrowRight className="h-4 w-4" aria-hidden />
-            </ButtonLink>
-            <ButtonLink href="/projects" variant="secondary">
-              Explore Studio Work
-            </ButtonLink>
-          </>
+          <ButtonLink href="/start-a-project">
+            <span>Start a Project</span>
+            <ArrowRight className="h-4 w-4" aria-hidden />
+          </ButtonLink>
         }
       />
 

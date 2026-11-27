@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import {
   ArrowRight,
-  ArrowUpRight,
   CheckCircle2,
   CircleAlert,
   PackageCheck,
@@ -13,7 +11,6 @@ import { Container } from "@/components/ui/container";
 import { PageIntro } from "@/components/ui/page-intro";
 import { ServiceIcon } from "@/components/ui/service-icon";
 import { WhatsAppCta } from "@/components/ui/whatsapp-cta";
-import { getProjectBySlug } from "@/content/projects";
 import { services } from "@/content/services";
 import { buildServiceInquiryMessage } from "@/lib/whatsapp";
 
@@ -69,14 +66,7 @@ export default function ServicesPage() {
       {/* Six Service Categories */}
       <section aria-label="Service categories" className="py-14 sm:py-20">
         <Container className="space-y-10">
-          {services.map((service, index) => {
-            const relatedProjects = service.relatedProjectSlugs
-              .map((slug) => getProjectBySlug(slug))
-              .filter((project): project is NonNullable<typeof project> =>
-                Boolean(project),
-              );
-
-            return (
+          {services.map((service, index) => (
               <article
                 key={service.slug}
                 id={service.slug}
@@ -190,31 +180,8 @@ export default function ServicesPage() {
                     </ul>
                   </div>
                 </div>
-
-                {/* Related Projects Strip */}
-                {relatedProjects.length > 0 && (
-                  <div className="border-t border-border bg-background/70 px-6 py-4 sm:px-8">
-                    <div className="flex flex-wrap items-center gap-3">
-                      <span className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">
-                        Related Work:
-                      </span>
-                      {relatedProjects.map((project) => (
-                        <Link
-                          key={project.slug}
-                          href={`/projects/${project.slug}`}
-                          className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-navy transition-colors hover:border-electric hover:text-electric"
-                        >
-                          <span>{project.title}</span>
-                          <span className="text-muted">({project.status})</span>
-                          <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </article>
-            );
-          })}
+          ))}
         </Container>
       </section>
 

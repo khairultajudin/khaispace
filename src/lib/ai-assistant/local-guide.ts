@@ -1,4 +1,3 @@
-import { projects } from "@/content/projects";
 import { services, type ServiceSlug } from "@/content/services";
 import type {
   AssistantRecommendation,
@@ -190,19 +189,6 @@ export class LocalGuidedAssistantProvider implements ProjectAssistantProvider {
         badge: "Matching Service",
       });
 
-      const relatedProject = projects.find(
-        (project) => project.serviceSlug === matchedService.slug,
-      );
-      if (relatedProject) {
-        recommendations.push({
-          kind: "project",
-          title: relatedProject.title,
-          description: relatedProject.subtitle,
-          href: `/projects/${relatedProject.slug}`,
-          badge: relatedProject.status,
-        });
-      }
-
       recommendations.push({
         kind: "brief",
         title: `Start a ${matchedService.shortTitle} Brief`,
@@ -213,7 +199,7 @@ export class LocalGuidedAssistantProvider implements ProjectAssistantProvider {
       });
 
       return {
-        reply: `${bestMatch?.guidance} Based on what you shared, **${matchedService.title}** looks like the closest starting point. You can inspect related studio work below, test our preliminary scope estimator, or start a pre-selected project brief.`,
+        reply: `${bestMatch?.guidance} Based on what you shared, **${matchedService.title}** looks like the closest starting point. You can review the matching service below, test our preliminary scope estimator, or start a pre-selected project brief.`,
         mode: this.mode,
         recommendations,
         suggestedServiceSlug: matchedService.slug,
