@@ -8,8 +8,10 @@ import {
   PieChart,
   Plus,
   AlertTriangle,
+  DownloadCloud,
 } from "lucide-react";
 import { AISubscriptionItem, HubProject } from "../../types/dashboard";
+import { AUDITED_SUBSCRIPTIONS_2026 } from "@/data/audited-subscriptions-2026";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { useAuth } from "@/hooks/use-auth";
 import { fetchProjects } from "@/lib/supabase/projects-service";
@@ -34,6 +36,7 @@ export function SubscriptionsView() {
   const [subscriptions, setSubscriptions] = useState<AISubscriptionItem[]>([]);
   const [projects, setProjects] = useState<HubProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isImportingAudit, setIsImportingAudit] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<SubscriptionTab>("directory");
 
@@ -186,6 +189,32 @@ export function SubscriptionsView() {
     }
   };
 
+  const missingAuditedSubscriptions = AUDITED_SUBSCRIPTIONS_2026.filter(
+    (seed) =>
+      !subscriptions.some(
+        (existing) =>
+          existing.productName.trim().toLowerCase() === seed.productName.trim().toLowerCase()
+      )
+  );
+
+  const handleImportAuditedSubscriptions = async () => {
+    if (!activeWorkspace || !user || missingAuditedSubscriptions.length === 0) return;
+    setIsImportingAudit(true);
+    setError(null);
+    try {
+      for (const item of missingAuditedSubscriptions) {
+        await createSubscription(activeWorkspace.id, user.id, item);
+      }
+      await loadSubscriptions();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to import audited subscriptions."
+      );
+    } finally {
+      setIsImportingAudit(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
       {/* Editorial Header */}
@@ -204,10 +233,27 @@ export function SubscriptionsView() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
             <span className="text-xs font-mono text-[#536B85]">
               {isLoading ? "Syncing..." : `${subscriptions.length} tracked`}
             </span>
+
+            {!isLoading && missingAuditedSubscriptions.length > 0 && (
+              <button
+                type="button"
+                disabled={isImportingAudit}
+                onClick={handleImportAuditedSubscriptions}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-[#EBF5F0] hover:bg-[#DCF0E6] text-[#347A63] border border-[#C8E6D7] text-xs font-semibold transition-colors cursor-pointer disabled:opacity-60"
+                title="Masukkan semua langganan daripada audit kewangan Jun–Nov 2026 ke Supabase"
+              >
+                <DownloadCloud className="w-4 h-4" />
+                <span>
+                  {isImportingAudit
+                    ? "Menyegerak..."
+                    : `Import Audit 2026 (${missingAuditedSubscriptions.length})`}
+                </span>
+              </button>
+            )}
 
             <button
               type="button"
