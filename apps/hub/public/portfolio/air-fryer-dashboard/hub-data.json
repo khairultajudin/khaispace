@@ -1,0 +1,180 @@
+{
+  "recipes": [
+    {
+      "id": 1,
+      "day": "Isnin",
+      "title": "Smoked Paprika Garlic Chicken",
+      "category": "Isnin",
+      "categoryName": "Isnin (Smoked Garlic)",
+      "desc": "Gabungan aroma salai smoked paprika dan kelazatan garlic powder, diseimbangkan dengan chicken seasoning berjus.",
+      "temp": "180°C",
+      "time": "14 min",
+      "timeMins": 14,
+      "servings": "400g (2 Orang)",
+      "portion": "400g Dada Ayam",
+      "powders": [
+        "Smoked Paprika",
+        "Garlic Powder",
+        "Chicken Seasoning",
+        "Black Pepper"
+      ],
+      "ingredients": [
+        "400g dada ayam Lotus's (dikelar sedikit permukaan)",
+        "1 sudu kecil Serbuk Smoked Paprika",
+        "1/2 sudu kecil Serbuk Garlic Powder (Lotus's)",
+        "1/2 sudu kecil Chicken Seasoning (Pati Ayam)",
+        "1/2 sudu kecil Serbuk Black Pepper (Lada Hitam)",
+        "1 sudu besar Minyak Masak / Minyak Zaitun"
+      ],
+      "steps": [
+        "Lumurkan 400g dada ayam bersama 1 sudu besar minyak.",
+        "Campurkan smoked paprika, garlic powder, chicken seasoning dan black pepper.",
+        "Tabur dan gosokkan campuran rempah serbuk rata pada seluruh permukaan ayam.",
+        "Masukkan ke dalam air fryer dan bakar pada suhu 180°C selama 8 minit.",
+        "Terbalikkan dada ayam dan sambung bakar selama 6 minit lagi sehingga berkilat merah keemasan.",
+        "Rehatkan 3 minit sebelum dipotong nipis untuk hidangan."
+      ]
+    },
+    {
+      "id": 2,
+      "day": "Selasa",
+      "title": "Italian Herb & Onion Chicken",
+      "category": "Selasa",
+      "categoryName": "Selasa (Herb & Onion)",
+      "desc": "Aroma wangi herba oregano dipadukan dengan rasa manis karamel onion powder dan garlic powder. Sangat segar!",
+      "temp": "180°C",
+      "time": "13 min",
+      "timeMins": 13,
+      "servings": "400g (2 Orang)",
+      "portion": "400g Dada Ayam",
+      "powders": [
+        "Oregano",
+        "Onion Powder",
+        "Garlic Powder",
+        "Chicken Seasoning",
+        "Black Pepper"
+      ],
+      "ingredients": [
+        "400g dada ayam (fillet sederhana tebal)",
+        "1 sudu kecil Oregano kering",
+        "1/2 sudu kecil Serbuk Onion Powder (Lotus's)",
+        "1/2 sudu kecil Serbuk Garlic Powder (Lotus's)",
+        "1/2 sudu kecil Chicken Seasoning",
+        "1/2 sudu kecil Black Pepper",
+        "1 sudu besar Minyak Masak / Zaitun"
+      ],
+      "steps": [
+        "Sapu minyak rata pada kedua-dua belah permukaan dada ayam.",
+        "Campurkan oregano, onion powder, garlic powder, chicken seasoning dan black pepper.",
+        "Lumur dan ramas lembut serbuk rempah pada isi ayam.",
+        "Bakar dalam air fryer pada suhu 180°C selama 7 minit.",
+        "Terbalikkan ayam dan sambung bakar 6 minit lagi hingga wangi beraroma herba."
+      ]
+    },
+    {
+      "id": 3,
+      "day": "Rabu",
+      "title": "Smoky Onion Pepper Glaze Chicken",
+      "category": "Rabu",
+      "categoryName": "Rabu (Smoky Onion)",
+      "desc": "Rasa berasap smoked paprika bergabung dengan manis onion powder dan kepedasan lada hitam kasar.",
+      "temp": "180°C",
+      "time": "14 min",
+      "timeMins": 14,
+      "servings": "400g (2 Orang)",
+      "portion": "400g Dada Ayam",
+      "powders": [
+        "Smoked Paprika",
+        "Onion Powder",
+        "Black Pepper",
+        "Chicken Seasoning"
+      ],
+      "ingredients": [
+        "400g dada ayam (dipotong kepingan lebar)",
+        "1 sudu kecil Serbuk Smoked Paprika",
+        "1 sudu kecil Serbuk Onion Powder (Lotus's)",
+        "1/2 sudu kecil Serbuk Black Pepper Kasar",
+        "1/2 sudu kecil Chicken Seasoning",
+        "1 sudu besar Minyak Masak"
+      ],
+      "steps": [
+        "Lumurkan kepingan ayam dengan 1 sudu minyak.",
+        "Gaulkan smoked paprika, onion powder, black pepper dan chicken seasoning di dalam mangkuk kecil.",
+        "Taburkan sekata pada kepingan ayam.",
+        "Susun dalam bakul air fryer dan bakar pada suhu 180°C selama 8 minit.",
+        "Terbalikkan ayam dan bakar lagi selama 6 minit sehingga terbentuk kerak karamel bawang yang lazat."
+      ]
+    },
+    {
+      "id": 4,
+      "day": "Khamis",
+      "title": "Garlic Herb Savoury Chicken",
+      "category": "Khamis",
+      "categoryName": "Khamis (Garlic Herb)",
+      "desc": "Resepi klasik ala restoran Barat; aroma padu garlic powder dan oregano dengan rasa gurih pekat chicken seasoning.",
+      "temp": "180°C",
+      "time": "14 min",
+      "timeMins": 14,
+      "servings": "400g (2 Orang)",
+      "portion": "400g Dada Ayam",
+      "powders": [
+        "Garlic Powder",
+        "Oregano",
+        "Chicken Seasoning",
+        "Black Pepper"
+      ],
+      "ingredients": [
+        "400g dada ayam (dikelar silang)",
+        "1 sudu kecil Serbuk Garlic Powder (Lotus's)",
+        "1 sudu kecil Oregano",
+        "1/2 sudu kecil Chicken Seasoning",
+        "1/2 sudu kecil Black Pepper",
+        "1 sudu besar Minyak Masak / Minyak Zaitun"
+      ],
+      "steps": [
+        "Lumurkan minyak ke seluruh bahagian ayam.",
+        "Campurkan garlic powder, oregano, chicken seasoning dan black pepper.",
+        "Gosokkan campuran ke dalam celah-celah kelaran dada ayam.",
+        "Bakar dalam air fryer pada suhu 180°C selama 8 minit.",
+        "Terbalikkan dan sambung bakar 6 minit lagi sehingga keemasan."
+      ]
+    },
+    {
+      "id": 5,
+      "day": "Jumaat",
+      "title": "Smoky Spicy / BBQ Dry Rub Chicken",
+      "category": "Jumaat",
+      "categoryName": "Jumaat (Smoky Spicy)",
+      "desc": "Menu penutup minggu yang padu! Gabungan lengkap smoked paprika, garlic, onion, black pepper & sedikit chili powder.",
+      "temp": "180°C",
+      "time": "15 min",
+      "timeMins": 15,
+      "servings": "400g (2 Orang)",
+      "portion": "400g Dada Ayam",
+      "powders": [
+        "Smoked Paprika",
+        "Garlic Powder",
+        "Onion Powder",
+        "Black Pepper",
+        "Chilli Powder (Optional)"
+      ],
+      "ingredients": [
+        "400g dada ayam (boneless breast)",
+        "1 sudu kecil Serbuk Smoked Paprika",
+        "1/2 sudu kecil Serbuk Garlic Powder (Lotus's)",
+        "1/2 sudu kecil Serbuk Onion Powder (Lotus's)",
+        "1/2 sudu kecil Chicken Seasoning",
+        "1/2 sudu kecil Black Pepper",
+        "1/2 sudu kecil Serbuk Cili (jika suka pedas)",
+        "1 sudu besar Minyak Masak"
+      ],
+      "steps": [
+        "Sapu minyak pada dada ayam.",
+        "Campurkan semua rempah serbuk (smoked paprika, garlic, onion, black pepper, chicken seasoning dan serbuk cili).",
+        "Lumur tebal ke atas ayam untuk menghasilkan 'BBQ dry crust'.",
+        "Bakar dalam air fryer pada suhu 180°C selama 9 minit.",
+        "Terbalikkan dan sambung bakar 6 minit lagi sehingga warna merah gelap berasap dan super juicy."
+      ]
+    }
+  ]
+}

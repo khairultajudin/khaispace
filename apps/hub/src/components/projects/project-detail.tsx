@@ -25,6 +25,8 @@ import { useWorkspace } from "@/hooks/use-workspace";
 import { fetchProjectContext, type ProjectContextSummary } from "@/lib/supabase/projects-service";
 import { formatMYR } from "@/utils/finance-utils";
 import { MemburuJejakWorkspace } from "./memburu-jejak-workspace";
+import { HidroponikWorkspace } from "./hidroponik-workspace";
+import { AirFryerWorkspace } from "./air-fryer-workspace";
 
 interface ProjectDetailProps {
   project: HubProject;
@@ -54,6 +56,13 @@ export function ProjectDetail({
   const isMemburuJejak =
     project.title.toLowerCase().includes("memburu jejak") ||
     Boolean(project.metadata?.archiveUrl?.includes("memburu-jejak"));
+  const isHidroponik =
+    project.title.toLowerCase().includes("hidroponik") ||
+    Boolean(project.metadata?.archiveUrl?.includes("hidroponik"));
+  const isAirFryer =
+    project.title.toLowerCase().includes("air fryer") ||
+    Boolean(project.metadata?.archiveUrl?.includes("air-fryer"));
+  const hasNativeWorkspace = isMemburuJejak || isHidroponik || isAirFryer;
   const isPlanned =
     project.status === "Planning" ||
     project.metadata?.verificationStatus === "Planned / Not Yet Implemented";
@@ -151,8 +160,10 @@ export function ProjectDetail({
         )}
       </div>
 
-      {/* Merged Memburu Jejak Studio Workspace (replaces separate Preserved Archive) */}
+      {/* Merged Native Project Workspaces (replaces separate Preserved Archive) */}
       {isMemburuJejak && <MemburuJejakWorkspace />}
+      {isHidroponik && <HidroponikWorkspace />}
+      {isAirFryer && <AirFryerWorkspace />}
 
       {/* Main Project Header Card */}
       <div className="p-6 sm:p-8 rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs space-y-4">
@@ -254,7 +265,7 @@ export function ProjectDetail({
               </div>
             )}
 
-            {project.metadata?.archiveUrl && !isMemburuJejak && (
+            {project.metadata?.archiveUrl && !hasNativeWorkspace && (
               <div>
                 <div className="text-[#536B85] font-medium mb-1.5">
                   Preserved Private Portfolio Archive:
