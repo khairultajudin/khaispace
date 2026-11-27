@@ -27,6 +27,8 @@ import { formatMYR } from "@/utils/finance-utils";
 import { MemburuJejakWorkspace } from "./memburu-jejak-workspace";
 import { HidroponikWorkspace } from "./hidroponik-workspace";
 import { AirFryerWorkspace } from "./air-fryer-workspace";
+import { BizTrackWorkspace } from "./biztrack-workspace";
+import { KaiWorkspace } from "./kai-workspace";
 
 interface ProjectDetailProps {
   project: HubProject;
@@ -62,7 +64,15 @@ export function ProjectDetail({
   const isAirFryer =
     project.title.toLowerCase().includes("air fryer") ||
     Boolean(project.metadata?.archiveUrl?.includes("air-fryer"));
-  const hasNativeWorkspace = isMemburuJejak || isHidroponik || isAirFryer;
+  const isBizTrack =
+    project.title.toLowerCase().includes("biztrack") ||
+    Boolean(project.metadata?.archiveUrl?.includes("biztrack"));
+  const isKai =
+    project.title.toLowerCase().includes("ai assistant") ||
+    project.title.toLowerCase().startsWith("kai") ||
+    project.title.toLowerCase().includes("kai ");
+  const hasNativeWorkspace =
+    isMemburuJejak || isHidroponik || isAirFryer || isBizTrack || isKai;
   const isPlanned =
     project.status === "Planning" ||
     project.metadata?.verificationStatus === "Planned / Not Yet Implemented";
@@ -164,6 +174,8 @@ export function ProjectDetail({
       {isMemburuJejak && <MemburuJejakWorkspace />}
       {isHidroponik && <HidroponikWorkspace />}
       {isAirFryer && <AirFryerWorkspace />}
+      {isBizTrack && <BizTrackWorkspace />}
+      {isKai && <KaiWorkspace />}
 
       {/* Main Project Header Card */}
       <div className="p-6 sm:p-8 rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs space-y-4">
