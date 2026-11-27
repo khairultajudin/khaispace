@@ -82,6 +82,7 @@ export function ProjectsView({ resetSignal = 0 }: ProjectsViewProps = {}) {
           "",
           `${window.location.pathname}${window.location.search}${targetHash}`
         );
+        window.dispatchEvent(new HashChangeEvent("hashchange"));
       }
     }
   }, []);
@@ -318,11 +319,53 @@ export function ProjectsView({ resetSignal = 0 }: ProjectsViewProps = {}) {
     </>
   );
 
+  const activeProjectsTabList = useMemo(
+    () => projects.filter((p) => !p.metadata?.archived),
+    [projects]
+  );
+
+  const renderProjectTabsBar = () => {
+    if (activeProjectsTabList.length === 0) return null;
+    return (
+      <div className="bg-white rounded-lg border border-[#DCD7CC] p-2 flex items-center gap-1.5 overflow-x-auto shadow-xs">
+        <button
+          type="button"
+          onClick={() => handleSelectProject(null)}
+          className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+            !selectedProjectId
+              ? "bg-[#0C2340] text-white"
+              : "bg-[#FAF8F4] text-[#536B85] border border-[#DCD7CC] hover:text-[#0C2340]"
+          }`}
+        >
+          Semua Projek ({activeProjectsTabList.length})
+        </button>
+        {activeProjectsTabList.map((proj) => {
+          const isActive = selectedProjectId === proj.id;
+          return (
+            <button
+              key={proj.id}
+              type="button"
+              onClick={() => handleSelectProject(proj.id)}
+              className={`px-3 py-1.5 rounded-md text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                isActive
+                  ? "bg-[#347A63] text-white shadow-xs"
+                  : "bg-[#FAF8F4] text-[#0C2340] border border-[#DCD7CC] hover:bg-[#EDF5F2] hover:text-[#347A63]"
+              }`}
+            >
+              {proj.title}
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
   if (selectedProjectId) {
     const selectedProject = projects.find((p) => p.id === selectedProjectId);
     if (selectedProject) {
       return (
-        <>
+        <div className="space-y-4">
+          {renderProjectTabsBar()}
           <ProjectDetail
             project={selectedProject}
             onBack={() => handleSelectProject(null)}
@@ -334,13 +377,14 @@ export function ProjectsView({ resetSignal = 0 }: ProjectsViewProps = {}) {
             onDelete={(proj) => setDeletingProject(proj)}
           />
           {renderModals()}
-        </>
+        </div>
       );
     }
   }
 
   return (
     <div className="space-y-6">
+      {renderProjectTabsBar()}
       {/* Header Banner */}
       <div className="p-6 sm:p-7 rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

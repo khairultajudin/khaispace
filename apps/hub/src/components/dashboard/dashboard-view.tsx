@@ -108,9 +108,17 @@ function DashboardShell() {
   });
 
   const [sectionNavNonce, setSectionNavNonce] = useState(0);
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      const m = window.location.hash.match(/^#project-([a-z0-9-]+)$/i);
+      return m ? m[1] : null;
+    }
+    return null;
+  });
 
   const handleSelectSection = useCallback((section: NavSection) => {
     setCurrentSection(section);
+    setActiveProjectId(null);
     setSectionNavNonce((prev) => prev + 1);
     if (typeof window !== "undefined") {
       const targetHash = section === "overview" ? "" : `#${section}`;
@@ -121,15 +129,31 @@ function DashboardShell() {
     }
   }, []);
 
+  const handleSelectProject = useCallback((projectId: string) => {
+    setCurrentSection("projects");
+    setActiveProjectId(projectId);
+    if (typeof window !== "undefined") {
+      const targetHash = `#project-${projectId}`;
+      if (window.location.hash !== targetHash) {
+        const nextUrl = `${window.location.pathname}${window.location.search}${targetHash}`;
+        window.history.pushState(null, "", nextUrl);
+      }
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    }
+  }, []);
+
   React.useEffect(() => {
     const handleHash = () => {
       const rawHash = window.location.hash.replace("#", "");
       if (rawHash === "") {
         setCurrentSection("overview");
+        setActiveProjectId(null);
       } else if (VALID_SECTIONS.includes(rawHash as NavSection)) {
         setCurrentSection(rawHash as NavSection);
+        setActiveProjectId(null);
       } else if (rawHash.startsWith("project-")) {
         setCurrentSection("projects");
+        setActiveProjectId(rawHash.replace(/^project-/, ""));
       } else if (rawHash.startsWith("task-") || rawHash === "milestones") {
         setCurrentSection("tasks");
       } else if (
@@ -183,7 +207,9 @@ function DashboardShell() {
       {/* Sidebar Navigation */}
       <Sidebar
         currentSection={currentSection}
+        activeProjectId={activeProjectId}
         onSelectSection={handleSelectSection}
+        onSelectProject={handleSelectProject}
         mobileOpen={mobileMenuOpen}
         onCloseMobile={() => setMobileMenuOpen(false)}
       />

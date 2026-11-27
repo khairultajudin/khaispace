@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   FolderKanban,
@@ -17,13 +17,19 @@ import {
   LogOut,
   Loader2,
   UserCheck,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { NavSection } from "../../types/dashboard";
+import { useWorkspace } from "@/hooks/use-workspace";
+import { fetchProjects } from "@/lib/supabase/projects-service";
+import { HubProject, NavSection } from "../../types/dashboard";
 
 interface SidebarProps {
   currentSection: NavSection;
+  activeProjectId?: string | null;
   onSelectSection: (section: NavSection) => void;
+  onSelectProject?: (projectId: string) => void;
   mobileOpen: boolean;
   onCloseMobile: () => void;
 }
@@ -102,12 +108,53 @@ const NAV_ITEMS: NavItemConfig[] = [
 
 export function Sidebar({
   currentSection,
+  activeProjectId = null,
   onSelectSection,
+  onSelectProject,
   mobileOpen,
   onCloseMobile,
 }: SidebarProps) {
   const { user, signOut } = useAuth();
+  const { activeWorkspace } = useWorkspace();
   const [isSigningOut, setIsSigningOut] = useState<boolean>(false);
+  const [sidebarProjects, setSidebarProjects] = useState<HubProject[]>([]);
+  const [projectsExpanded, setProjectsExpanded] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (!activeWorkspace) return;
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const rows = await fetchProjects(activeWorkspace.id);
+        if (!cancelled) {
+          setSidebarProjects(rows.filter((p) => !p.metadata?.archived));
+        }
+      } catch {
+        // ignore sidebar fetch errors
+      }
+    };
+    void load();
+    const onUpdated = () => void load();
+    window.addEventListener("khai-projects-updated", onUpdated);
+    return () => {
+      cancelled = true;
+      window.removeEventListener("khai-projects-updated", onUpdated);
+    };
+  }, [activeWorkspace]);
+
+  const statusDotClass = (status: string) => {
+    switch (status) {
+      case "Production":
+      case "Active":
+        return "bg-[#347A63]";
+      case "In Development":
+        return "bg-sky-500";
+      case "Planning":
+        return "bg-amber-500";
+      default:
+        return "bg-[#8C9BAF]";
+    }
+  };
 
   const handleSignOut = async () => {
     setIsSigningOut(true);
@@ -159,36 +206,97 @@ export function Sidebar({
 
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
-          const isActive = currentSection === item.id;
+          const isActive =
+            currentSection === item.id && !(item.id === "projects" && activeProjectId);
+          const isProjectsItem = item.id === "projects";
 
           return (
-            <button
-              key={item.id}
-              onClick={() => {
-                onSelectSection(item.id);
-                if (mobileOpen) onCloseMobile();
-              }}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-medium transition-all duration-150 text-left cursor-pointer ${
-                isActive
-                  ? "bg-[#EDF5F2] text-[#347A63] font-semibold border border-[#A8CFC2]"
-                  : "text-[#0C2340] hover:bg-[#E9E5DC] hover:text-[#0C2340] border border-transparent"
-              }`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Icon
-                  className={`w-4 h-4 ${
-                    isActive ? "text-[#347A63]" : "text-[#536B85]"
+            <div key={item.id} className="space-y-0.5">
+              <div className="flex items-center gap-0.5">
+                <button
+                  onClick={() => {
+                    onSelectSection(item.id);
+                    if (mobileOpen) onCloseMobile();
+                  }}
+                  className={`flex-1 flex items-center justify-between px-3 py-2 rounded-md text-xs font-medium transition-all duration-150 text-left cursor-pointer ${
+                    isActive
+                      ? "bg-[#EDF5F2] text-[#347A63] font-semibold border border-[#A8CFC2]"
+                      : "text-[#0C2340] hover:bg-[#E9E5DC] hover:text-[#0C2340] border border-transparent"
                   }`}
-                />
-                <span>{item.label}</span>
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Icon
+                      className={`w-4 h-4 ${
+                        isActive ? "text-[#347A63]" : "text-[#536B85]"
+                      }`}
+                    />
+                    <span>{item.label}</span>
+                  </div>
+
+                  {isProjectsItem && sidebarProjects.length > 0 ? (
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#E9E5DC] text-[#536B85] border border-[#DCD7CC]">
+                      {sidebarProjects.length}
+                    </span>
+                  ) : (
+                    item.badge && (
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#E9E5DC] text-[#536B85] border border-[#DCD7CC]">
+                        {item.badge}
+                      </span>
+                    )
+                  )}
+                </button>
+
+                {isProjectsItem && sidebarProjects.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setProjectsExpanded((v) => !v)}
+                    className="p-1.5 rounded text-[#536B85] hover:text-[#0C2340] hover:bg-[#E9E5DC] cursor-pointer"
+                    aria-label={projectsExpanded ? "Collapse projects" : "Expand projects"}
+                  >
+                    {projectsExpanded ? (
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    ) : (
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                )}
               </div>
 
-              {item.badge && (
-                <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-[#E9E5DC] text-[#536B85] border border-[#DCD7CC]">
-                  {item.badge}
-                </span>
+              {/* 1 Project = 1 Tab under Projects */}
+              {isProjectsItem && projectsExpanded && sidebarProjects.length > 0 && (
+                <div className="ml-4 pl-2.5 border-l border-[#DCD7CC] space-y-0.5 py-0.5">
+                  {sidebarProjects.map((proj) => {
+                    const projActive =
+                      currentSection === "projects" && activeProjectId === proj.id;
+                    return (
+                      <button
+                        key={proj.id}
+                        type="button"
+                        onClick={() => {
+                          if (onSelectProject) {
+                            onSelectProject(proj.id);
+                          }
+                          if (mobileOpen) onCloseMobile();
+                        }}
+                        title={`${proj.title} (${proj.status})`}
+                        className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[11px] transition-colors text-left cursor-pointer ${
+                          projActive
+                            ? "bg-[#EDF5F2] text-[#347A63] font-semibold border border-[#A8CFC2]"
+                            : "text-[#536B85] hover:bg-[#E9E5DC] hover:text-[#0C2340] border border-transparent"
+                        }`}
+                      >
+                        <span
+                          className={`w-1.5 h-1.5 rounded-full shrink-0 ${statusDotClass(
+                            proj.status
+                          )}`}
+                        />
+                        <span className="truncate">{proj.title}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               )}
-            </button>
+            </div>
           );
         })}
       </nav>
