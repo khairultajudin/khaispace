@@ -27,6 +27,12 @@ export function SubscriptionMetrics({ subscriptions }: SubscriptionMetricsProps)
   const todayIso = getLocalTodayIso();
   const activeCount = calculateActiveCount(subscriptions);
   const monthlyCommitment = calculateTotalMonthlyCommitment(subscriptions);
+  const personalMonthly = calculateTotalMonthlyCommitment(
+    subscriptions.filter((s) => (s.paidBy || "Personal") === "Personal")
+  );
+  const companyMonthly = calculateTotalMonthlyCommitment(
+    subscriptions.filter((s) => s.paidBy === "Company")
+  );
   const annualCommitment = calculateEstimatedAnnualCommitment(subscriptions);
   const upcomingRenewals = getUpcomingRenewals(subscriptions, todayIso, 30);
   const urgentRenewals = upcomingRenewals.filter((r) => r.isUrgent);
@@ -39,7 +45,7 @@ export function SubscriptionMetrics({ subscriptions }: SubscriptionMetricsProps)
         <div className="p-5 rounded-lg border border-[#DCD7CC] bg-[#FFFFFF] shadow-xs flex flex-col justify-between">
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs text-[#536B85]">
-              <span className="font-medium">Active AI Subscriptions</span>
+              <span className="font-medium">Active Subscriptions</span>
               <Bot className="w-4 h-4 text-[#347A63]" />
             </div>
             <div className="text-2xl font-bold tracking-tight text-[#0C2340] font-mono">
@@ -62,8 +68,8 @@ export function SubscriptionMetrics({ subscriptions }: SubscriptionMetricsProps)
               {formatMYR(monthlyCommitment)}
             </div>
           </div>
-          <span className="text-[11px] text-[#347A63]/80 pt-2 border-t border-[#A8CFC2]/60 mt-2 block font-medium">
-            Active recurring commitment (MYR/mo)
+          <span className="text-[11px] text-[#347A63]/90 pt-2 border-t border-[#A8CFC2]/60 mt-2 block font-medium">
+            Personal: {formatMYR(personalMonthly)} &bull; Company: {formatMYR(companyMonthly)}
           </span>
         </div>
 

@@ -36,6 +36,7 @@ export function SubscriptionForm({
   const [billingCycle, setBillingCycle] = useState<SubscriptionBillingCycle>(() => initialData?.billingCycle || "Monthly");
   const [amount, setAmount] = useState<string>(() => (initialData ? initialData.amount.toString() : ""));
   const [status, setStatus] = useState<SubscriptionStatus>(() => initialData?.status || "Active");
+  const [paidBy, setPaidBy] = useState<"Personal" | "Company">(() => initialData?.paidBy || "Personal");
   const [startDateIso, setStartDateIso] = useState<string>(() => initialData?.startDateIso || todayIso);
   const [nextBillingDateIso, setNextBillingDateIso] = useState<string>(() => initialData?.nextBillingDateIso || todayIso);
   const [projectId, setProjectId] = useState<string>(() => initialData?.assignedProjectId || "none");
@@ -132,6 +133,7 @@ export function SubscriptionForm({
       nextBillingDateIso,
       assignedProjectId: matchedProject?.id,
       assignedProjectTitle: matchedProject?.title,
+      paidBy,
       purpose: purpose.trim(),
       notes: notes.trim() || undefined,
     };
@@ -243,6 +245,9 @@ export function SubscriptionForm({
                 <option value="Voice & Audio">Voice &amp; Audio</option>
                 <option value="Research & Discovery">Research &amp; Discovery</option>
                 <option value="Infrastructure & APIs">Infrastructure &amp; APIs</option>
+                <option value="Utilities & Telco">Utilities &amp; Telco</option>
+                <option value="Entertainment & Media">Entertainment &amp; Media</option>
+                <option value="Domain & Hosting">Domain &amp; Hosting</option>
               </select>
               {errors.category && (
                 <p className="text-[11px] text-[#8C3B2B] flex items-center gap-1">
@@ -252,8 +257,8 @@ export function SubscriptionForm({
             </div>
           </div>
 
-          {/* Billing Cycle, Amount & Status Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Billing Cycle, Amount, Status & Paid By Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="space-y-1">
               <label htmlFor="sub-cycle" className="font-semibold text-[#0C2340] block">
                 Billing Cycle <span className="text-[#8C3B2B]">*</span>
@@ -304,6 +309,21 @@ export function SubscriptionForm({
                 <option value="Paused">Paused</option>
                 <option value="Trial">Trial</option>
                 <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label htmlFor="sub-paid-by" className="font-semibold text-[#0C2340] block">
+                Paid By <span className="text-[#8C3B2B]">*</span>
+              </label>
+              <select
+                id="sub-paid-by"
+                value={paidBy}
+                onChange={(e) => setPaidBy(e.target.value as "Personal" | "Company")}
+                className="w-full px-3 py-2 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] text-[#0C2340] focus:outline-none focus:border-[#347A63] cursor-pointer"
+              >
+                <option value="Personal">Personal (Khai)</option>
+                <option value="Company">Company (MK Venture)</option>
               </select>
             </div>
           </div>

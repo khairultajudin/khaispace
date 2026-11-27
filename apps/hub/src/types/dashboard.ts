@@ -163,6 +163,7 @@ export interface AISubscriptionItem {
   nextBillingDateIso: string;
   assignedProjectId?: string;
   assignedProjectTitle?: string;
+  paidBy?: "Personal" | "Company";
   purpose: string;
   notes?: string;
 }

@@ -76,7 +76,7 @@ const NAV_ITEMS: NavItemConfig[] = [
   },
   {
     id: "subscriptions",
-    label: "AI Subscriptions",
+    label: "Subscriptions",
     icon: Bot,
     isReady: true,
   },

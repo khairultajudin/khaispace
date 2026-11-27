@@ -42,6 +42,7 @@ export function SubscriptionList({
 }: SubscriptionListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [selectedPayer, setSelectedPayer] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedCycle, setSelectedCycle] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("renewal-asc");
@@ -85,6 +86,11 @@ export function SubscriptionList({
           return false;
         }
 
+        // Paid By filter
+        if (selectedPayer !== "all" && (s.paidBy || "Personal") !== selectedPayer) {
+          return false;
+        }
+
         // Category filter
         if (selectedCategory !== "all" && s.category !== selectedCategory) {
           return false;
@@ -115,7 +121,7 @@ export function SubscriptionList({
         }
         return 0;
       });
-  }, [subscriptions, searchTerm, selectedStatus, selectedCategory, selectedCycle, sortBy]);
+  }, [subscriptions, searchTerm, selectedStatus, selectedPayer, selectedCategory, selectedCycle, sortBy]);
 
   const hasActiveFilters =
     searchTerm.trim() !== "" ||
@@ -206,6 +212,20 @@ export function SubscriptionList({
                   {c}
                 </option>
               ))}
+            </select>
+          </div>
+
+          {/* Paid By Filter */}
+          <div className="flex items-center gap-2">
+            <Building2 className="w-3.5 h-3.5 text-[#536B85] shrink-0" />
+            <select
+              value={selectedPayer}
+              onChange={(e) => setSelectedPayer(e.target.value)}
+              className="w-full px-2.5 py-1.5 rounded-md border border-[#DCD7CC] bg-[#FAF8F4] text-[#0C2340] focus:outline-none focus:border-[#347A63] cursor-pointer"
+            >
+              <option value="all">All Payers (Personal &amp; Company)</option>
+              <option value="Personal">Personal (Khai)</option>
+              <option value="Company">Company (MK Venture)</option>
             </select>
           </div>
 
@@ -306,9 +326,18 @@ export function SubscriptionList({
                     >
                       {/* Tool & Plan */}
                       <td className="py-3.5 px-4 space-y-0.5">
-                        <div className="font-semibold text-sm text-[#0C2340] group-hover:text-[#347A63] transition-colors flex items-center gap-1.5">
+                        <div className="font-semibold text-sm text-[#0C2340] group-hover:text-[#347A63] transition-colors flex items-center gap-1.5 flex-wrap">
                           <span>{sub.productName}</span>
                           <span className="text-xs font-normal text-[#536B85]">by {sub.provider}</span>
+                          <span
+                            className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold border ${
+                              sub.paidBy === "Company"
+                                ? "bg-amber-50 text-amber-800 border-amber-200"
+                                : "bg-sky-50 text-sky-700 border-sky-200"
+                            }`}
+                          >
+                            {sub.paidBy === "Company" ? "Company (MK)" : "Personal"}
+                          </span>
                         </div>
                         <div className="text-[11px] text-[#536B85]">
                           {sub.planName} &bull; <span className="font-mono text-[#536B85]">{sub.category}</span>

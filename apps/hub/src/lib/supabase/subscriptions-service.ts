@@ -6,6 +6,29 @@ import type {
   SubscriptionStatus,
 } from '@/types/dashboard';
 
+function parsePaidByFromNotes(rawNotes: string | null): {
+  paidBy: 'Personal' | 'Company';
+  cleanNotes?: string;
+} {
+  if (!rawNotes) return { paidBy: 'Personal', cleanNotes: undefined };
+  const match = rawNotes.match(/^\[Paid By:\s*(Personal|Company)\]\s*/i);
+  if (match) {
+    const payer = match[1].toLowerCase() === 'company' ? 'Company' : 'Personal';
+    const rest = rawNotes.slice(match[0].length).trim();
+    return { paidBy: payer, cleanNotes: rest || undefined };
+  }
+  return { paidBy: 'Personal', cleanNotes: rawNotes };
+}
+
+function encodeNotesWithPaidBy(
+  paidBy: 'Personal' | 'Company' | undefined,
+  notes: string | undefined
+): string {
+  const payer = paidBy === 'Company' ? 'Company' : 'Personal';
+  const clean = (notes || '').replace(/^\[Paid By:\s*(Personal|Company)\]\s*/i, '').trim();
+  return clean ? `[Paid By: ${payer}] ${clean}` : `[Paid By: ${payer}]`;
+}
+
 function formatDisplayDate(iso: string): string {
   const d = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(d.getTime())) return iso;
@@ -46,6 +69,7 @@ export async function fetchSubscriptions(workspaceId: string): Promise<AISubscri
 
   return (data ?? []).map((row) => {
     const proj = row.projects as unknown as { title: string } | null;
+    const { paidBy, cleanNotes } = parsePaidByFromNotes(row.notes ?? null);
     return {
       id: row.id,
       provider: row.provider,
@@ -62,8 +86,9 @@ export async function fetchSubscriptions(workspaceId: string): Promise<AISubscri
       nextBillingDateIso: row.next_billing_date,
       assignedProjectId: row.assigned_project_id ?? undefined,
       assignedProjectTitle: proj?.title ?? undefined,
+      paidBy,
       purpose: row.purpose,
-      notes: row.notes ?? undefined,
+      notes: cleanNotes,
     };
   });
 }
@@ -93,7 +118,7 @@ export async function createSubscription(
       start_date: input.startDateIso,
       next_billing_date: input.nextBillingDateIso,
       purpose: input.purpose.trim(),
-      notes: input.notes?.trim() || null,
+      notes: encodeNotesWithPaidBy(input.paidBy, input.notes),
       created_by: userId,
     })
     .select('id, product_name')
@@ -134,7 +159,7 @@ export async function updateSubscription(
       start_date: input.startDateIso,
       next_billing_date: input.nextBillingDateIso,
       purpose: input.purpose.trim(),
-      notes: input.notes?.trim() || null,
+      notes: encodeNotesWithPaidBy(input.paidBy, input.notes),
     })
     .eq('id', subId)
     .eq('workspace_id', workspaceId);

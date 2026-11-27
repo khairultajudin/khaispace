@@ -197,13 +197,33 @@ export function SubscriptionsView() {
       )
   );
 
+  const payerMismatchedSubscriptions = AUDITED_SUBSCRIPTIONS_2026.flatMap((seed) => {
+    const existing = subscriptions.find(
+      (s) => s.productName.trim().toLowerCase() === seed.productName.trim().toLowerCase()
+    );
+    if (existing && existing.paidBy !== seed.paidBy) {
+      return [{ existing, seed }];
+    }
+    return [];
+  });
+
+  const pendingSyncCount =
+    missingAuditedSubscriptions.length + payerMismatchedSubscriptions.length;
+
   const handleImportAuditedSubscriptions = async () => {
-    if (!activeWorkspace || !user || missingAuditedSubscriptions.length === 0) return;
+    if (!activeWorkspace || !user || pendingSyncCount === 0) return;
     setIsImportingAudit(true);
     setError(null);
     try {
       for (const item of missingAuditedSubscriptions) {
         await createSubscription(activeWorkspace.id, user.id, item);
+      }
+      for (const { existing, seed } of payerMismatchedSubscriptions) {
+        await updateSubscription(activeWorkspace.id, existing.id, {
+          ...existing,
+          paidBy: seed.paidBy,
+          category: seed.category,
+        });
       }
       await loadSubscriptions();
     } catch (err) {
@@ -223,13 +243,13 @@ export function SubscriptionsView() {
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#347A63]">
               <Bot className="w-4 h-4" />
-              <span>AI Command Center &bull; Developer Tooling</span>
+              <span>Personal &amp; Company (MK Venture) &bull; Recurring Services</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#0C2340]">
-              AI Subscriptions &amp; Services
+              Subscriptions
             </h1>
             <p className="text-xs sm:text-sm text-[#536B85] max-w-2xl leading-relaxed">
-              Consolidated lifecycle tracking, renewal calendar, and cost attribution across LLM assistants, generative media models, and AI developer tooling.
+              Consolidated lifecycle tracking, renewal calendar, and cost attribution across Personal &amp; Company (MK Venture) subscriptions — AI tools, telco, internet, domain, and media.
             </p>
           </div>
 
@@ -238,19 +258,19 @@ export function SubscriptionsView() {
               {isLoading ? "Syncing..." : `${subscriptions.length} tracked`}
             </span>
 
-            {!isLoading && missingAuditedSubscriptions.length > 0 && (
+            {!isLoading && pendingSyncCount > 0 && (
               <button
                 type="button"
                 disabled={isImportingAudit}
                 onClick={handleImportAuditedSubscriptions}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-md bg-[#EBF5F0] hover:bg-[#DCF0E6] text-[#347A63] border border-[#C8E6D7] text-xs font-semibold transition-colors cursor-pointer disabled:opacity-60"
-                title="Masukkan semua langganan daripada audit kewangan Jun–Nov 2026 ke Supabase"
+                title="Masukkan & kemas kini semua langganan Personal & Company daripada audit kewangan 2026 ke Supabase"
               >
                 <DownloadCloud className="w-4 h-4" />
                 <span>
                   {isImportingAudit
                     ? "Menyegerak..."
-                    : `Import Audit 2026 (${missingAuditedSubscriptions.length})`}
+                    : `Segerak Audit 2026 (${pendingSyncCount})`}
                 </span>
               </button>
             )}
